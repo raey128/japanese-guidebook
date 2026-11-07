@@ -1,0 +1,28 @@
+slug,name,top_category
+ramen,Ramen,food
+sushi,Sushi,food
+izakaya,Izakaya,food
+yakitori,Yakitori,food
+tempura,Tempura,food
+tonkatsu,Tonkatsu,food
+udon_soba,Udon & Soba,food
+okonomiyaki,Okonomiyaki,food
+kaiseki,Kaiseki,food
+cafe,Cafe,food
+sweets,Sweets & Bakery,food
+market,Food Market,food
+temple,Temple,sights
+shrine,Shrine,sights
+castle,Castle,sights
+museum,Museum,sights
+garden_park,Garden & Park,sights
+viewpoint,Viewpoint,sights
+neighborhood,Neighborhood & Street,sights
+landmark,Landmark,sights
+hotel,Hotel,stays
+ryokan,Ryokan,stays
+hostel,Hostel,stays
+onsen,Onsen & Sento,experiences
+bar,Bar,experiences
+shopping,Shopping,experiences
+activity,Activity,experiences

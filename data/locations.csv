@@ -1,0 +1,71 @@
+slug,name,name_ja,city,lat,lng,is_catch_all
+asakusa,Asakusa,浅草,tokyo,35.7120,139.7960,false
+ueno-yanaka,Ueno & Yanaka,上野・谷中,tokyo,35.7180,139.7720,false
+bunkyo,Bunkyo,文京,tokyo,35.7180,139.7520,false
+akihabara,Akihabara,秋葉原,tokyo,35.6990,139.7730,false
+marunouchi-ginza,Marunouchi & Ginza,丸の内・銀座,tokyo,35.6780,139.7640,false
+tsukiji,Tsukiji,築地,tokyo,35.6640,139.7690,false
+toyosu-odaiba,Toyosu & Odaiba,豊洲・お台場,tokyo,35.6430,139.7850,false
+oshiage,Oshiage & Skytree,押上・スカイツリー,tokyo,35.7100,139.8107,false
+shinjuku,Shinjuku,新宿,tokyo,35.6900,139.7000,false
+shibuya-harajuku,Shibuya & Harajuku,渋谷・原宿,tokyo,35.6650,139.7020,false
+ebisu-meguro,Ebisu & Meguro,恵比寿・目黒,tokyo,35.6400,139.7120,false
+roppongi-azabu,Roppongi & Azabu,六本木・麻布,tokyo,35.6620,139.7380,false
+setagaya,Setagaya,世田谷,tokyo,35.6460,139.6530,false
+mitaka-kichijoji,Mitaka & Kichijoji,三鷹・吉祥寺,tokyo,35.7000,139.5750,false
+tokyo-elsewhere,Elsewhere in Tokyo,東京のその他,tokyo,,,true
+gion-higashiyama,Gion & Higashiyama,祇園・東山,kyoto,35.0000,135.7790,false
+ginkakuji-nanzenji,Ginkaku-ji & Nanzen-ji,銀閣寺・南禅寺,kyoto,35.0200,135.7950,false
+kawaramachi,Kawaramachi,河原町,kyoto,35.0060,135.7660,false
+kyoto-station,Kyoto Station,京都駅,kyoto,34.9860,135.7560,false
+fushimi,Fushimi,伏見,kyoto,34.9700,135.7730,false
+arashiyama,Arashiyama,嵐山,kyoto,35.0150,135.6720,false
+kinkakuji-kitano,Kinkaku-ji & Kitano,金閣寺・北野,kyoto,35.0370,135.7260,false
+nijo-gosho,Nijo & Gosho,二条・御所,kyoto,35.0200,135.7550,false
+kita,Kita (Northern Kyoto),北区,kyoto,35.0500,135.7480,false
+kurama-kibune,Kurama & Kibune,鞍馬・貴船,kyoto,35.1150,135.7700,false
+kyoto-elsewhere,Elsewhere in Kyoto,京都のその他,kyoto,,,true
+namba-dotonbori,Namba & Dotonbori,難波・道頓堀,osaka,34.6690,135.5010,false
+umeda,Umeda,梅田,osaka,34.7030,135.4970,false
+tenma-nakanoshima,Tenma & Nakanoshima,天満・中之島,osaka,34.6960,135.5100,false
+osaka-castle,Osaka Castle,大阪城,osaka,34.6850,135.5230,false
+shinsekai-tennoji,Shinsekai & Tennoji,新世界・天王寺,osaka,34.6500,135.5090,false
+osaka-bay,Osaka Bay,大阪ベイエリア,osaka,34.6600,135.4300,false
+sumiyoshi,Sumiyoshi,住吉,osaka,34.6125,135.4930,false
+suita,Suita,吹田,osaka,34.8090,135.5320,false
+osaka-elsewhere,Elsewhere in Osaka,大阪のその他,osaka,,,true
+nara-park,Nara Park,奈良公園,nara,34.6850,135.8420,false
+kintetsu-nara,Kintetsu Nara,近鉄奈良,nara,34.6850,135.8285,false
+naramachi,Naramachi,ならまち,nara,34.6775,135.8305,false
+nishinokyo,Nishinokyo,西ノ京,nara,34.6720,135.7845,false
+heijo,Heijo Palace,平城宮跡,nara,34.6910,135.8000,false
+ikaruga,Ikaruga,斑鳩,nara,34.6143,135.7343,false
+yoshino,Yoshino,吉野,nara,34.3660,135.8600,false
+nara-elsewhere,Elsewhere in Nara,奈良のその他,nara,,,true
+peace-park,Peace Park,平和記念公園,hiroshima,34.3930,132.4527,false
+hondori-nagarekawa,Hondori & Nagarekawa,本通・流川,hiroshima,34.3920,132.4620,false
+hiroshima-castle,Hiroshima Castle,広島城,hiroshima,34.4020,132.4590,false
+hiroshima-station,Hiroshima Station,広島駅,hiroshima,34.3960,132.4730,false
+miyajima,Miyajima,宮島,hiroshima,34.2960,132.3200,false
+hiroshima-elsewhere,Elsewhere in Hiroshima,広島のその他,hiroshima,,,true
+tenjin-daimyo,Tenjin & Daimyo,天神・大名,fukuoka,33.5890,130.3960,false
+nakasu-hakata,Nakasu & Hakata,中洲・博多,fukuoka,33.5925,130.4100,false
+ohori,Ohori Park,大濠公園,fukuoka,33.5850,130.3800,false
+momochi,Momochi,百道,fukuoka,33.5940,130.3540,false
+dazaifu,Dazaifu,太宰府,fukuoka,33.5215,130.5349,false
+sasaguri,Sasaguri,篠栗,fukuoka,33.6330,130.5470,false
+fukuoka-elsewhere,Elsewhere in Fukuoka,福岡のその他,fukuoka,,,true
+odori,Odori,大通,sapporo,43.0600,141.3510,false
+susukino,Susukino,すすきの,sapporo,43.0540,141.3530,false
+sapporo-station,Sapporo Station,札幌駅,sapporo,43.0700,141.3500,false
+maruyama,Maruyama,円山,sapporo,43.0530,141.3150,false
+jozankei,Jozankei,定山渓,sapporo,42.9680,141.1630,false
+otaru,Otaru,小樽,sapporo,43.1990,141.0030,false
+sapporo-elsewhere,Elsewhere in Sapporo,札幌のその他,sapporo,,,true
+higashi-chaya,Higashi Chaya,ひがし茶屋街,kanazawa,36.5720,136.6660,false
+kenrokuen,Kenroku-en,兼六園,kanazawa,36.5620,136.6610,false
+korinbo-nagamachi,Korinbo & Nagamachi,香林坊・長町,kanazawa,36.5620,136.6520,false
+omicho,Omicho,近江町,kanazawa,36.5716,136.6566,false
+kanazawa-station,Kanazawa Station,金沢駅,kanazawa,36.5780,136.6480,false
+teramachi-nishi,Teramachi & Nishi Chaya,寺町・にし茶屋街,kanazawa,36.5555,136.6500,false
+kanazawa-elsewhere,Elsewhere in Kanazawa,金沢のその他,kanazawa,,,true

@@ -1,0 +1,226 @@
+name,name_ja,lat,lng,subcategory,location
+Senso-ji,浅草寺,35.7148,139.7967,temple,asakusa
+Meiji Jingu,明治神宮,35.6764,139.6993,shrine,shibuya-harajuku
+Tokyo Skytree,東京スカイツリー,35.7101,139.8107,viewpoint,oshiage
+Tokyo Tower,東京タワー,35.6586,139.7454,viewpoint,roppongi-azabu
+Shibuya Sky,渋谷スカイ,35.6585,139.7022,viewpoint,shibuya-harajuku
+Shinjuku Gyoen,新宿御苑,35.6852,139.7100,garden_park,shinjuku
+Ueno Park,上野恩賜公園,35.7156,139.7745,garden_park,ueno-yanaka
+Tokyo National Museum,東京国立博物館,35.7188,139.7765,museum,ueno-yanaka
+teamLab Planets,チームラボプラネッツ,35.6491,139.7898,museum,toyosu-odaiba
+Ghibli Museum,三鷹の森ジブリ美術館,35.6962,139.5704,museum,mitaka-kichijoji
+Hamarikyu Gardens,浜離宮恩賜庭園,35.6600,139.7633,garden_park,tsukiji
+Rikugien,六義園,35.7330,139.7466,garden_park,bunkyo
+Imperial Palace East Gardens,皇居東御苑,35.6852,139.7571,garden_park,marunouchi-ginza
+Gotoku-ji,豪徳寺,35.6489,139.6474,temple,setagaya
+Nezu Shrine,根津神社,35.7202,139.7608,shrine,bunkyo
+Yanaka Ginza,谷中銀座商店街,35.7276,139.7660,neighborhood,ueno-yanaka
+Tsukiji Outer Market,築地場外市場,35.6654,139.7707,market,tsukiji
+Toyosu Market,豊洲市場,35.6455,139.7850,market,toyosu-odaiba
+Ameyoko,アメ横商店街,35.7101,139.7745,shopping,ueno-yanaka
+Kappabashi Dougu Street,かっぱ橋道具街,35.7130,139.7880,shopping,asakusa
+Akihabara Electric Town,秋葉原電気街,35.6984,139.7731,shopping,akihabara
+Omoide Yokocho,思い出横丁,35.6929,139.6996,izakaya,shinjuku
+Golden Gai,新宿ゴールデン街,35.6940,139.7046,bar,shinjuku
+Ichiran Shibuya,一蘭 渋谷店,35.6614,139.7010,ramen,shibuya-harajuku
+AFURI Ebisu,AFURI 恵比寿,35.6474,139.7088,ramen,ebisu-meguro
+Fuunji,風雲児,35.6871,139.6967,ramen,shinjuku
+Tonkatsu Maisen Aoyama,とんかつ まい泉 青山本店,35.6672,139.7114,tonkatsu,shibuya-harajuku
+Sushi Dai Toyosu,寿司大 豊洲市場店,35.6454,139.7840,sushi,toyosu-odaiba
+Spa LaQua,スパ ラクーア,35.7069,139.7531,onsen,bunkyo
+Park Hyatt Tokyo,パーク ハイアット 東京,35.6856,139.6907,hotel,shinjuku
+The Okura Tokyo,The Okura Tokyo,35.6670,139.7430,hotel,roppongi-azabu
+Hoshinoya Tokyo,星のや東京,35.6877,139.7656,ryokan,marunouchi-ginza
+Fushimi Inari Taisha,伏見稲荷大社,34.9671,135.7727,shrine,fushimi
+Kiyomizu-dera,清水寺,34.9949,135.7850,temple,gion-higashiyama
+Kinkaku-ji,金閣寺,35.0394,135.7292,temple,kinkakuji-kitano
+Ginkaku-ji,銀閣寺,35.0270,135.7982,temple,ginkakuji-nanzenji
+Ryoan-ji,龍安寺,35.0345,135.7183,temple,kinkakuji-kitano
+Tenryu-ji,天龍寺,35.0158,135.6737,temple,arashiyama
+Sanjusangen-do,三十三間堂,34.9879,135.7718,temple,kyoto-station
+Tofuku-ji,東福寺,34.9767,135.7740,temple,fushimi
+Nanzen-ji,南禅寺,35.0112,135.7942,temple,ginkakuji-nanzenji
+Daitoku-ji,大徳寺,35.0440,135.7460,temple,kita
+Kurama-dera,鞍馬寺,35.1180,135.7713,temple,kurama-kibune
+Yasaka Shrine,八坂神社,35.0037,135.7785,shrine,gion-higashiyama
+Kamigamo Shrine,上賀茂神社,35.0600,135.7525,shrine,kita
+Nijo Castle,二条城,35.0142,135.7482,castle,nijo-gosho
+Kyoto Imperial Palace,京都御所,35.0254,135.7621,landmark,nijo-gosho
+Kyoto Tower,京都タワー,34.9875,135.7593,viewpoint,kyoto-station
+Arashiyama Bamboo Grove,嵐山竹林の小径,35.0170,135.6713,garden_park,arashiyama
+Philosopher's Path,哲学の道,35.0220,135.7950,garden_park,ginkakuji-nanzenji
+Hanamikoji Street,花見小路,35.0030,135.7750,neighborhood,gion-higashiyama
+Pontocho,先斗町,35.0060,135.7710,neighborhood,kawaramachi
+Sannenzaka,産寧坂,34.9960,135.7810,neighborhood,gion-higashiyama
+Nishiki Market,錦市場,35.0050,135.7649,market,kawaramachi
+Kyoto Railway Museum,京都鉄道博物館,34.9871,135.7428,museum,kyoto-station
+Honke Owariya,本家尾張屋 本店,35.0118,135.7588,udon_soba,kawaramachi
+Kyoto Ramen Koji,京都拉麺小路,34.9858,135.7585,ramen,kyoto-station
+Kikunoi Honten,菊乃井 本店,35.0010,135.7810,kaiseki,gion-higashiyama
+% Arabica Arashiyama,% ARABICA 京都 嵐山,35.0129,135.6773,cafe,arashiyama
+Funaoka Onsen,船岡温泉,35.0390,135.7440,onsen,kita
+Hoshinoya Kyoto,星のや京都,35.0180,135.6640,ryokan,arashiyama
+Tawaraya Ryokan,俵屋旅館,35.0100,135.7650,ryokan,kawaramachi
+Osaka Castle,大阪城,34.6873,135.5262,castle,osaka-castle
+Dotonbori,道頓堀,34.6687,135.5013,neighborhood,namba-dotonbori
+Hozenji Yokocho,法善寺横丁,34.6683,135.5025,neighborhood,namba-dotonbori
+Nakazakicho,中崎町,34.7080,135.5060,neighborhood,umeda
+Kuromon Market,黒門市場,34.6653,135.5068,market,namba-dotonbori
+Tsutenkaku,通天閣,34.6525,135.5063,viewpoint,shinsekai-tennoji
+Umeda Sky Building,梅田スカイビル,34.7053,135.4903,viewpoint,umeda
+Abeno Harukas,あべのハルカス,34.6458,135.5135,viewpoint,shinsekai-tennoji
+Shitenno-ji,四天王寺,34.6544,135.5164,temple,shinsekai-tennoji
+Sumiyoshi Taisha,住吉大社,34.6125,135.4930,shrine,sumiyoshi
+Namba Yasaka Shrine,難波八阪神社,34.6614,135.4972,shrine,namba-dotonbori
+Osaka Tenmangu,大阪天満宮,34.6957,135.5128,shrine,tenma-nakanoshima
+Osaka Museum of History,大阪歴史博物館,34.6823,135.5210,museum,osaka-castle
+Osaka Aquarium Kaiyukan,海遊館,34.6545,135.4290,activity,osaka-bay
+Universal Studios Japan,ユニバーサル・スタジオ・ジャパン,34.6654,135.4323,activity,osaka-bay
+Expo '70 Commemorative Park,万博記念公園,34.8094,135.5324,garden_park,suita
+Shinsaibashi-suji,心斎橋筋商店街,34.6740,135.5013,shopping,namba-dotonbori
+Amerikamura,アメリカ村,34.6720,135.4980,shopping,namba-dotonbori
+Tenjinbashisuji Shopping Street,天神橋筋商店街,34.7000,135.5120,shopping,tenma-nakanoshima
+Spa World,スパワールド,34.6512,135.5048,onsen,shinsekai-tennoji
+Mizuno,美津の,34.6685,135.5020,okonomiyaki,namba-dotonbori
+Kushikatsu Daruma Shinsekai,串かつだるま 新世界総本店,34.6520,135.5060,izakaya,shinsekai-tennoji
+Conrad Osaka,コンラッド大阪,34.6930,135.4920,hotel,umeda
+Todai-ji,東大寺,34.6890,135.8398,temple,nara-park
+Kofuku-ji,興福寺,34.6830,135.8317,temple,nara-park
+Yakushi-ji,薬師寺,34.6684,135.7845,temple,nishinokyo
+Toshodai-ji,唐招提寺,34.6755,135.7849,temple,nishinokyo
+Horyu-ji,法隆寺,34.6143,135.7343,temple,ikaruga
+Kasuga Taisha,春日大社,34.6812,135.8485,shrine,nara-park
+Nara Park,奈良公園,34.6851,135.8430,garden_park,nara-park
+Isuien Garden,依水園,34.6860,135.8370,garden_park,nara-park
+Nara National Museum,奈良国立博物館,34.6830,135.8370,museum,nara-park
+Naramachi,ならまち,34.6770,135.8290,neighborhood,naramachi
+Mount Wakakusa,若草山,34.6870,135.8510,viewpoint,nara-park
+Mount Yoshino,吉野山,34.3660,135.8600,viewpoint,yoshino
+Nakatanidou,中谷堂,34.6810,135.8290,sweets,naramachi
+Nara Hotel,奈良ホテル,34.6800,135.8340,hotel,nara-park
+Atomic Bomb Dome,原爆ドーム,34.3955,132.4536,landmark,peace-park
+Peace Memorial Park,平和記念公園,34.3929,132.4525,garden_park,peace-park
+Hiroshima Peace Memorial Museum,広島平和記念資料館,34.3916,132.4520,museum,peace-park
+Hiroshima Castle,広島城,34.4027,132.4592,castle,hiroshima-castle
+Shukkeien,縮景園,34.4005,132.4675,garden_park,hiroshima-castle
+Okonomimura,お好み村,34.3925,132.4630,okonomiyaki,hondori-nagarekawa
+Nagataya,長田屋,34.3945,132.4520,okonomiyaki,peace-park
+Hondori Shopping Street,本通商店街,34.3930,132.4580,shopping,hondori-nagarekawa
+Itsukushima Shrine,厳島神社,34.2959,132.3199,shrine,miyajima
+Mount Misen,弥山,34.2790,132.3190,viewpoint,miyajima
+Daisho-in,大聖院,34.2930,132.3220,temple,miyajima
+Ohori Park,大濠公園,33.5860,130.3770,garden_park,ohori
+Fukuoka Castle Ruins,福岡城跡,33.5845,130.3830,castle,ohori
+Kushida Shrine,櫛田神社,33.5930,130.4105,shrine,nakasu-hakata
+Tocho-ji,東長寺,33.5960,130.4140,temple,nakasu-hakata
+Fukuoka Tower,福岡タワー,33.5933,130.3515,viewpoint,momochi
+Fukuoka Art Museum,福岡市美術館,33.5840,130.3790,museum,ohori
+Nakasu Yatai,中洲屋台,33.5920,130.4060,izakaya,nakasu-hakata
+Ichiran Main Store,一蘭 本社総本店,33.5930,130.4070,ramen,nakasu-hakata
+ShinShin Tenjin,ShinShin 天神本店,33.5890,130.3960,ramen,tenjin-daimyo
+Yanagibashi Market,柳橋連合市場,33.5850,130.4040,market,nakasu-hakata
+Canal City Hakata,キャナルシティ博多,33.5897,130.4108,shopping,nakasu-hakata
+Dazaifu Tenmangu,太宰府天満宮,33.5215,130.5349,shrine,dazaifu
+Nanzoin,南蔵院,33.6330,130.5470,temple,sasaguri
+Odori Park,大通公園,43.0600,141.3480,garden_park,odori
+Moerenuma Park,モエレ沼公園,43.1220,141.4300,garden_park,sapporo-elsewhere
+Sapporo TV Tower,さっぽろテレビ塔,43.0611,141.3564,viewpoint,odori
+Mount Moiwa,藻岩山,43.0220,141.3220,viewpoint,sapporo-elsewhere
+Sapporo Clock Tower,札幌市時計台,43.0625,141.3536,landmark,odori
+Hokkaido Shrine,北海道神宮,43.0540,141.3080,shrine,maruyama
+Sapporo Beer Museum,サッポロビール博物館,43.0715,141.3690,museum,sapporo-station
+Nijo Market,二条市場,43.0580,141.3580,market,odori
+Susukino,すすきの,43.0550,141.3530,neighborhood,susukino
+Ganso Ramen Yokocho,元祖さっぽろラーメン横丁,43.0550,141.3530,ramen,susukino
+Daruma Honten,だるま 本店,43.0540,141.3540,izakaya,susukino
+Shiroi Koibito Park,白い恋人パーク,43.0890,141.2710,sweets,sapporo-elsewhere
+Jozankei Onsen,定山渓温泉,42.9680,141.1630,onsen,jozankei
+Otaru Canal,小樽運河,43.1990,141.0030,neighborhood,otaru
+Kenroku-en,兼六園,36.5621,136.6626,garden_park,kenrokuen
+Kanazawa Castle,金沢城,36.5650,136.6590,castle,kenrokuen
+Higashi Chaya District,ひがし茶屋街,36.5725,136.6665,neighborhood,higashi-chaya
+Kazuemachi Chaya District,主計町茶屋街,36.5710,136.6640,neighborhood,higashi-chaya
+Nagamachi Samurai District,長町武家屋敷跡,36.5630,136.6500,neighborhood,korinbo-nagamachi
+Omicho Market,近江町市場,36.5716,136.6566,market,omicho
+21st Century Museum of Contemporary Art,金沢21世紀美術館,36.5609,136.6582,museum,kenrokuen
+D.T. Suzuki Museum,鈴木大拙館,36.5580,136.6610,museum,kenrokuen
+Myoryu-ji,妙立寺,36.5550,136.6510,temple,teramachi-nishi
+Oyama Shrine,尾山神社,36.5660,136.6550,shrine,korinbo-nagamachi
+Tsuzumi Gate,鼓門,36.5781,136.6480,landmark,kanazawa-station
+Torishiki,鳥しき,35.6335,139.7150,yakitori,ebisu-meguro
+Shin-Umeda Shokudogai,新梅田食道街,34.7030,135.4980,izakaya,umeda
+Nakanoshima Park,中之島公園,34.6930,135.5090,garden_park,tenma-nakanoshima
+Nakanoshima Museum of Art,大阪中之島美術館,34.6920,135.4920,museum,tenma-nakanoshima
+JR Tower Hotel Nikko Sapporo,JRタワーホテル日航札幌,43.0680,141.3510,hotel,sapporo-station
+Nakajima Park,中島公園,43.0450,141.3540,garden_park,susukino
+Maruyama Park,円山公園,43.0530,141.3150,garden_park,maruyama
+Hokkaido University,北海道大学,43.0770,141.3400,landmark,sapporo-station
+Former Hokkaido Government Office,北海道庁旧本庁舎,43.0640,141.3480,landmark,odori
+Okurayama Ski Jump Stadium,大倉山ジャンプ競技場,43.0480,141.2950,viewpoint,maruyama
+Tanukikoji Shopping Street,狸小路商店街,43.0570,141.3530,shopping,susukino
+Sapporo Jogai Market,札幌場外市場,43.0650,141.3260,market,maruyama
+Ramen Shingen,らーめん 信玄,43.0560,141.3390,ramen,odori
+Rokkatei Sapporo Main Store,六花亭 札幌本店,43.0670,141.3530,sweets,sapporo-station
+Historical Village of Hokkaido,北海道開拓の村,43.0480,141.4980,museum,sapporo-elsewhere
+Sapporo Art Park,札幌芸術の森,42.9480,141.3420,museum,sapporo-elsewhere
+Bar Yamazaki,バー やまざき,43.0550,141.3540,bar,susukino
+Guesthouse Nara Backpackers,ゲストハウス奈良バックパッカーズ,34.6870,135.8310,hostel,kintetsu-nara
+JW Marriott Hotel Nara,JWマリオット・ホテル奈良,34.6870,135.8170,hotel,kintetsu-nara
+Higashimuki Shopping Street,東向商店街,34.6840,135.8280,shopping,kintetsu-nara
+Mochiidono Shopping Street,もちいどのセンター街,34.6800,135.8290,shopping,naramachi
+Gango-ji,元興寺,34.6780,135.8310,temple,naramachi
+Shin-Yakushi-ji,新薬師寺,34.6770,135.8500,temple,nara-park
+Heijo Palace Site,平城宮跡,34.6910,135.7960,landmark,heijo
+Yoshikien Garden,吉城園,34.6860,135.8360,garden_park,nara-park
+Kasugayama Primeval Forest,春日山原始林,34.6850,135.8600,garden_park,nara-park
+Nigatsu-do,二月堂,34.6893,135.8435,viewpoint,nara-park
+Hiraso Nara,平宗 奈良店,34.6780,135.8300,sushi,naramachi
+Mentoan,麺闘庵,34.6820,135.8290,udon_soba,kintetsu-nara
+Nara Prefectural Museum of Art,奈良県立美術館,34.6850,135.8310,museum,kintetsu-nara
+Harushika Sake Brewery,今西清兵衛商店 春鹿,34.6770,135.8310,activity,naramachi
+Hotel Okura Fukuoka,ホテルオークラ福岡,33.5935,130.4050,hotel,nakasu-hakata
+The Ritz-Carlton Fukuoka,ザ・リッツ・カールトン福岡,33.5880,130.3960,hotel,tenjin-daimyo
+Momochi Seaside Park,シーサイドももち海浜公園,33.5950,130.3520,garden_park,momochi
+Uminonakamichi Seaside Park,海の中道海浜公園,33.6620,130.3600,garden_park,fukuoka-elsewhere
+Nokonoshima Island Park,のこのしまアイランドパーク,33.6430,130.3010,garden_park,fukuoka-elsewhere
+Fukuoka City Museum,福岡市博物館,33.5880,130.3530,museum,momochi
+Shofuku-ji,聖福寺,33.5980,130.4140,temple,nakasu-hakata
+Sumiyoshi Shrine Fukuoka,住吉神社,33.5860,130.4130,shrine,nakasu-hakata
+Kego Shrine,警固神社,33.5880,130.3990,shrine,tenjin-daimyo
+Daimyo,大名,33.5880,130.3940,neighborhood,tenjin-daimyo
+Tenjin Underground Mall,天神地下街,33.5900,130.3990,shopping,tenjin-daimyo
+Hakata Issou,博多一双 博多駅東本店,33.5900,130.4250,ramen,nakasu-hakata
+Hakata Gion Tetsunabe,博多祇園鉄なべ,33.5920,130.4120,izakaya,nakasu-hakata
+Tempura Hirao Daimyo,天麩羅処ひらお 大名店,33.5880,130.3930,tempura,tenjin-daimyo
+Mizuho PayPay Dome Fukuoka,みずほPayPayドーム福岡,33.5955,130.3620,activity,momochi
+Hyatt Centric Kanazawa,ハイアット セントリック 金沢,36.5770,136.6460,hotel,kanazawa-station
+Asadaya Ryokan,浅田屋,36.5700,136.6560,ryokan,omicho
+HATCHi Kanazawa,HATCHi 金沢,36.5740,136.6620,hostel,higashi-chaya
+Gyokusen-inmaru Garden,玉泉院丸庭園,36.5640,136.6560,garden_park,kenrokuen
+Ishikawa Prefectural Museum of Art,石川県立美術館,36.5600,136.6620,museum,kenrokuen
+Kanazawa Yasue Gold Leaf Museum,金沢市立安江金箔工芸館,36.5730,136.6640,museum,higashi-chaya
+Utatsuyama Temple District,卯辰山麓寺院群,36.5740,136.6700,neighborhood,higashi-chaya
+Nishi Chaya District,にし茶屋街,36.5560,136.6490,neighborhood,teramachi-nishi
+Mount Utatsu,卯辰山,36.5750,136.6800,viewpoint,higashi-chaya
+Hakuichi Higashiyama,箔一 東山店,36.5720,136.6660,sweets,higashi-chaya
+Morimori Sushi Kanazawa Station,もりもり寿し 金沢駅前店,36.5770,136.6500,sushi,kanazawa-station
+Korinbo,香林坊,36.5620,136.6550,shopping,korinbo-nagamachi
+Sakuda Gold Leaf,金銀箔工芸さくだ,36.5710,136.6680,activity,higashi-chaya
+Sheraton Grand Hiroshima,シェラトングランドホテル広島,34.3980,132.4760,hotel,hiroshima-station
+Hotel Granvia Hiroshima,ホテルグランヴィア広島,34.3975,132.4750,hotel,hiroshima-station
+K's House Hiroshima,ケイズハウス広島,34.3930,132.4710,hostel,hiroshima-station
+Hiroshima Gokoku Shrine,広島護国神社,34.4020,132.4580,shrine,hiroshima-castle
+Hiroshima Museum of Art,ひろしま美術館,34.3990,132.4580,museum,hiroshima-castle
+Hiroshima Prefectural Art Museum,広島県立美術館,34.4005,132.4685,museum,hiroshima-station
+Orizuru Tower,おりづるタワー,34.3960,132.4550,viewpoint,peace-park
+Children's Peace Monument,原爆の子の像,34.3935,132.4528,landmark,peace-park
+Mitaki-dera,三瀧寺,34.4250,132.4300,temple,hiroshima-elsewhere
+Fudoin,不動院,34.4220,132.4710,temple,hiroshima-elsewhere
+Hijiyama Park,比治山公園,34.3870,132.4750,garden_park,hiroshima-station
+Hiroshima Botanical Garden,広島市植物公園,34.3810,132.3420,garden_park,hiroshima-elsewhere
+Bakudan-ya,ばくだん屋 本店,34.3900,132.4610,ramen,hondori-nagarekawa
+Kanawa,かなわ,34.3920,132.4540,kaiseki,peace-park
+Hassei,八昌,34.3900,132.4640,okonomiyaki,hondori-nagarekawa
+Nagarekawa,流川,34.3920,132.4650,neighborhood,hondori-nagarekawa
+Mazda Zoom-Zoom Stadium,MAZDA Zoom-Zoom スタジアム広島,34.3920,132.4840,activity,hiroshima-station
+Kanazawa Noh Museum,金沢能楽美術館,36.5615,136.6590,museum,kenrokuen
