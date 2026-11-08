@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #b91c1c;
+  --color-brand-dark: #7f1d1d;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-white text-stone-900 antialiased;
+  overflow-x: hidden;
+}
+
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-blue-600;
+}
