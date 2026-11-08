@@ -1,8 +1,42 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens (R16.1). Friendly and bright, in the spirit of Duolingo but not its branding (X12):
+ * the primary is a torii vermilion, not Duolingo green. Every text/fill pair here is ≥ 4.5:1 (N3.8):
+ * white on primary 4.6, white on each category colour ≥ 5.0.
+ */
 @theme {
-  --color-brand: #b91c1c;
-  --color-brand-dark: #7f1d1d;
+  --font-sans: "Nunito Variable", ui-rounded, "Hiragino Maru Gothic ProN", system-ui, sans-serif;
+
+  --color-brand: #d93a1f;
+  --color-brand-dark: #a82a13;
+  --color-brand-soft: #fdebe7;
+
+  --color-food: #b45309;
+  --color-food-dark: #7c3a06;
+  --color-sights: #c2255c;
+  --color-sights-dark: #8a1a41;
+  --color-stays: #1971c2;
+  --color-stays-dark: #114f88;
+  --color-experiences: #6741d9;
+  --color-experiences-dark: #482d98;
+
+  --color-success: #237a35;
+  --color-success-dark: #175224;
+  --color-success-soft: #e6f4e9;
+  --color-warning-soft: #fff4d6;
+  --color-warning-ink: #7a4d00;
+  --color-danger: #c92a2a;
+  --color-danger-dark: #8f1d1d;
+
+  --color-ink: #1f2937;
+  --color-muted: #57534e;
+  --color-line: #e7e5e4;
+  --color-line-strong: #d6d3d1;
+  --color-canvas: #fffaf5;
+
+  --radius-chunky: 14px;
+  --radius-card: 18px;
 }
 
 html,
@@ -12,10 +46,108 @@ body,
 }
 
 body {
-  @apply bg-white text-stone-900 antialiased;
+  @apply bg-canvas font-sans text-ink antialiased;
   overflow-x: hidden;
 }
 
+h1,
+h2,
+h3 {
+  @apply font-extrabold tracking-tight;
+}
+
 :focus-visible {
-  @apply outline-2 outline-offset-2 outline-blue-600;
+  @apply outline-3 outline-offset-2 outline-stays;
+}
+
+@layer components {
+  /* Chunky button (R16.2): a darker bottom edge that collapses on press. */
+  .btn {
+    @apply inline-flex min-h-12 select-none items-center justify-center gap-2 rounded-(--radius-chunky) border-2 border-b-4 px-5 py-2 text-base font-extrabold tracking-wide transition-[transform,border-width] duration-75;
+  }
+  .btn:active:not(:disabled) {
+    @apply translate-y-0.5 border-b-2;
+  }
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    @apply cursor-not-allowed opacity-50;
+  }
+  .btn-primary {
+    @apply border-brand-dark bg-brand text-white hover:brightness-105;
+  }
+  .btn-secondary {
+    @apply border-line-strong bg-white text-ink hover:bg-stone-50;
+  }
+  .btn-danger {
+    @apply border-danger-dark bg-danger text-white hover:brightness-105;
+  }
+  .btn-success {
+    @apply border-success-dark bg-success text-white hover:brightness-105;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent text-ink hover:bg-stone-100;
+  }
+  .btn-sm {
+    @apply min-h-10 px-3 py-1.5 text-sm;
+  }
+  .btn-icon {
+    @apply aspect-square px-0;
+  }
+
+  /* Selectable pill (R16.2). Colour comes from --chip, defaulting to the brand. */
+  .chip {
+    --chip: var(--color-brand);
+    --chip-dark: var(--color-brand-dark);
+    @apply inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-2 border-b-4 border-line-strong bg-white px-4 py-1.5 text-sm font-bold text-ink transition-[transform,border-width] duration-75;
+  }
+  .chip:active {
+    @apply translate-y-px border-b-2;
+  }
+  .chip[aria-pressed="true"] {
+    background: var(--chip);
+    border-color: var(--chip-dark);
+    @apply text-white;
+  }
+
+  .card {
+    @apply rounded-(--radius-card) border-2 border-b-4 border-line bg-white p-4;
+  }
+
+  .field {
+    @apply block w-full min-h-12 rounded-(--radius-chunky) border-2 border-line-strong bg-white px-3 py-2 text-base text-ink placeholder:text-muted focus:border-stays focus:outline-none;
+  }
+  .label {
+    @apply mb-1 block text-sm font-bold text-ink;
+  }
+  .hint {
+    @apply text-sm text-muted;
+  }
+  .link {
+    @apply font-bold text-stays underline decoration-2 underline-offset-2 hover:text-stays-dark;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .chip {
+    transition: none;
+  }
+  .btn:active:not(:disabled),
+  .chip:active {
+    transform: none;
+  }
+}
+
+/* Full-screen map home: keep MapLibre's controls clear of the floating search bar and chips. */
+.map-home .maplibregl-ctrl-top-right {
+  top: 9.5rem;
+}
+.map-home .maplibregl-ctrl-group {
+  border-radius: var(--radius-chunky);
+  border: 2px solid var(--color-line);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
 }

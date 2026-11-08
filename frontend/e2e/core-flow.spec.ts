@@ -39,14 +39,14 @@ test("sign in, add a place by pin, rank three places, see them in both lists", a
   const c = await createPlaceApi(page, { name: `Corefl Tonkotsu ${run}` });
 
   // 3. Rank all three through the RankFlow UI: A first, then B (A is better), then C (B is better).
-  await page.getByRole("link", { name: "Rank", exact: true }).click();
+  await page.getByRole("button", { name: "Rank", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/places/${idA}/rank$`));
   expect(await rankViaUi(page, idA)).toBe(0);
   expect(await rankViaUi(page, b.id, { answers: ["existing"] })).toBe(1);
   expect(await rankViaUi(page, c.id, { answers: ["existing"], note: `Great bowl ${run}` })).toBe(1);
 
   // 4. Personal list: all three, in order, with scores.
-  await page.goto("/me/rankings");
+  await page.goto("/lists?tab=mine");
   await expect(page.getByRole("heading", { level: 3, name: "Ramen" })).toBeVisible();
   const mine = page.getByRole("listitem").filter({ hasText: run });
   await expect(mine).toHaveCount(3);

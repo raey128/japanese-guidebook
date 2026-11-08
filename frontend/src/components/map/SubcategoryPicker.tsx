@@ -17,7 +17,7 @@ export default function SubcategoryPicker({
   const groups = groupByTopCategory(data ?? []);
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium">
+      <label htmlFor={id} className="label">
         Subcategory <span aria-hidden="true">*</span>
       </label>
       <select
@@ -27,7 +27,7 @@ export default function SubcategoryPicker({
         aria-describedby={error ? `${id}-err` : undefined}
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
-        className="mt-1 w-full rounded border border-stone-400 px-2 py-1.5"
+        className="field mt-1"
       >
         <option value="">Choose a subcategory</option>
         {groups.map((g) => (
@@ -41,7 +41,7 @@ export default function SubcategoryPicker({
         ))}
       </select>
       {error && (
-        <p id={`${id}-err`} role="alert" className="mt-1 text-sm text-red-800">
+        <p id={`${id}-err`} role="alert" className="mt-1 text-sm text-danger">
           {error}
         </p>
       )}

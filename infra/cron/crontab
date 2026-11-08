@@ -1,2 +1,4 @@
 # Weekly open-data dump, Mondays 03:00 UTC. Same entrypoint as `make dump`.
 0 3 * * 1 cd /app/backend && python -m app.cli dump --out /app/dumps
+# Weekly usage-event rollup + 90-day expiry (R18.3), Mondays 03:30 UTC.
+30 3 * * 1 cd /app/backend && python -m app.cli rollup-events

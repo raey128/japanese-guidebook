@@ -148,15 +148,17 @@ async def create_place(
     subcategory_id: int,
     location: Location,
     address: str | None,
+    pending: bool = False,
 ) -> Place:
+    """Insert a place. Manual adds from search (R13) are stored pending and hidden until reviewed."""
     place_id = (
         await db.execute(
             text(
                 """
                 INSERT INTO places (name, name_ja, address, geom, subcategory_id, location_id,
-                                    city_id, creator_id)
+                                    city_id, creator_id, status, is_hidden)
                 VALUES (:name, :name_ja, :address, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326),
-                        :sub, :loc, :city, :creator)
+                        :sub, :loc, :city, :creator, :status, :hidden)
                 RETURNING id
                 """
             ),
@@ -170,6 +172,8 @@ async def create_place(
                 "loc": location.id,
                 "city": location.city_id,
                 "creator": user.id,
+                "status": "pending" if pending else "live",
+                "hidden": pending,
             },
         )
     ).scalar_one()

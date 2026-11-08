@@ -69,11 +69,11 @@ test.describe("ranking flow", () => {
     await page.getByRole("link", { name: "Cancel" }).click();
 
     await expect(page).toHaveURL(new RegExp(`/places/${target.id}$`));
-    await expect(page.getByRole("link", { name: "Rank", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Rank", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Your ranking" })).toHaveCount(0);
     expect((await snapshotApi(page, target.id)).my_ranking).toBeNull();
 
-    await page.goto("/me/rankings");
+    await page.goto("/lists?tab=mine");
     await expect(page.getByRole("heading", { level: 3, name: "Ramen" })).toBeVisible();
     await expect(page.getByRole("listitem").filter({ hasText: target.name })).toHaveCount(0);
   });

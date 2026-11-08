@@ -7,6 +7,7 @@ from app import place_views
 from app.deps import DB, CurrentUser
 from app.models import Place
 from app.schemas.bookmarks import BookmarkList, BookmarkState
+from app.visibility import can_use
 
 router = APIRouter(tags=["bookmarks"])
 
@@ -14,7 +15,7 @@ router = APIRouter(tags=["bookmarks"])
 @router.put("/bookmarks/{place_id}", response_model=BookmarkState, operation_id="addBookmark")
 async def add_bookmark(place_id: int, db: DB, user: CurrentUser) -> BookmarkState:
     place = await db.get(Place, place_id)
-    if place is None or place.is_hidden or place.merged_into_id is not None:
+    if place is None or not can_use(place, user.id):
         raise HTTPException(404, "Place not found.")
     await db.execute(
         text(
@@ -45,7 +46,8 @@ async def list_my_bookmarks(db: DB, user: CurrentUser) -> BookmarkList:
             text(
                 """
                 SELECT b.place_id FROM bookmarks b JOIN places p ON p.id = b.place_id
-                WHERE b.user_id = :u AND NOT p.is_hidden AND p.merged_into_id IS NULL
+                WHERE b.user_id = :u AND p.merged_into_id IS NULL
+                  AND (NOT p.is_hidden OR (p.status = 'pending' AND p.creator_id = :u))
                 ORDER BY b.created_at DESC, b.place_id DESC
                 """
             ),

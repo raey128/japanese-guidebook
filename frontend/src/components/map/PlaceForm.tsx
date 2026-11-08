@@ -34,7 +34,7 @@ type Props = {
 function FieldError({ id, text }: { id: string; text?: string }) {
   if (!text) return null;
   return (
-    <p id={id} role="alert" className="mt-1 text-sm text-red-800">
+    <p id={id} role="alert" className="mt-1 text-sm text-danger">
       {text}
     </p>
   );
@@ -152,7 +152,7 @@ export default function PlaceForm({ initial, submitLabel, pending, serverErrors,
     });
   };
 
-  const input = "mt-1 w-full rounded border border-stone-400 px-2 py-1.5";
+  const input = "field mt-1";
   const canSubmit = pin !== null && !outside && !pending;
 
   return (
@@ -162,11 +162,11 @@ export default function PlaceForm({ initial, submitLabel, pending, serverErrors,
           1. Where is it?
         </h2>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={useMyLocation} className="rounded border border-stone-400 px-3 py-1.5 text-sm">
+          <button type="button" onClick={useMyLocation} className="btn btn-secondary btn-sm">
             Use my location
           </button>
         </div>
-        <p aria-live="polite" className="text-sm text-stone-700">
+        <p aria-live="polite" className="hint">
           {geoMsg}
         </p>
         <AddressSearch onPick={(p, label) => {
@@ -176,7 +176,7 @@ export default function PlaceForm({ initial, submitLabel, pending, serverErrors,
         <BasePinMap lat={pin?.lat ?? null} lng={pin?.lng ?? null} draggable clickToSet onChange={setPinFromUser} height={300} label="Place pin map" />
         <FieldError id={`${uid}-pin-err`} text={errors.pin} />
         {outside && (
-          <div role="alert" className="rounded border border-amber-600 bg-amber-50 p-3 text-sm text-amber-950">
+          <div role="alert" className="card border-amber-400 bg-warning-soft text-sm text-warning-ink">
             <p className="font-semibold">We only cover these cities for now</p>
             <ul className="list-disc pl-5">
               {coveredCities.map((c) => (
@@ -192,7 +192,7 @@ export default function PlaceForm({ initial, submitLabel, pending, serverErrors,
           2. Details
         </h2>
         <div>
-          <label htmlFor={`${uid}-name`} className="block text-sm font-medium">
+          <label htmlFor={`${uid}-name`} className="label">
             English name <span aria-hidden="true">*</span>
           </label>
           <input
@@ -212,7 +212,7 @@ export default function PlaceForm({ initial, submitLabel, pending, serverErrors,
           <FieldError id={`${uid}-name-err`} text={errors.name} />
         </div>
         <div>
-          <label htmlFor={`${uid}-ja`} className="block text-sm font-medium">
+          <label htmlFor={`${uid}-ja`} className="label">
             Japanese name (optional)
           </label>
           <input
@@ -254,7 +254,7 @@ export default function PlaceForm({ initial, submitLabel, pending, serverErrors,
           }}
         />
         <div>
-          <label htmlFor={`${uid}-addr`} className="block text-sm font-medium">
+          <label htmlFor={`${uid}-addr`} className="label">
             Address (optional)
           </label>
           <input
@@ -267,25 +267,25 @@ export default function PlaceForm({ initial, submitLabel, pending, serverErrors,
             }}
             className={input}
           />
-          <p className="mt-1 text-xs text-stone-700">Filled in automatically from the pin when possible.</p>
+          <p className="mt-1 text-xs text-muted">Filled in automatically from the pin when possible.</p>
         </div>
       </section>
 
       <LicenceNotice />
       {children}
       {serverErrors?.message && !serverErrors.coveredCities && (
-        <p role="alert" className="rounded border border-red-700 bg-red-50 p-2 text-sm text-red-900">
+        <p role="alert" className="card border-red-300 bg-red-50 text-sm text-danger">
           {serverErrors.message}
         </p>
       )}
       <button
         type="submit"
         disabled={!canSubmit}
-        className="rounded bg-brand px-4 py-2 font-semibold text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
+        className="btn btn-primary"
       >
         {pending ? "Saving…" : submitLabel}
       </button>
-      {!pin && <p className="text-sm text-stone-700">Place the pin to enable this button.</p>}
+      {!pin && <p className="hint">Place the pin to enable this button.</p>}
     </form>
   );
 }

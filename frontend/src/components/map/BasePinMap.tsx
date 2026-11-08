@@ -66,7 +66,7 @@ export default function BasePinMap({ lat, lng, draggable, clickToSet, onChange, 
         tabIndex={editable ? 0 : undefined}
         aria-label={editable ? `${label}. Focus here and use the arrow keys to move the pin 5 metres; hold Shift for 50 metres.` : label}
         onKeyDown={onKeyDown}
-        className="overflow-hidden rounded border border-stone-300"
+        className="overflow-hidden rounded-(--radius-card) border-2 border-line"
         style={{ height }}
         data-testid="pin-map"
       >
@@ -104,11 +104,11 @@ export default function BasePinMap({ lat, lng, draggable, clickToSet, onChange, 
       {editable && (
         <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
           {!hasPin && clickToSet && (
-            <button type="button" onClick={dropAtCentre} className="rounded border border-stone-400 px-2 py-1">
+            <button type="button" onClick={dropAtCentre} className="btn btn-secondary btn-sm">
               Drop pin at map centre
             </button>
           )}
-          <p aria-live="polite" className="text-stone-700" data-testid="pin-readout">
+          <p aria-live="polite" className="text-muted" data-testid="pin-readout">
             {hasPin ? `Pin at ${formatCoords({ lat, lng })}` : "No pin yet. Tap the map, or use the options above."}
           </p>
         </div>

@@ -86,6 +86,10 @@ jobs:
           uv run python -m app.cli seed-places
           uv run uvicorn app.main:app --port 8000 &
           for i in $(seq 30); do curl -sf localhost:8000/api/health && break; sleep 1; done
+          # An admin for the map-first e2e (manual add → approval, N5.6).
+          curl -sf -X POST localhost:8000/api/auth/sign-in -H 'content-type: application/json' \
+            -d '{"username":"e2e_admin","create":true}' > /dev/null
+          uv run python -m app.cli make-admin e2e_admin
       - name: Playwright
         working-directory: frontend
         run: |

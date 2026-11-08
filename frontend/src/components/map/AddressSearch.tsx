@@ -21,7 +21,7 @@ export default function AddressSearch({ onPick }: { onPick: (p: LatLng, label: s
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium">
+      <label htmlFor={id} className="label">
         Search for an address
       </label>
       <input
@@ -33,13 +33,13 @@ export default function AddressSearch({ onPick }: { onPick: (p: LatLng, label: s
           if (e.key === "Enter") e.preventDefault();
         }}
         autoComplete="off"
-        className="mt-1 w-full rounded border border-stone-400 px-2 py-1.5"
+        className="field mt-1"
       />
-      <p aria-live="polite" className="mt-1 text-sm text-stone-700">
+      <p aria-live="polite" className="mt-1 hint">
         {status}
       </p>
       {active && search.data && search.data.results.length > 0 && (
-        <ul className="mt-1 divide-y divide-stone-200 rounded border border-stone-300">
+        <ul className="card mt-1 divide-y-2 divide-line p-0 overflow-hidden">
           {search.data.results.map((r, i) => (
             <li key={`${r.lat},${r.lng},${i}`}>
               <button

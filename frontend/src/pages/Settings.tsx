@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router";
 
 import { api, unwrap } from "../api/client";
 import { useMe } from "../hooks/auth";
+import Loading from "../components/ui/Loading";
 
 export default function Settings() {
   const me = useMe();
@@ -17,13 +18,13 @@ export default function Settings() {
     },
   });
 
-  if (me.isPending) return <p role="status">Loading…</p>;
+  if (me.isPending) return <Loading />;
   const user = me.data?.user;
   if (!user) return <Navigate to="/sign-in?next=%2Fsettings" replace />;
 
   return (
     <div className="max-w-xl space-y-4">
-      <h1 className="text-2xl font-bold">Settings</h1>
+      <h1 className="text-3xl font-extrabold">Settings</h1>
       <div>
         <label className="flex items-center gap-2 text-lg">
           <input
@@ -35,7 +36,7 @@ export default function Settings() {
           />
           Make my profile private
         </label>
-        <p className="mt-1 text-stone-800">
+        <p className="mt-1 text-ink">
           When private, your notes and the places you add show as Anonymous and your profile page is hidden. Your
           rankings still count toward public scores.
         </p>
@@ -44,16 +45,16 @@ export default function Settings() {
         {update.isPending ? "Saving…" : update.isError ? `Could not save: ${update.error.message}` : update.isSuccess ? "Saved" : ""}
       </p>
       <p>
-        <Link className="underline" to={`/u/${user.username}`}>
+        <Link className="link" to={`/u/${user.username}`}>
           View my public profile
         </Link>
       </p>
       <p className="flex gap-4">
-        <Link className="underline" to="/me/rankings">
+        <Link className="link" to="/lists?tab=mine">
           My rankings
         </Link>
-        <Link className="underline" to="/me/want-to-go">
-          Want to go
+        <Link className="link" to="/lists?tab=want_to_go">
+          Saved
         </Link>
       </p>
     </div>

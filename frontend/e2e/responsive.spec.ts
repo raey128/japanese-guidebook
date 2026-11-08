@@ -16,10 +16,20 @@ test.describe("360px layout", () => {
     await stubMapStyle(page);
   });
 
-  test("home", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  test("home is the map; the overlay leaves at least half of it visible (N4.4)", async ({ page }) => {
+    await page.goto("/?lat=35.7148&lng=139.7967&z=15");
+    await expect(page.getByTestId("map-container")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add a place" })).toBeVisible();
     await expectNoHorizontalScroll(page);
+    // Top overlay (bar + chips) and the bottom sheet together cover at most half the screen.
+    const covered = await page.evaluate(() => {
+      const els = [...document.querySelectorAll(".map-home > div.absolute")] as HTMLElement[];
+      const h = window.innerHeight;
+      const top = els[0]?.querySelector(".card")?.getBoundingClientRect();
+      const sheet = document.querySelector("section[aria-label]")?.getBoundingClientRect();
+      return ((top ? top.bottom : 0) + (sheet ? h - sheet.top : 0)) / h;
+    });
+    expect(covered).toBeLessThanOrEqual(0.5);
   });
 
   test("ranked list", async ({ page }) => {
@@ -35,9 +45,13 @@ test.describe("360px layout", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("search", async ({ page }) => {
-    await page.goto("/search?q=Senso");
-    await expect(page.getByRole("link", { name: /^Senso-ji/ })).toBeVisible();
+  test("search suggestions fit the screen", async ({ page }) => {
+    await page.goto("/?lat=35.7148&lng=139.7967&z=15");
+    await page.getByRole("combobox", { name: "Search places and areas" }).fill("Senso");
+    const list = page.getByRole("listbox", { name: "Suggestions" });
+    await expect(list).toBeVisible();
+    const box = await list.boundingBox();
+    expect(box!.height).toBeLessThanOrEqual(740 * 0.6 + 1);
     await expectNoHorizontalScroll(page);
   });
 
@@ -52,7 +66,7 @@ test.describe("360px layout", () => {
   test("map", async ({ page }) => {
     await page.goto("/map?lat=35.7148&lng=139.7967&z=15");
     await expect(page.getByTestId("map-container")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Senso-ji", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Senso-ji, / })).toBeVisible();
     await expectNoHorizontalScroll(page);
   });
 

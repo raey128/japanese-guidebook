@@ -1,15 +1,18 @@
-import { Link, useLocation } from "react-router";
+import { useNavigate } from "react-router";
 
-import { useMe } from "../hooks/auth";
+import { useInlineSignIn } from "./app/InlineSignIn";
 
+/** Opens the ranking flow; signed out → inline username panel first (R17.3). */
 export default function RankButton({ placeId, ranked }: { placeId: number; ranked: boolean }) {
-  const me = useMe();
-  const loc = useLocation();
-  const target = `/places/${placeId}/rank`;
-  const to = me.data?.user ? target : `/sign-in?next=${encodeURIComponent(target)}`;
+  const navigate = useNavigate();
+  const { requireUser } = useInlineSignIn();
   return (
-    <Link to={to} className="inline-block rounded bg-brand px-3 py-2 text-sm font-medium text-white hover:bg-brand-dark">
+    <button
+      type="button"
+      className="btn btn-primary btn-sm"
+      onClick={() => requireUser(() => void navigate(`/places/${placeId}/rank`), "Pick a username to rank places")}
+    >
       {ranked ? "Re-rank" : "Rank"}
-    </Link>
+    </button>
   );
 }

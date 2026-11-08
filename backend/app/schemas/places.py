@@ -39,6 +39,8 @@ class PlaceCreateRequest(PlaceCheckRequest):
     address: str | None = Field(default=None, max_length=500)
     # True once the user has seen the duplicate candidates and chose "this is different".
     confirm_not_duplicate: bool = False
+    # "manual" = added via "Add manually" from search: saved pending admin review (R13).
+    source: Literal["pin", "manual"] = "pin"
 
 
 class PlaceCreateResponse(BaseModel):

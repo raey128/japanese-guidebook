@@ -18,7 +18,7 @@ const CHOICES: { value: FlagType; label: string }[] = [
   { value: "spam", label: "Fake or spam" },
 ];
 
-const input = "w-full rounded border border-stone-400 px-2 py-1.5";
+const input = "field";
 const TOP_LABEL: Record<string, string> = {
   food: "Food",
   sights: "Sights",
@@ -33,7 +33,7 @@ export default function FlagButton({ place }: { place: Place }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded border border-stone-400 px-3 py-1.5 text-sm font-medium text-stone-800 hover:bg-stone-100"
+        className="btn btn-ghost btn-sm"
       >
         Flag
       </button>
@@ -75,12 +75,12 @@ function FlagDialog({ place, onClose }: { place: Place; onClose: () => void }) {
           Thanks — an admin will review it.
         </p>
         {done.auto_action && (
-          <p role="status" className="mb-2 text-stone-800">
+          <p role="status" className="mb-2 text-ink">
             Enough people have flagged this place that it was automatically{" "}
             {done.auto_action === "hidden" ? "hidden" : "marked as closed"} pending review.
           </p>
         )}
-        <button type="button" onClick={onClose} className="rounded bg-brand px-4 py-2 font-medium text-white">
+        <button type="button" onClick={onClose} className="btn btn-primary">
           Close
         </button>
       </Dialog>
@@ -114,7 +114,7 @@ function FlagDialog({ place, onClose }: { place: Place; onClose: () => void }) {
 
         {type === "wrong_location" && (
           <div className="mb-3 space-y-2">
-            <p className="text-sm text-stone-700">Drag the pin to where the place really is, or type the coordinates.</p>
+            <p className="hint">Drag the pin to where the place really is, or type the coordinates.</p>
             <PinMap
               lat={Number.isFinite(Number(lat)) && lat !== "" ? Number(lat) : place.lat}
               lng={Number.isFinite(Number(lng)) && lng !== "" ? Number(lng) : place.lng}
@@ -166,20 +166,20 @@ function FlagDialog({ place, onClose }: { place: Place; onClose: () => void }) {
 
         <div aria-live="polite">
           {error && (
-            <p role="alert" className="mb-3 text-red-800">
+            <p role="alert" className="mb-3 text-danger">
               {error}
             </p>
           )}
         </div>
 
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded border border-stone-400 px-4 py-2">
+          <button type="button" onClick={onClose} className="btn btn-secondary">
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="rounded bg-brand px-4 py-2 font-medium text-white disabled:opacity-60"
+            className="btn btn-primary disabled:opacity-60"
           >
             {mutation.isPending ? "Sending…" : "Submit flag"}
           </button>
@@ -208,7 +208,7 @@ function WrongInfoFields(props: {
 
   return (
     <div className="mb-3 space-y-2">
-      <p className="text-sm text-stone-700">Change only what is wrong.</p>
+      <p className="hint">Change only what is wrong.</p>
       <label className="block text-sm">
         Suggested name
         <input className={input} value={props.name} maxLength={200} onChange={(e) => props.setName(e.target.value)} />
@@ -279,12 +279,12 @@ function DuplicatePicker({
         Search for the other place
         <input className={input} type="search" value={q} onChange={(e) => setQ(e.target.value)} />
       </label>
-      <div aria-live="polite" className="text-sm text-stone-700">
+      <div aria-live="polite" className="hint">
         {selectedId !== null && <p>Selected: {selectedName}</p>}
         {results.isFetching && <p>Searching…</p>}
         {debounced && !results.isFetching && items.length === 0 && <p>No matches.</p>}
       </div>
-      <ul className="max-h-48 divide-y overflow-y-auto rounded border border-stone-300">
+      <ul className="max-h-48 divide-y-2 divide-line overflow-y-auto rounded-(--radius-chunky) border-2 border-line">
         {items.map((i) => (
           <li key={i.id}>
             <button
@@ -295,7 +295,7 @@ function DuplicatePicker({
             >
               {i.name}
               {i.name_ja && <span lang="ja"> {i.name_ja}</span>}
-              <span className="block text-sm text-stone-700">
+              <span className="block hint">
                 {i.subcategory.name} · {i.location.name}
               </span>
             </button>

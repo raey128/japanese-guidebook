@@ -18,7 +18,7 @@ export default function FlagNoteButton({ rankingId }: { rankingId: number }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm text-stone-700 underline hover:text-stone-900"
+        className="hint underline hover:text-ink"
       >
         Flag note
       </button>
@@ -29,7 +29,7 @@ export default function FlagNoteButton({ rankingId }: { rankingId: number }) {
               <p role="status" className="mb-3">
                 Thanks — an admin will review it.
               </p>
-              <button type="button" onClick={close} className="rounded bg-brand px-4 py-2 font-medium text-white">
+              <button type="button" onClick={close} className="btn btn-primary">
                 Close
               </button>
             </>
@@ -38,20 +38,20 @@ export default function FlagNoteButton({ rankingId }: { rankingId: number }) {
               <p className="mb-3">Report this note as fake or spam? An admin will review it.</p>
               <div aria-live="polite">
                 {mutation.error && (
-                  <p role="alert" className="mb-3 text-red-800">
+                  <p role="alert" className="mb-3 text-danger">
                     {flagErrorMessage(mutation.error, "note")}
                   </p>
                 )}
               </div>
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={close} className="rounded border border-stone-400 px-4 py-2">
+                <button type="button" onClick={close} className="btn btn-secondary">
                   Cancel
                 </button>
                 <button
                   type="button"
                   disabled={mutation.isPending}
                   onClick={() => mutation.mutate()}
-                  className="rounded bg-brand px-4 py-2 font-medium text-white disabled:opacity-60"
+                  className="btn btn-primary disabled:opacity-60"
                 >
                   {mutation.isPending ? "Sending…" : "Flag note"}
                 </button>

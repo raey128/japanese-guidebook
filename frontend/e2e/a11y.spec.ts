@@ -96,15 +96,26 @@ test.describe("accessibility (axe)", () => {
     await expectNoSeriousViolations(page, `/u/${username}`);
   });
 
-  test("search", async ({ page }) => {
-    await page.goto("/search?q=Senso");
-    await expect(page.getByRole("list", { name: "Search results" })).toBeVisible();
-    await expectNoSeriousViolations(page, "/search?q=Senso");
+  test("map search with suggestions open", async ({ page }) => {
+    await page.goto("/?lat=35.7148&lng=139.7967&z=15");
+    await page.getByRole("combobox", { name: "Search places and areas" }).fill("Senso");
+    await expect(page.getByRole("option", { name: /Senso-ji/ }).first()).toBeVisible();
+    await expectNoSeriousViolations(page, "/ (search open)");
+  });
+
+  test("menu drawer and lists", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /^Menu/ }).click();
+    await expect(page.getByRole("dialog", { name: "Menu" })).toBeVisible();
+    await expectNoSeriousViolations(page, "/ (menu)");
+    await page.goto("/lists");
+    await expect(page.getByRole("heading", { level: 1, name: "Lists" })).toBeVisible();
+    await expectNoSeriousViolations(page, "/lists");
   });
 
   test("home and sign-in", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByTestId("map-container")).toBeVisible();
     await expectNoSeriousViolations(page, "/");
     await page.goto("/sign-in");
     await expect(page.getByLabel("Username")).toBeVisible();
@@ -113,7 +124,7 @@ test.describe("accessibility (axe)", () => {
 
   test("map", async ({ page }) => {
     await page.goto("/map?lat=35.7148&lng=139.7967&z=15");
-    await expect(page.getByRole("button", { name: "Senso-ji", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Senso-ji, / })).toBeVisible();
     await expectNoSeriousViolations(page, "/map");
   });
 });

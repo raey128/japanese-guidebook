@@ -9,12 +9,12 @@ export default function PlaceNames({
 }) {
   const Tag = as ?? "span";
   return (
-    <Tag className={as === "h1" ? "text-2xl font-bold" : "font-semibold"}>
+    <Tag className={as === "h1" ? "text-3xl font-extrabold" : "font-semibold"}>
       {name}
       {nameJa ? (
         <>
           {" "}
-          <span lang="ja" className="font-normal text-stone-700">
+          <span lang="ja" className="font-normal text-muted">
             {nameJa}
           </span>
         </>

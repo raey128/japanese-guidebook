@@ -612,6 +612,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/top-picks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getTopPicks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getSuggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPendingPlaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/pending/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["countPendingPlaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/pending/{place_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approvePendingPlace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/pending/{place_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rejectPendingPlace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMySubmissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["postEvents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -737,6 +881,82 @@ export interface components {
             id: number;
             status: "open" | "dismissed" | "resolved";
         };
+        /** TopNote */
+        TopNote: {
+            author: string;
+            note: string;
+        };
+        /** TopPicks */
+        TopPicks: {
+            /** @enum {string} */
+            kind: "ranked" | "team" | "empty";
+            items: components["schemas"]["PlaceSummary"][];
+        };
+        /** Suggestions */
+        Suggestions: {
+            areas: components["schemas"]["LocationOut"][];
+            subcategories: components["schemas"]["SubcategoryOut"][];
+            on_map: components["schemas"]["PlaceSummary"][];
+            elsewhere: components["schemas"]["PlaceSummary"][];
+        };
+        /** PendingPlace */
+        PendingPlace: {
+            place: components["schemas"]["PlaceSummary"];
+            submitter: string;
+            created_at: string;
+            nearby: components["schemas"]["PlaceSummary"][];
+        };
+        /** PendingQueue */
+        PendingQueue: {
+            items: components["schemas"]["PendingPlace"][];
+        };
+        /** PendingCount */
+        PendingCount: {
+            count: number;
+        };
+        /** RejectIn */
+        RejectIn: {
+            reason?: string | null;
+        };
+        /** Submission */
+        Submission: {
+            place_id: number;
+            name: string;
+            /** @enum {string} */
+            status: "pending" | "live" | "rejected";
+            review_reason: string | null;
+            created_at: string;
+            reviewed_at: string | null;
+        };
+        /** Submissions */
+        Submissions: {
+            items: components["schemas"]["Submission"][];
+        };
+        /** EventItem */
+        EventItem: {
+            type: string;
+            source?: string | null;
+        };
+        /** EventBatch */
+        EventBatch: {
+            /** Format: uuid */
+            browser_id: string;
+            events: components["schemas"]["EventItem"][];
+        };
+        /** FunnelWeek */
+        FunnelWeek: {
+            week: string;
+            first_visits: number;
+            opened_place: number;
+            opened_within_2min: number;
+            saved: number;
+            ranked: number;
+            searches_no_result: number;
+        };
+        /** Stats */
+        Stats: {
+            weeks: components["schemas"]["FunnelWeek"][];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             detail?: components["schemas"]["ValidationError"][];
@@ -759,7 +979,7 @@ export interface components {
             city: components["schemas"]["CityOut"];
             public_score: number | null;
             ranker_count: number;
-            badges: ("unverified" | "closed" | "reported_closed" | "hidden")[];
+            badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
             rank: number | null;
         };
         /** LocationOut */
@@ -790,7 +1010,11 @@ export interface components {
             top_category: "food" | "sights" | "stays" | "experiences";
             public_score: number | null;
             ranker_count: number;
-            badges: ("unverified" | "closed" | "reported_closed" | "hidden")[];
+            badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
+            /** @default false */
+            saved: boolean;
+            /** @default false */
+            ranked: boolean;
         };
         /** MapResponse */
         MapResponse: {
@@ -872,6 +1096,11 @@ export interface components {
             address?: string | null;
             /** @default false */
             confirm_not_duplicate?: boolean;
+            /**
+             * @default pin
+             * @enum {string}
+             */
+            source?: "pin" | "manual";
         };
         /**
          * PlaceCreateResponse
@@ -896,11 +1125,14 @@ export interface components {
             city: components["schemas"]["CityOut"];
             public_score: number | null;
             ranker_count: number;
-            badges: ("unverified" | "closed" | "reported_closed" | "hidden")[];
+            badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
             creator: string;
             created_at: string;
             is_seed: boolean;
             edit_deadline: string | null;
+            /** @enum {string} */
+            status: "live" | "pending" | "rejected";
+            top_note: components["schemas"]["TopNote"] | null;
             viewer: components["schemas"]["ViewerState"];
         };
         /** PlaceNote */
@@ -934,7 +1166,7 @@ export interface components {
             city: components["schemas"]["CityOut"];
             public_score: number | null;
             ranker_count: number;
-            badges: ("unverified" | "closed" | "reported_closed" | "hidden")[];
+            badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
         };
         /**
          * PlaceUpdateRequest
@@ -999,6 +1231,12 @@ export interface components {
             rank_list: components["schemas"]["BucketList"];
             previous_list: components["schemas"]["BucketList"] | null;
             ranking: components["schemas"]["MyRanking"];
+            /** @default true */
+            is_new: boolean;
+            /** @default  */
+            city_name: string;
+            /** @default 0 */
+            city_rank_count: number;
         };
         /** RankingItem */
         RankingItem: {
@@ -1008,7 +1246,7 @@ export interface components {
             name_ja: string | null;
             position: number;
             personal_score: number;
-            badges: ("unverified" | "closed" | "reported_closed" | "hidden")[];
+            badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
         };
         /** ReverseGeocodeResponse */
         ReverseGeocodeResponse: {
@@ -1027,7 +1265,7 @@ export interface components {
             city: components["schemas"]["CityOut"];
             public_score: number | null;
             ranker_count: number;
-            badges: ("unverified" | "closed" | "reported_closed" | "hidden")[];
+            badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
             is_bookmarked: boolean;
             my_ranking_id: number | null;
         };
@@ -3014,6 +3252,321 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getTopPicks: {
+        parameters: {
+            query: {
+                min_lat: number;
+                min_lng: number;
+                max_lat: number;
+                max_lng: number;
+                category?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopPicks"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSuggestions: {
+        parameters: {
+            query: {
+                q: string;
+                city: string;
+                category?: string | null;
+                min_lat?: number | null;
+                min_lng?: number | null;
+                max_lat?: number | null;
+                max_lng?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Suggestions"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listPendingPlaces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingQueue"];
+                };
+            };
+        };
+    };
+    countPendingPlaces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingCount"];
+                };
+            };
+        };
+    };
+    approvePendingPlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                place_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceSummary"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rejectPendingPlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                place_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listMySubmissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Submissions"];
+                };
+            };
+        };
+    };
+    postEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventBatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getStats: {
+        parameters: {
+            query: {
+                weeks?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Stats"];
                 };
             };
             /** @description Validation Error */

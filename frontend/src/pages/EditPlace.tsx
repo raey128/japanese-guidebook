@@ -27,7 +27,7 @@ export default function EditPlace() {
     return (
       <div className="mx-auto max-w-xl">
         <h1 className="text-xl font-bold">Editing is closed</h1>
-        <p className="mt-2 text-stone-800">
+        <p className="mt-2 text-ink">
           Only the person who added a place can edit it, and only for 24 hours after adding it.
         </p>
         <Link to={`/places/${p.id}`} className="mt-3 inline-block underline">
@@ -52,7 +52,7 @@ export default function EditPlace() {
     <div className="mx-auto max-w-xl">
       <h1 className="mb-1 text-xl font-bold">Edit {p.name}</h1>
       {deadline && (
-        <p className="mb-4 text-sm text-stone-700">
+        <p className="mb-4 hint">
           You can edit this place until <time dateTime={p.edit_deadline ?? undefined}>{deadline.toLocaleString()}</time>.
         </p>
       )}

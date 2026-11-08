@@ -320,6 +320,9 @@ async def hide_place(db: AsyncSession, place_id: int) -> PlaceSummary:
 async def unhide_place(db: AsyncSession, place_id: int) -> PlaceSummary:
     place = await _admin_place(db, place_id)
     place.is_hidden = False
+    if place.status == "pending":  # unhiding a manual add is the same as approving it
+        place.status = "live"
+        place.reviewed_at = func.now()
     await db.flush()
     await scores.refresh_place(db, place.id)
     # The admin judged it not spam: don't let the old flags re-trigger the threshold.

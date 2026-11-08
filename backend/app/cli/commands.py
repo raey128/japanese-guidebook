@@ -35,6 +35,11 @@ async def run_in_session(db: AsyncSession, command: str, options: dict[str, Any]
             out = Path(options["out"]) if options.get("out") else None
             folder = await dump.write_dump(db, out)
             return f"dump written to {folder}"
+        if command == "rollup-events":
+            from app import events
+
+            rolled, deleted = await events.rollup_and_expire(db)
+            return f"events: {rolled} daily rows upserted, {deleted} raw events expired"
         if command == "synthetic":
             from app import synthetic
 

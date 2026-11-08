@@ -56,12 +56,11 @@ export type PlaceValues = {
 export function useCreatePlace() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (v: PlaceValues & { confirm_not_duplicate: boolean }) =>
+    mutationFn: async (v: PlaceValues & { confirm_not_duplicate: boolean; source?: "pin" | "manual" }) =>
       unwrap(await api.POST("/api/places", { body: v })),
     onSuccess: (res) => {
       if (res.status === "created") {
-        void qc.invalidateQueries({ queryKey: ["map"] });
-        void qc.invalidateQueries({ queryKey: ["search"] });
+        for (const key of ["map", "search", "suggest", "topPicks", "pendingCount"]) void qc.invalidateQueries({ queryKey: [key] });
       }
     },
   });

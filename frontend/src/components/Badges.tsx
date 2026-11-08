@@ -3,6 +3,7 @@ const LABELS: Record<string, string> = {
   closed: "Closed",
   reported_closed: "Reported closed",
   hidden: "Hidden",
+  pending: "⏳ Pending review",
 };
 
 export default function Badges({ badges }: { badges: string[] }) {
@@ -10,7 +11,7 @@ export default function Badges({ badges }: { badges: string[] }) {
   return (
     <span className="inline-flex flex-wrap gap-1">
       {badges.map((b) => (
-        <span key={b} className="rounded-full border border-stone-400 bg-stone-100 px-2 py-0.5 text-xs text-stone-800">
+        <span key={b} className="badge bg-warning-soft text-warning-ink">
           {LABELS[b] ?? b}
         </span>
       ))}

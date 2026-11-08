@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import scores
 from app.models import BUCKETS, Bookmark, Place, RankList, Ranking
+from app.visibility import can_use
 
 BANDS: dict[str, tuple[float, float]] = {
     "liked": (6.7, 10.0),
@@ -161,7 +162,7 @@ async def place_ranking(
     """
     if bucket not in BANDS:
         raise ValueError("Unknown bucket.")
-    if place.is_hidden or place.merged_into_id is not None:
+    if not can_use(place, user_id):
         raise RankingNotAllowed("This place can't be ranked.")
 
     target = ListKey(user_id, place.city_id, place.subcategory_id, bucket)

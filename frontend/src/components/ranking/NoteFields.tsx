@@ -27,7 +27,7 @@ export default function NoteFields({ value, onChange }: { value: NoteValue; onCh
   return (
     <div className="space-y-3">
       <div>
-        <label htmlFor={`${id}-note`} className="block text-sm font-medium">
+        <label htmlFor={`${id}-note`} className="label">
           Note (optional)
         </label>
         <textarea
@@ -36,22 +36,22 @@ export default function NoteFields({ value, onChange }: { value: NoteValue; onCh
           maxLength={NOTE_MAX}
           value={value.note}
           onChange={(e) => onChange({ ...value, note: e.target.value })}
-          className="mt-1 w-full rounded border border-stone-400 p-2"
+          className="field"
         />
-        <p className="text-sm text-stone-700" aria-live="polite">
+        <p className="hint" aria-live="polite">
           {value.note.length} / {NOTE_MAX} characters
         </p>
       </div>
       <div className="flex gap-3">
         <div>
-          <label htmlFor={`${id}-month`} className="block text-sm font-medium">
+          <label htmlFor={`${id}-month`} className="label">
             Visit month
           </label>
           <select
             id={`${id}-month`}
             value={value.month ?? ""}
             onChange={(e) => onChange({ ...value, month: e.target.value ? Number(e.target.value) : null })}
-            className="mt-1 rounded border border-stone-400 p-2"
+            className="mt-1 field"
           >
             <option value="">—</option>
             {MONTHS.map((m, i) => (
@@ -62,14 +62,14 @@ export default function NoteFields({ value, onChange }: { value: NoteValue; onCh
           </select>
         </div>
         <div>
-          <label htmlFor={`${id}-year`} className="block text-sm font-medium">
+          <label htmlFor={`${id}-year`} className="label">
             Visit year
           </label>
           <select
             id={`${id}-year`}
             value={value.year ?? ""}
             onChange={(e) => onChange({ ...value, year: e.target.value ? Number(e.target.value) : null })}
-            className="mt-1 rounded border border-stone-400 p-2"
+            className="mt-1 field"
           >
             <option value="">—</option>
             {years.map((y) => (

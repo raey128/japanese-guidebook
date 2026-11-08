@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { ApiError } from "../api/client";
 import { adminErrorMessage } from "../components/moderation/errors";
 import { useSeeds, useSetSeedReviewed } from "../hooks/moderation";
+import AdminNav from "../components/AdminNav";
 
 export default function SeedReview() {
   const [city, setCity] = useState("");
@@ -14,15 +15,18 @@ export default function SeedReview() {
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-xl font-bold">Seed review</h1>
-        <Link to="/admin" className="underline">
+        <h1 className="text-3xl font-extrabold">Seed review</h1>
+        <Link to="/admin" className="link">
           Moderation queue
         </Link>
+      </div>
+      <div className="mb-4">
+        <AdminNav />
       </div>
 
       {err?.status === 401 ? (
         <p role="alert">
-          Please <Link to="/sign-in?next=/admin/seeds" className="underline">sign in</Link> to continue.
+          Please <Link to="/sign-in?next=/admin/seeds" className="link">sign in</Link> to continue.
         </p>
       ) : err?.status === 403 ? (
         <p role="alert">Admins only.</p>
@@ -35,7 +39,7 @@ export default function SeedReview() {
               <label className="mb-3 block text-sm">
                 City
                 <select
-                  className="ml-2 rounded border border-stone-400 px-2 py-1.5"
+                  className="field ml-2 inline-block w-auto"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                 >
@@ -51,7 +55,7 @@ export default function SeedReview() {
               <table className="mb-4 w-full text-left text-sm">
                 <caption className="sr-only">Seed places per city</caption>
                 <thead>
-                  <tr className="border-b border-stone-400">
+                  <tr className="border-b border-line-strong">
                     <th scope="col" className="py-1">City</th>
                     <th scope="col" className="py-1 text-right">Total</th>
                     <th scope="col" className="py-1 text-right">Unreviewed</th>
@@ -59,7 +63,7 @@ export default function SeedReview() {
                 </thead>
                 <tbody>
                   {q.data.counts.map((c) => (
-                    <tr key={c.city.slug} className="border-b border-stone-200">
+                    <tr key={c.city.slug} className="border-b border-line">
                       <th scope="row" className="py-1 font-normal">{c.city.name}</th>
                       <td className="py-1 text-right">{c.total}</td>
                       <td className="py-1 text-right">{c.unreviewed}</td>
@@ -70,13 +74,13 @@ export default function SeedReview() {
 
               <div aria-live="polite">
                 {toggle.error && (
-                  <p role="alert" className="mb-2 text-red-800">
+                  <p role="alert" className="mb-2 text-danger">
                     {adminErrorMessage(toggle.error)}
                   </p>
                 )}
               </div>
               {q.data.items.length === 0 && <p>No seed places.</p>}
-              <ul className="divide-y divide-stone-200">
+              <ul className="divide-y divide-line">
                 {q.data.items.map(({ place, reviewed }) => (
                   <li key={place.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                     <div>
@@ -88,7 +92,7 @@ export default function SeedReview() {
                           {place.name_ja}
                         </span>
                       )}
-                      <p className="text-sm text-stone-700">
+                      <p className="hint">
                         {place.subcategory.name} · {place.location.name}, {place.city.name}
                       </p>
                     </div>

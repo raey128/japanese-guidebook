@@ -21,7 +21,7 @@ export const FLAG_LABEL: Record<string, string> = {
   spam: "Fake or spam",
 };
 
-const btn = "rounded border border-stone-400 px-3 py-1.5 text-sm font-medium text-stone-900 hover:bg-stone-100 disabled:opacity-60";
+const btn = "btn btn-secondary btn-sm";
 
 export function formatWhen(iso: string): string {
   const d = new Date(iso);
@@ -53,12 +53,12 @@ export default function FlagGroupCard({ group }: { group: Group }) {
   const label = place?.name ?? group.key;
 
   return (
-    <li className="rounded border border-stone-300 bg-white p-3" aria-label={`Flags for ${label}`}>
+    <li className="card" aria-label={`Flags for ${label}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-lg font-bold">
             {place ? (
-              <Link to={`/places/${place.id}`} className="underline">
+              <Link to={`/places/${place.id}`} className="link">
                 {place.name}
               </Link>
             ) : (
@@ -71,20 +71,20 @@ export default function FlagGroupCard({ group }: { group: Group }) {
             )}
           </h2>
           {place && (
-            <p className="text-sm text-stone-700">
+            <p className="hint">
               {place.subcategory.name} · {place.location.name}, {place.city.name}{" "}
               <Score score={place.public_score} rankerCount={place.ranker_count} />
             </p>
           )}
           {place && <Badges badges={place.badges} />}
         </div>
-        <p className="text-sm text-stone-700">{group.target_type === "note" ? "Note · " : ""}{countsSummary(group.counts)}</p>
+        <p className="hint">{group.target_type === "note" ? "Note · " : ""}{countsSummary(group.counts)}</p>
       </div>
 
       {group.note && (
-        <blockquote className="my-2 border-l-4 border-stone-400 pl-3">
+        <blockquote className="my-2 border-l-4 border-line-strong pl-3">
           <p className="whitespace-pre-wrap">{group.note.note ?? <em>(note already removed)</em>}</p>
-          <footer className="text-sm text-stone-700">
+          <footer className="hint">
             by {group.note.author}
             {group.note.author_is_private ? " (private profile)" : ""}
           </footer>
@@ -120,7 +120,7 @@ export default function FlagGroupCard({ group }: { group: Group }) {
 
       <div aria-live="polite">
         {mutation.error && (
-          <p role="alert" className="mt-2 text-red-800">
+          <p role="alert" className="mt-2 text-danger">
             {adminErrorMessage(mutation.error)}
           </p>
         )}
@@ -133,12 +133,12 @@ export default function FlagGroupCard({ group }: { group: Group }) {
             Rankings and bookmarks move to the surviving place and <strong>{merge.from.name}</strong> disappears. This cannot be undone.
           </p>
           <div className="flex justify-end gap-2">
-            <button type="button" className="rounded border border-stone-400 px-4 py-2" onClick={() => setMerge(null)}>
+            <button type="button" className="btn btn-secondary" onClick={() => setMerge(null)}>
               Cancel
             </button>
             <button
               type="button"
-              className="rounded bg-brand px-4 py-2 font-medium text-white"
+              className="btn btn-primary"
               onClick={() => {
                 run({ kind: "merge", placeId: merge.from.id, intoPlaceId: merge.into.id });
                 setMerge(null);
@@ -170,10 +170,10 @@ function FlagRow({
   const isOpen = flag.status === "open";
   const dup = flag.duplicate_place;
   return (
-    <li className="rounded bg-stone-50 p-2">
+    <li className="rounded-xl bg-stone-50 p-2">
       <p className="text-sm">
         <strong>{FLAG_LABEL[flag.flag_type] ?? flag.flag_type}</strong> by {flag.flagger} · {formatWhen(flag.created_at)}
-        {!isOpen && <span className="ml-2 text-stone-700">({flag.status})</span>}
+        {!isOpen && <span className="ml-2 text-muted">({flag.status})</span>}
       </p>
 
       {flag.flag_type === "wrong_location" && typeof payload.lat === "number" && typeof payload.lng === "number" && (
@@ -201,7 +201,7 @@ function FlagRow({
       {flag.flag_type === "duplicate" && dup && (
         <p className="my-1 text-sm">
           Duplicate of{" "}
-          <Link to={`/places/${dup.id}`} className="underline">
+          <Link to={`/places/${dup.id}`} className="link">
             {dup.name}
           </Link>{" "}
           (#{dup.id}, {dup.location.name})

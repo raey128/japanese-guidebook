@@ -8,6 +8,10 @@ import PlaceNames from "../components/PlaceNames";
 import { useMe } from "../hooks/auth";
 import { invalidateAfterRankingChange, usePlace, useSnapshot } from "../hooks/ranking";
 import { answer, next, position, start, type SearchState } from "../lib/binarySearch";
+import Loading from "../components/ui/Loading";
+import { useCelebrate } from "../components/app/Celebration";
+import { rankingMessage } from "../lib/celebrate";
+import { track } from "../lib/track";
 
 type Bucket = Schemas["MyRanking"]["bucket"];
 type Step = "bucket" | "compare" | "note" | "done";
@@ -26,6 +30,7 @@ export default function RankFlow() {
   const id = Number(useParams().id);
   const loc = useLocation();
   const qc = useQueryClient();
+  const celebrate = useCelebrate();
   const me = useMe();
   const signedIn = !!me.data?.user;
   const place = usePlace(id);
@@ -133,6 +138,11 @@ export default function RankFlow() {
       setResult(res);
       setStep("done");
       invalidateAfterRankingChange(qc);
+      track("rank", res.is_new ? "new" : "rerank");
+      if (res.city_rank_count > 0 && res.city_name) {
+        const msg = rankingMessage(res.city_rank_count, res.city_name);
+        celebrate(msg.title, { big: msg.big });
+      }
     },
     onError: async (err) => {
       const stale =
@@ -149,17 +159,17 @@ export default function RankFlow() {
   });
 
   if (!Number.isFinite(id)) return <p role="alert">Place not found</p>;
-  if (me.isPending) return <p role="status">Loading…</p>;
+  if (me.isPending) return <Loading />;
   if (!signedIn) return <Navigate to={`/sign-in?next=${encodeURIComponent(loc.pathname)}`} replace />;
   if (place.error instanceof ApiError && place.error.status === 404) return <p role="alert">Place not found</p>;
-  if (snapshot.isPending || place.isPending) return <p role="status">Loading…</p>;
+  if (snapshot.isPending || place.isPending) return <Loading />;
   if (snapshot.isError || !snap || !place.data) return <p role="alert">Could not load this place for ranking.</p>;
 
   const p = place.data;
   const reRank = snap.my_ranking != null;
   const back_to = `/places/${p.id}`;
   const cancel = (
-    <Link to={back_to} className="rounded border border-stone-400 px-3 py-2">
+    <Link to={back_to} className="btn btn-secondary">
       Cancel
     </Link>
   );
@@ -168,7 +178,7 @@ export default function RankFlow() {
     return (
       <div className="space-y-3">
         <p role="alert">Reported closed: not accepting new rankings</p>
-        <Link className="underline" to={back_to}>
+        <Link className="link" to={back_to}>
           Back to {p.name}
         </Link>
       </div>
@@ -181,16 +191,16 @@ export default function RankFlow() {
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      <h1 className="text-2xl font-bold">
+      <h1 className="text-3xl font-extrabold">
         {reRank ? "Re-rank " : "Rank "}
         <PlaceNames name={p.name} nameJa={p.name_ja} as="span" />
       </h1>
-      <p className="text-sm text-stone-700">
+      <p className="hint">
         Ranking within {p.subcategory.name} in {snap.city.name}.
       </p>
 
       {conflict ? (
-        <p role="alert" className="rounded border border-amber-600 bg-amber-50 p-2 text-stone-900">
+        <p role="alert" className="card border-amber-400 bg-warning-soft text-warning-ink">
           Your list changed in another tab — let's redo the comparisons
         </p>
       ) : null}
@@ -207,10 +217,10 @@ export default function RankFlow() {
                 type="button"
                 autoFocus={i === 0}
                 onClick={() => chooseBucket(b.key)}
-                className="rounded border-2 border-stone-500 p-4 text-left text-lg font-semibold hover:bg-stone-100"
+                className="card text-left text-lg font-extrabold transition-transform hover:bg-stone-50 active:translate-y-0.5 active:border-b-2"
               >
                 {b.label}
-                <span className="block text-sm font-normal text-stone-700">{b.hint} (press {i + 1})</span>
+                <span className="block text-sm font-normal text-muted">{b.hint} (press {i + 1})</span>
               </button>
             ))}
           </div>
@@ -223,7 +233,7 @@ export default function RankFlow() {
           <h2 id="q-compare" className="text-xl font-semibold" aria-live="polite">
             Which was better?
           </h2>
-          <p className="text-sm text-stone-700">
+          <p className="hint">
             Comparison {history.length + 1} (at most {Math.ceil(Math.log2(total + 1))}). Use the buttons, 1 / 2 or the left / right arrow keys.
           </p>
           <div key={`${search.lo}-${search.hi}`} className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -232,23 +242,23 @@ export default function RankFlow() {
               autoFocus
               data-testid="choose-new"
               onClick={() => choose(true)}
-              className="rounded border-2 border-brand p-4 text-left text-lg font-semibold hover:bg-red-50"
+              className="card border-brand text-left text-lg font-extrabold transition-transform hover:bg-brand-soft active:translate-y-0.5 active:border-b-2"
             >
-              <span className="block text-sm font-normal text-stone-700">This place (1)</span>
+              <span className="block text-sm font-normal text-muted">This place (1)</span>
               {p.name}
             </button>
             <button
               type="button"
               data-testid="choose-existing"
               onClick={() => choose(false)}
-              className="rounded border-2 border-stone-500 p-4 text-left text-lg font-semibold hover:bg-stone-100"
+              className="card text-left text-lg font-extrabold transition-transform hover:bg-stone-50 active:translate-y-0.5 active:border-b-2"
             >
-              <span className="block text-sm font-normal text-stone-700">Your #{other.position} (2)</span>
+              <span className="block text-sm font-normal text-muted">Your #{other.position} (2)</span>
               {other.name}
             </button>
           </div>
           <div className="mt-4 flex gap-2">
-            <button type="button" onClick={back} className="rounded border border-stone-400 px-3 py-2">
+            <button type="button" onClick={back} className="btn btn-secondary">
               Back
             </button>
             {cancel}
@@ -273,15 +283,15 @@ export default function RankFlow() {
           </p>
           <NoteFields value={noteValue} onChange={setNoteValue} />
           {error ? (
-            <p role="alert" className="text-red-800">
+            <p role="alert" className="text-danger">
               {error}
             </p>
           ) : null}
           <div className="flex gap-2">
-            <button type="submit" autoFocus disabled={save.isPending} className="rounded bg-brand px-4 py-2 font-medium text-white">
+            <button type="submit" autoFocus disabled={save.isPending} className="btn btn-primary">
               Save
             </button>
-            <button type="button" onClick={back} className="rounded border border-stone-400 px-3 py-2">
+            <button type="button" onClick={back} className="btn btn-secondary">
               Back
             </button>
             {cancel}
@@ -292,11 +302,17 @@ export default function RankFlow() {
       {step === "done" && result ? (
         <section aria-labelledby="q-done" className="space-y-3">
           <div role="status">
-            <h2 id="q-done" className="text-xl font-semibold">
+            <p aria-hidden="true" className="text-4xl">
+              🎉
+            </p>
+            <h2 id="q-done" className="text-2xl font-extrabold">
               Saved
             </h2>
+            {result.city_rank_count > 0 ? (
+              <p className="font-bold text-success-dark">{rankingMessage(result.city_rank_count, result.city_name).title}</p>
+            ) : null}
           </div>
-          <ol className="divide-y divide-stone-300">
+          <ol className="divide-y divide-line">
             {result.rank_list.items.map((it) => (
               <li key={it.ranking_id} className={`flex justify-between gap-2 py-2 ${it.place_id === id ? "font-bold" : ""}`}>
                 <span>
@@ -307,10 +323,10 @@ export default function RankFlow() {
             ))}
           </ol>
           <p className="flex gap-3">
-            <Link className="underline" to="/me/rankings">
+            <Link className="link" to="/lists?tab=mine">
               My rankings
             </Link>
-            <Link className="underline" to={back_to}>
+            <Link className="link" to={back_to}>
               Back to {p.name}
             </Link>
           </p>

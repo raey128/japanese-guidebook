@@ -113,13 +113,22 @@ def score_params() -> dict[str, float]:
     return {"prior_weight": s.prior_weight, "default_prior": s.default_prior}
 
 
-def badges(*, is_unverified: bool, is_closed: bool, closed_by_reports: bool, is_hidden: bool) -> list[str]:
+def badges(
+    *,
+    is_unverified: bool,
+    is_closed: bool,
+    closed_by_reports: bool,
+    is_hidden: bool,
+    is_pending: bool = False,
+) -> list[str]:
     """Badge codes shown on rows, pins and detail pages."""
     out: list[str] = []
     if is_unverified:
         out.append("unverified")
     if is_closed:
         out.append("reported_closed" if closed_by_reports else "closed")
-    if is_hidden:
+    if is_pending:
+        out.append("pending")
+    elif is_hidden:
         out.append("hidden")
     return out

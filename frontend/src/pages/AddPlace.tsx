@@ -5,7 +5,10 @@ import { ApiError, type Schemas } from "../api/client";
 import { distanceMetres, formatDistance, mapApiErrors, type FormErrors } from "../components/map/geo";
 import PlaceForm from "../components/map/PlaceForm";
 import PlaceNames from "../components/PlaceNames";
+import { useCelebrate } from "../components/app/Celebration";
 import { useMe } from "../hooks/auth";
+import { ADDED_MESSAGE, SENT_FOR_REVIEW_MESSAGE } from "../lib/celebrate";
+import { track } from "../lib/track";
 import { useCreatePlace, type PlaceValues } from "../hooks/places";
 
 function parseCoord(v: string | null, max: number): number | null {
@@ -23,11 +26,15 @@ export default function AddPlace() {
   const lastValues = useRef<PlaceValues | null>(null);
   const [errors, setErrors] = useState<FormErrors | null>(null);
   const [candidates, setCandidates] = useState<Schemas["PlaceSummary"][] | null>(null);
+  const celebrate = useCelebrate();
+  // "Add manually" from search (R13): pre-filled name, saved pending admin review.
+  const manual = params.get("source") === "manual";
 
   const initial = useMemo(() => {
     const lat = parseCoord(params.get("lat"), 90);
     const lng = parseCoord(params.get("lng"), 180);
-    return lat !== null && lng !== null ? { lat, lng } : {};
+    const name = (params.get("name") ?? "").slice(0, 200);
+    return { ...(lat !== null && lng !== null ? { lat, lng } : {}), ...(name ? { name } : {}) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -40,11 +47,13 @@ export default function AddPlace() {
     lastValues.current = values;
     setErrors(null);
     create.mutate(
-      { ...values, confirm_not_duplicate: confirm },
+      { ...values, confirm_not_duplicate: confirm, source: manual ? "manual" : "pin" },
       {
         onSuccess: (res) => {
           if (res.status === "created" && res.place) {
-            void navigate(`/places/${res.place.id}`);
+            track("add", manual ? "manual" : "pin");
+            celebrate(manual ? SENT_FOR_REVIEW_MESSAGE : ADDED_MESSAGE);
+            void navigate(manual ? `/?place=${res.place.id}` : `/places/${res.place.id}`);
           } else {
             setCandidates(res.candidates);
           }
@@ -59,20 +68,22 @@ export default function AddPlace() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <h1 className="mb-1 text-xl font-bold">Add a place</h1>
-      <p className="mb-4 text-sm text-stone-700">
-        Drop a pin where the place is. It appears straight away, marked Unverified.
+      <h1 className="mb-1 text-3xl font-extrabold">Add a place</h1>
+      <p className="mb-4 hint">
+        {manual
+          ? "Put the pin where it is and we'll check it soon. Until then, only you can see it (and you can already rank or save it)."
+          : "Drop a pin where the place is. It appears straight away, marked Unverified."}
       </p>
       <PlaceForm
         initial={initial}
-        submitLabel="Add place"
+        submitLabel={manual ? "Send for review" : "Add place"}
         pending={create.isPending}
         serverErrors={errors}
         onSubmit={(v) => submit(v, false)}
         onEdited={() => setCandidates(null)}
       >
         {candidates && lastValues.current && (
-          <section aria-labelledby="dup-heading" className="rounded border border-amber-600 bg-amber-50 p-3">
+          <section aria-labelledby="dup-heading" className="card border-amber-400 bg-warning-soft">
             <h2 id="dup-heading" className="font-semibold text-amber-950">
               Is it one of these?
             </h2>
@@ -81,16 +92,16 @@ export default function AddPlace() {
               {candidates.map((c) => {
                 const d = distanceMetres({ lat: lastValues.current!.lat, lng: lastValues.current!.lng }, { lat: c.lat, lng: c.lng });
                 return (
-                  <li key={c.id} className="rounded border border-stone-300 bg-white p-2">
+                  <li key={c.id} className="card p-3">
                     <PlaceNames name={c.name} nameJa={c.name_ja} as="h3" />
-                    <p className="text-sm text-stone-700">
+                    <p className="hint">
                       {c.subcategory.name} · {formatDistance(d)} away
                     </p>
                     <div className="mt-1 flex flex-wrap gap-3 text-sm">
                       <Link to={`/places/${c.id}/rank`} className="font-medium text-brand underline">
                         This is it: rank {c.name}
                       </Link>
-                      <Link to={`/places/${c.id}`} className="underline">
+                      <Link to={`/places/${c.id}`} className="link">
                         View details
                       </Link>
                     </div>
@@ -100,7 +111,7 @@ export default function AddPlace() {
             </ul>
             <button
               type="button"
-              className="mt-3 rounded border border-stone-700 bg-white px-3 py-1.5 text-sm font-medium"
+              className="btn btn-secondary btn-sm mt-3"
               disabled={create.isPending}
               onClick={() => lastValues.current && submit(lastValues.current, true)}
             >

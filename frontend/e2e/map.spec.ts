@@ -16,7 +16,7 @@ test("pan/zoom reloads the pins, and a pin opens its summary and detail page", a
   const body = (await (await first).json()) as { kind: string };
   expect(body.kind).toBe("points");
 
-  const pin = page.getByRole("button", { name: "Senso-ji", exact: true });
+  const pin = page.getByRole("button", { name: /^Senso-ji, / });
   await expect(pin).toBeVisible();
 
   // Zooming out with the map's own control triggers moveend -> a new /api/map request.
@@ -41,7 +41,7 @@ test("pan/zoom reloads the pins, and a pin opens its summary and detail page", a
 
 test("the summary closes with the close button", async ({ page }) => {
   await page.goto("/map?lat=35.7148&lng=139.7967&z=15");
-  await page.getByRole("button", { name: "Senso-ji", exact: true }).click();
+  await page.getByRole("button", { name: /^Senso-ji, / }).click();
   const summary = page.getByRole("region", { name: "Place summary" });
   await expect(summary).toBeVisible();
   await summary.getByRole("button", { name: "Close place summary" }).click();
@@ -56,7 +56,7 @@ test("zoomed out, the map shows clusters that zoom in when activated", async ({ 
   const clusters = page.getByRole("button", { name: /^\d+ places?, zoom in$/ });
   await expect(clusters.first()).toBeVisible();
   expect(await clusters.count()).toBeGreaterThan(0);
-  await expect(page.getByRole("button", { name: "Senso-ji", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Senso-ji, / })).toHaveCount(0);
 
   await clusters.first().click();
   await expect
@@ -64,11 +64,12 @@ test("zoomed out, the map shows clusters that zoom in when activated", async ({ 
     .toBeGreaterThan(8);
 });
 
-test("filters change the query", async ({ page }) => {
+test("category chips filter the pins", async ({ page }) => {
   await page.goto("/map?lat=35.7148&lng=139.7967&z=15");
-  await expect(page.getByRole("button", { name: "Senso-ji", exact: true })).toBeVisible();
-  const filtered = page.waitForResponse((r) => isMapCall(r.url()) && r.url().includes("category=ramen") && r.ok());
-  await page.getByLabel("Category").selectOption("ramen");
+  await expect(page.getByRole("button", { name: /^Senso-ji, / })).toBeVisible();
+  const filtered = page.waitForResponse((r) => isMapCall(r.url()) && r.url().includes("category=food") && r.ok());
+  await page.getByRole("group", { name: "Category" }).getByRole("button", { name: "Food" }).click();
   await filtered;
-  await expect(page.getByRole("button", { name: "Senso-ji", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Senso-ji, / })).toHaveCount(0);
+  await expect(page).toHaveURL(/category=food/);
 });

@@ -4,5 +4,5 @@ export function formatScore(score: number | null, rankerCount: number): string {
 }
 
 export default function Score({ score, rankerCount }: { score: number | null; rankerCount: number }) {
-  return <span className="text-sm font-medium text-stone-800">{formatScore(score, rankerCount)}</span>;
+  return <span className="badge bg-success-soft text-success-dark">{formatScore(score, rankerCount)}</span>;
 }

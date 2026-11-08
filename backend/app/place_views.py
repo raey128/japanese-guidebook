@@ -19,8 +19,10 @@ from app.schemas.common import (
     PlaceDetail,
     PlaceSummary,
     SubcategoryOut,
+    TopNote,
     ViewerState,
 )
+from app.visibility import can_use
 
 
 @dataclass
@@ -57,7 +59,7 @@ SUMMARY_SQL = f"""
 WITH {scores.place_scores_cte()}
 SELECT p.id, p.name, p.name_ja, p.address, ST_Y(p.geom) AS lat, ST_X(p.geom) AS lng,
        p.subcategory_id, p.location_id, p.city_id, p.is_hidden, p.is_closed,
-       p.closed_by_reports, s.public_score, s.ranker_count, s.is_unverified
+       p.closed_by_reports, p.status, s.public_score, s.ranker_count, s.is_unverified
 FROM places p JOIN place_scores s ON s.place_id = p.id
 WHERE p.id = ANY(:ids)
 """
@@ -82,6 +84,7 @@ def summary_from_row(row: Any, ref: Reference) -> PlaceSummary:
             is_closed=row.is_closed,
             closed_by_reports=row.closed_by_reports,
             is_hidden=row.is_hidden,
+            is_pending=row.status == "pending",
         ),
     )
 
@@ -135,20 +138,45 @@ async def place_detail(db: AsyncSession, place: Place, viewer: User | None) -> P
         ).first() is not None
 
     within_window = now < edit_deadline(place)
+    top_note = await _top_note(db, place.id)
     return PlaceDetail(
         **summary.model_dump(),
         creator=creator_name,
         created_at=place.created_at.isoformat(),
         is_seed=place.is_seed,
         edit_deadline=edit_deadline(place).isoformat() if within_window else None,
+        status=place.status,  # type: ignore[arg-type]
+        top_note=top_note,
         viewer=ViewerState(
             signed_in=viewer is not None,
             can_edit=can_edit(viewer, place, now=now),
             can_flag=viewer is not None and viewer.id != place.creator_id,
             can_rank=viewer is not None
-            and not place.is_hidden
+            and can_use(place, viewer.id)
             and (my_ranking is not None or not place.is_closed),
             is_bookmarked=bookmarked,
             my_ranking=my_ranking,
         ),
     )
+
+
+async def _top_note(db: AsyncSession, place_id: int) -> TopNote | None:
+    """Most recent non-empty note on a "Liked" ranking (moderators remove notes by clearing them)."""
+    row = (
+        await db.execute(
+            text(
+                """
+                SELECT r.note, u.username, u.is_private
+                FROM rankings r JOIN users u ON u.id = r.user_id
+                WHERE r.place_id = :p AND r.bucket = 'liked'
+                  AND r.note IS NOT NULL AND btrim(r.note) <> ''
+                ORDER BY r.updated_at DESC NULLS LAST, r.id DESC
+                LIMIT 1
+                """
+            ),
+            {"p": place_id},
+        )
+    ).first()
+    if row is None:
+        return None
+    return TopNote(author=ANONYMOUS if row.is_private else row.username, note=row.note)

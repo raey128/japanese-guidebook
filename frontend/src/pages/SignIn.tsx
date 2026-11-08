@@ -43,12 +43,12 @@ export default function SignIn() {
 
   return (
     <div className="mx-auto max-w-sm space-y-4">
-      <h1 className="text-2xl font-bold">Sign in</h1>
-      <p className="text-sm text-stone-700">
+      <h1 className="text-3xl font-extrabold">Sign in</h1>
+      <p className="hint">
         Just pick a username. No password or email is needed.
       </p>
       <form onSubmit={submit} className="space-y-2" noValidate>
-        <label htmlFor={inputId} className="block font-medium">
+        <label htmlFor={inputId} className="label">
           Username
         </label>
         <input
@@ -57,29 +57,29 @@ export default function SignIn() {
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
-          className="w-full rounded border border-stone-400 px-3 py-2"
+          className="field"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
         />
-        <p className="text-xs text-stone-700">3–20 characters: lowercase letters, digits, underscores.</p>
+        <p className="text-xs text-muted">3–20 characters: lowercase letters, digits, underscores.</p>
         {error && (
-          <p id={errorId} role="alert" className="text-sm text-red-700">
+          <p id={errorId} role="alert" className="text-sm text-danger">
             {error}
           </p>
         )}
         <button
           type="submit"
           disabled={signIn.isPending || !username.trim()}
-          className="rounded bg-brand px-4 py-2 text-white disabled:opacity-50"
+          className="btn btn-primary w-full"
         >
           Continue
         </button>
       </form>
 
       {confirm && (
-        <div role="dialog" aria-labelledby="confirm-title" className="space-y-2 rounded border border-stone-300 p-3">
+        <div role="dialog" aria-labelledby="confirm-title" className="card space-y-3">
           <p id="confirm-title" className="font-medium">
             Create account <strong>{confirm.username}</strong>?
           </p>
@@ -87,12 +87,12 @@ export default function SignIn() {
             <button
               type="button"
               autoFocus
-              className="rounded bg-brand px-3 py-1 text-white"
+              className="btn btn-primary btn-sm"
               onClick={() => signIn.mutate({ username: confirm.username, create: true })}
             >
               Create account
             </button>
-            <button type="button" className="rounded border px-3 py-1" onClick={() => setConfirm(null)}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setConfirm(null)}>
               Cancel
             </button>
           </div>

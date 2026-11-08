@@ -33,7 +33,7 @@ test("script and img payloads in a place name and a note render as literal text"
   await noXss();
 
   // Other surfaces that render the name.
-  await page.goto("/me/rankings");
+  await page.goto("/lists?tab=mine");
   await expect(page.getByRole("link", { name: new RegExp(run) }).first()).toBeVisible();
   await noXss();
 

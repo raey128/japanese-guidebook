@@ -24,6 +24,8 @@ class MapPoint(BaseModel):
     public_score: float | None
     ranker_count: int
     badges: list[Badge]
+    saved: bool = False  # the signed-in viewer has saved (bookmarked) it
+    ranked: bool = False  # the signed-in viewer has ranked it
 
 
 class MapResponse(BaseModel):

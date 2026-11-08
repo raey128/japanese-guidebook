@@ -8,6 +8,7 @@ from sqlalchemy import text
 from app import scores
 from app.deps import DB, OptionalUser, SettingsDep
 from app.schemas.map import MapCluster, MapPoint, MapResponse
+from app.visibility import VISIBLE_SQL
 
 router = APIRouter(tags=["map"])
 
@@ -25,7 +26,7 @@ POINT_DETAIL_SQL = f"""
 WITH {scores.place_scores_cte()}
 SELECT p.id, p.name, p.name_ja, ST_Y(p.geom) AS lat, ST_X(p.geom) AS lng,
        sc.slug AS subcategory_slug, sc.top_category,
-       p.is_hidden, p.is_closed, p.closed_by_reports,
+       p.is_hidden, p.is_closed, p.closed_by_reports, p.status,
        s.public_score, s.ranker_count, s.is_unverified
 FROM places p
 JOIN subcategories sc ON sc.id = p.subcategory_id
@@ -55,10 +56,11 @@ async def get_map(
 
     where = [
         "p.geom && ST_MakeEnvelope(:min_lng, :min_lat, :max_lng, :max_lat, 4326)",
-        "NOT p.is_hidden",
+        VISIBLE_SQL,
         "p.merged_into_id IS NULL",
     ]
     params: dict[str, object] = {
+        "viewer_id": user.id if user else None,
         "min_lat": min_lat,
         "min_lng": min_lng,
         "max_lat": max_lat,
@@ -130,6 +132,23 @@ async def get_map(
         await db.execute(text(POINT_DETAIL_SQL), {"ids": ids, **scores.score_params()})
     ).all()
     by_id = {r.id: r for r in detail}
+    saved: set[int] = set()
+    ranked: set[int] = set()
+    if user is not None:
+        saved = {
+            r.place_id
+            for r in await db.execute(
+                text("SELECT place_id FROM bookmarks WHERE user_id = :u AND place_id = ANY(:ids)"),
+                {"u": user.id, "ids": ids},
+            )
+        }
+        ranked = {
+            r.place_id
+            for r in await db.execute(
+                text("SELECT place_id FROM rankings WHERE user_id = :u AND place_id = ANY(:ids)"),
+                {"u": user.id, "ids": ids},
+            )
+        }
     points = []
     for pid in ids:
         r = by_id.get(pid)
@@ -151,7 +170,10 @@ async def get_map(
                     is_closed=r.is_closed,
                     closed_by_reports=r.closed_by_reports,
                     is_hidden=r.is_hidden,
+                    is_pending=r.status == "pending",
                 ),
+                saved=r.id in saved,
+                ranked=r.id in ranked,
             )
         )
     return MapResponse(kind="points", clusters=[], points=points, truncated=truncated)

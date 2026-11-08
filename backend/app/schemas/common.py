@@ -5,7 +5,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 Bucket = Literal["liked", "fine", "disliked"]
-Badge = Literal["unverified", "closed", "reported_closed", "hidden"]
+Badge = Literal["unverified", "closed", "reported_closed", "hidden", "pending"]
+PlaceStatus = Literal["live", "pending", "rejected"]
 TopCategory = Literal["food", "sights", "stays", "experiences"]
 
 ANONYMOUS = "Anonymous"
@@ -92,11 +93,20 @@ class ViewerState(Out):
     my_ranking: MyRanking | None
 
 
+class TopNote(Out):
+    """The most recent note from a "Liked" ranking, quoted in the place popup (R17.7)."""
+
+    author: str  # username, or "Anonymous" for private users
+    note: str
+
+
 class PlaceDetail(PlaceSummary):
     creator: str  # username, or "Anonymous" for private users
     created_at: str
     is_seed: bool
     edit_deadline: str | None  # ISO time the creator's edit window closes
+    status: PlaceStatus
+    top_note: TopNote | None
     viewer: ViewerState
 
 

@@ -9,7 +9,6 @@ export type MapQuery = {
   bbox: Bbox; // already rounded, so it doubles as the cache key
   zoom: number;
   category: string;
-  location: string;
   mode: MapMode;
 };
 
@@ -30,7 +29,6 @@ export function useMapData(q: MapQuery | null) {
               max_lng: q.bbox.maxLng,
               zoom: q.zoom,
               category: q.category || undefined,
-              location: q.location || undefined,
               mode: q.mode,
             },
           },
@@ -53,5 +51,67 @@ export function useCities() {
     queryKey: ["cities"],
     staleTime: Infinity,
     queryFn: async () => unwrap(await api.GET("/api/cities")),
+  });
+}
+
+export function useTopPicks(bbox: Bbox | null, category: string) {
+  return useQuery({
+    queryKey: ["topPicks", bbox, category],
+    enabled: bbox !== null,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      if (!bbox) throw new Error("no bbox");
+      return unwrap(
+        await api.GET("/api/top-picks", {
+          params: {
+            query: {
+              min_lat: bbox.minLat,
+              min_lng: bbox.minLng,
+              max_lat: bbox.maxLat,
+              max_lng: bbox.maxLng,
+              category: category || undefined,
+            },
+          },
+        }),
+      );
+    },
+  });
+}
+
+export function useSuggest(q: string, city: string, category: string, bbox: Bbox | null) {
+  const term = q.trim();
+  return useQuery({
+    queryKey: ["suggest", term, city, category, bbox],
+    enabled: term.length > 0 && city.length > 0,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    // TanStack Query keys each result by its query, so a slow older response can never
+    // overwrite a newer one (N1.4).
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await api.GET("/api/suggest", {
+          signal,
+          params: {
+            query: {
+              q: term,
+              city,
+              category: category || undefined,
+              min_lat: bbox?.minLat,
+              min_lng: bbox?.minLng,
+              max_lat: bbox?.maxLat,
+              max_lng: bbox?.maxLng,
+            },
+          },
+        }),
+      ),
+  });
+}
+
+export function usePendingCount(enabled: boolean) {
+  return useQuery({
+    queryKey: ["pendingCount"],
+    enabled,
+    staleTime: 0,
+    queryFn: async () => unwrap(await api.GET("/api/admin/pending/count")),
   });
 }

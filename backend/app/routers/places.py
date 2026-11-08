@@ -32,6 +32,7 @@ from app.schemas.places import (
     PlaceUpdateRequest,
     ReverseGeocodeResponse,
 )
+from app.visibility import can_see
 
 router = APIRouter(tags=["places"])
 
@@ -114,6 +115,7 @@ async def create_place(
         subcategory_id=body.subcategory_id,
         location=location,
         address=address,
+        pending=body.source == "manual",
     )
     await db.commit()
     return PlaceCreateResponse(status="created", place=await place_detail(db, place, user))
@@ -152,7 +154,7 @@ async def update_place(  # type: ignore[no-untyped-def]
     ).scalar_one_or_none()
     if place is None or place.merged_into_id is not None:
         raise HTTPException(404, "Place not found.")
-    if place.is_hidden and not user.is_admin:
+    if not can_see(place, user):
         raise HTTPException(404, "Place not found.")
     if not can_edit(user, place, now=await svc.db_now(db)):
         if place.creator_id == user.id:

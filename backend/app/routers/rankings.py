@@ -26,6 +26,7 @@ from app.schemas.rankings import (
     Snapshot,
     StaleListOut,
 )
+from app.visibility import can_see, can_use
 
 router = APIRouter(tags=["rankings"])
 
@@ -43,6 +44,7 @@ def _item(r: Ranking, p: Place) -> RankingItem:
             is_closed=p.is_closed,
             closed_by_reports=p.closed_by_reports,
             is_hidden=p.is_hidden,
+            is_pending=p.status == "pending",
         ),
     )
 
@@ -64,16 +66,16 @@ async def _bucket_list(db, snap: ranking_core.ListSnapshot) -> BucketList:  # ty
     )
 
 
-async def _visible_place(db, place_id: int) -> Place:  # type: ignore[no-untyped-def]
+async def _visible_place(db, place_id: int, user_id: int) -> Place:  # type: ignore[no-untyped-def]
     place = await db.get(Place, place_id)
-    if place is None or place.is_hidden or place.merged_into_id is not None:
+    if place is None or not can_use(place, user_id):
         raise HTTPException(404, "Place not found.")
     return place
 
 
 @router.get("/rankings/snapshot", response_model=Snapshot, operation_id="getRankingSnapshot")
 async def get_snapshot(place_id: int, db: DB, user: CurrentUser) -> Snapshot:
-    place = await _visible_place(db, place_id)
+    place = await _visible_place(db, place_id, user.id)
     snaps = await ranking_core.get_snapshot(db, user.id, place.city_id, place.subcategory_id)
     mine = await ranking_core.get_user_ranking(db, user.id, place.id)
     ref = await load_reference(db)
@@ -97,7 +99,7 @@ async def get_snapshot(place_id: int, db: DB, user: CurrentUser) -> Snapshot:
     operation_id="putRanking",
 )
 async def put_ranking(body: RankRequest, db: DB, user: CurrentUser):  # type: ignore[no-untyped-def]
-    place = await _visible_place(db, body.place_id)
+    place = await _visible_place(db, body.place_id, user.id)
     existing = await ranking_core.get_user_ranking(db, user.id, place.id)
     previous_bucket = existing.bucket if existing is not None else None
     previous_key = (existing.city_id, existing.subcategory_id) if existing is not None else None
@@ -141,10 +143,24 @@ async def put_ranking(body: RankRequest, db: DB, user: CurrentUser):  # type: ig
         and previous_key == (place.city_id, place.subcategory_id)
     ):
         previous_list = await _bucket_list(db, snaps[previous_bucket])
+    # For the celebration message (R16.5): "That's your 7th place in Tokyo!"
+    city_count = (
+        await db.execute(
+            text(
+                "SELECT count(*) FROM rankings r JOIN places p ON p.id = r.place_id "
+                "WHERE r.user_id = :u AND p.city_id = :c"
+            ),
+            {"u": user.id, "c": place.city_id},
+        )
+    ).scalar_one()
+    ref = await load_reference(db)
     return RankResponse(
         rank_list=await _bucket_list(db, snaps[body.bucket]),
         previous_list=previous_list,
         ranking=MyRanking.model_validate(ranked),
+        is_new=existing is None,
+        city_name=ref.cities[place.city_id].name,
+        city_rank_count=city_count,
     )
 
 
@@ -260,7 +276,7 @@ async def place_notes(
     offset: int = Query(0, ge=0),
 ):  # type: ignore[no-untyped-def]
     place = await db.get(Place, place_id)
-    if place is None or place.is_hidden:
+    if place is None or not can_see(place, viewer):
         raise HTTPException(404, "Place not found.")
     if place.merged_into_id is not None:
         return RedirectResponse(f"/api/places/{place.merged_into_id}/notes", status_code=308)

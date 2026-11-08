@@ -9,6 +9,8 @@ from app.logs import RequestLogMiddleware, configure_logging
 from app.routers import (
     auth,
     bookmarks,
+    discover,
+    events,
     geography,
     health,
     lists,
@@ -18,6 +20,7 @@ from app.routers import (
     places,
     profiles,
     rankings,
+    review,
     search,
 )
 
@@ -35,6 +38,9 @@ ROUTERS = [
     bookmarks,
     profiles,
     moderation,
+    discover,
+    review,
+    events,
 ]
 
 

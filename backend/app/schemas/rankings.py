@@ -57,6 +57,9 @@ class RankResponse(Out):
     rank_list: BucketList  # the updated target List
     previous_list: BucketList | None  # the List it left, when a re-rank changed bucket
     ranking: MyRanking
+    is_new: bool = True  # False for a re-rank
+    city_name: str = ""
+    city_rank_count: int = 0  # the user's rankings in this place's city, after this save
 
 
 class StaleListOut(BaseModel):

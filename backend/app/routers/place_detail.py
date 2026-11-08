@@ -7,6 +7,7 @@ from app.deps import DB, OptionalUser
 from app.models import Place
 from app.place_views import place_detail
 from app.schemas.common import PlaceDetail
+from app.visibility import can_see
 
 router = APIRouter(tags=["places"])
 
@@ -23,6 +24,6 @@ async def get_place(place_id: int, db: DB, viewer: OptionalUser):  # type: ignor
         raise HTTPException(404, "Place not found.")
     if place.merged_into_id is not None:
         return RedirectResponse(f"/api/places/{place.merged_into_id}", status_code=308)
-    if place.is_hidden and not (viewer and viewer.is_admin):
+    if not can_see(place, viewer):
         raise HTTPException(404, "Place not found.")
     return await place_detail(db, place, viewer)

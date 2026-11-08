@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { ApiError } from "../api/client";
 import FlagGroupCard from "../components/moderation/FlagGroupCard";
 import { useAdminFlags, type FlagStatusFilter } from "../hooks/moderation";
+import AdminNav from "../components/AdminNav";
 
 const TABS: { value: FlagStatusFilter; label: string }[] = [
   { value: "open", label: "Open" },
@@ -20,21 +21,24 @@ export default function AdminQueue() {
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-xl font-bold">Moderation queue</h1>
-        <Link to="/admin/seeds" className="underline">
+        <h1 className="text-3xl font-extrabold">Moderation queue</h1>
+        <Link to="/admin/seeds" className="link">
           Review seed places
         </Link>
+      </div>
+      <div className="mb-4">
+        <AdminNav />
       </div>
 
       {err?.status === 401 ? (
         <p role="alert">
-          Please <Link to="/sign-in?next=/admin" className="underline">sign in</Link> to continue.
+          Please <Link to="/sign-in?next=/admin" className="link">sign in</Link> to continue.
         </p>
       ) : err?.status === 403 ? (
         <p role="alert">Admins only.</p>
       ) : (
         <>
-          <div role="tablist" aria-label="Flag status" className="mb-3 flex flex-wrap gap-1">
+          <div role="tablist" aria-label="Flag status" className="mb-3 flex flex-wrap gap-2">
             {TABS.map((t) => (
               <button
                 key={t.value}
@@ -42,9 +46,7 @@ export default function AdminQueue() {
                 role="tab"
                 aria-selected={status === t.value}
                 onClick={() => setStatus(t.value)}
-                className={`rounded px-3 py-1.5 text-sm font-medium ${
-                  status === t.value ? "bg-brand text-white" : "border border-stone-400 text-stone-900"
-                }`}
+                className={`chip ${status === t.value ? "border-brand-dark bg-brand text-white" : ""}`}
               >
                 {t.label}
               </button>

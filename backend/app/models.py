@@ -116,6 +116,10 @@ class Place(Base):
     is_seed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     seed_reviewed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     merged_into_id: Mapped[int | None] = mapped_column(ForeignKey("places.id"))
+    # Manual adds (R13): 'pending' until an admin approves ('live') or rejects ('rejected').
+    status: Mapped[str] = mapped_column(String(10), default="live", server_default="live", nullable=False)
+    review_reason: Mapped[str | None] = mapped_column(String(200))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class PlaceStats(Base):

@@ -176,6 +176,54 @@ _Replaces the separate My rankings and Want to go pages and the map toggle. The 
 | R14.5 | Every row links back to the map | Each place row has "Show on map", which opens `/` with the map flown to that place and its pin summary open (same as R12.4) |
 | R14.6 | Logged-out view | Logged out, the All segment works; My rankings and Want to go show a "Sign in to see your lists" prompt |
 
+### R15: Recommendations on the map `⬜ new`
+
+_Goal: a first-time visitor finds a good recommendation from the map by instinct, without searching._
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| R15.1 | Zoomed-in pins show their score | At zoom ≥ 14 (config value) each ranked pin shows its public score with one decimal ("8.7") next to the category emoji. Unranked pins show only the emoji. Below 14, plain pins |
+| R15.2 | A "Top picks here" bottom sheet lists the best places in view | Up to 10 live places inside the viewport with ≥ 1 ranker, sorted by public score (ties: more rankers first), filtered by the active category chip. It refreshes on pan/zoom end and on chip change. Peek state shows the title, the count and the top 3; expanded shows the full list with rank, name, score, emoji and area |
+| R15.3 | Tapping a pick shows it on the map | The map flies to the place (zoom ≥ 16), highlights its pin, opens the pin summary (R6.2) and collapses the sheet to peek |
+| R15.4 | Friendly empty state | With no ranked places in view, the sheet says "Nothing ranked here yet. Be the first!" with a button that starts the pin-drop add |
+| R15.5 | Sheet, search and buttons don't fight | Opening the search dropdown collapses the sheet. The + button floats above the sheet. At 360×640 the peek sheet leaves ≥ 50% of the map visible |
+
+### R16: Friendly, playful look and feel (Duolingo-inspired) `⬜ new`
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| R16.1 | One design system for the whole app | Colour, radius and spacing tokens live in `src/index.css` with no hard-coded hex colours in components: a bright primary, 4 category colours (shared by pins, chips and legend), success, warning and danger, and a neutral scale. The font is rounded and bold (Nunito, served by the app itself) |
+| R16.2 | Chunky, tappable controls | Shared `Button` (≥ 48px tall, radius ≥ 12px, darker bottom border that compresses on press), `Chip`, `Card`, `Sheet`, `Badge` and `EmptyState` components. Every page uses them; no hand-styled buttons remain |
+| R16.3 | Emoji category icons | 🍜 Food, ⛩️ Sights, 🏨 Stays, 🏮 Experiences & Nightlife on chips, pins, the legend and list rows. The emoji is `aria-hidden`; text labels carry the meaning |
+| R16.4 | Friendly copy | Second person, plain, warm. The search placeholder is "Where to?". Every empty state names what's missing and offers one action (e.g. "Nothing ranked here yet. Be the first!"). Errors say what happened in plain words and offer a retry. Strings live in `src/copy.ts` |
+| R16.5 | Celebrations when users contribute | Saving a ranking shows a ~1.5s confetti burst and "Nice! That's your <n><ordinal> place in <City>!", with bigger messages at 1, 5, 10, 25 and 50. Adding a place: "Added! Thanks for helping fellow travellers 🙌"; a manual add: "Sent for review! We'll add it soon 🙌". The celebration closes on tap, Esc or its timer and never blocks the page |
+| R16.6 | The whole app is restyled, not just new screens | Sign-in, Lists, ranked list, place detail, ranking flow, add/edit place, settings, profile, admin and not-found all use the R16.2 components (checked in review and by the axe run in N3.1) |
+
+### R17: Discover and save here instead of Google Maps `⬜ new`
+
+_Own discovery, saving and ranking; hand off only turn-by-turn directions._
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| R17.1 | "Save ♡" and "Add a place +" are distinct, and "pin" never appears in the UI | Want-to-go is labelled **Save** (♡) everywhere, including the Lists segment "Saved". Creating a place is **Add a place** (+). `grep -rni "\bpin\b" src/copy.ts` finds nothing user-facing |
+| R17.2 | My places stand out on the map | Saved places show a ♡ marker and places I've ranked a ✓ marker, always, alongside all places. A **♡ Saved** chip at the start of the chip row shows only my saved places (signed in only) |
+| R17.3 | Saving, ranking and adding work from a signed-out start without leaving the map | Tapping ♡, Rank or + while signed out opens an inline panel, "Pick a username to save places" (one field, R1.2 rules). On submit the account is created or signed in, the action completes, and the user stays on the same map view |
+| R17.4 | Near me | A **📍 Near me** button asks for location only when tapped, centres the map on the user at zoom 15 and shows a "you are here" dot. Top picks then reflect that area. If permission is denied or unavailable, a friendly message shows and the map doesn't move |
+| R17.5 | Walking time | Once the user's location is known, picks and the place popup show "~N min walk" = straight-line distance × 1.3 ÷ 80 m/min, rounded up. Over 30 min, show the distance instead ("2.4 km") |
+| R17.6 | Get directions hands off to a maps app | iPhone/iPad → `https://maps.apple.com/?daddr=<lat>,<lng>`; Android → `geo:<lat>,<lng>?q=<lat>,<lng>(<name>)`; desktop → OpenStreetMap directions to the place in a new tab. Never a Google link |
+| R17.7 | The place popup gives a decision in seconds | Order: name → score & ranker count → category emoji · area · walk time (if located) → one-line quote of the most recent note from a "Liked" ranking (if any) → buttons **Save ♡ · Directions · Rank** → "View details". Flag sits under a "…" menu |
+| R17.8 | Top picks never empty in a covered city | If nothing in view is ranked, the sheet shows **Team picks**: reviewed seed places in view, nearest to the map centre first, marked "Team pick". "Nothing here yet" only shows when there are no places in view at all |
+
+### R18: Usage counts (self-hosted, anonymous) `⬜ new`
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| R18.1 | The app records key events | Events: `app_open` (first or returning), `place_open` (source: pin, top_pick, search, near_me, list), `save`, `rank`, `add`, `search_no_result`, `near_me`, `directions`. Sent fire-and-forget to `POST /api/events`; a failure never affects the UI |
+| R18.2 | Events are anonymous | Each event carries a random per-browser ID (localStorage, regenerated if storage is blocked) and is **never** linked to a user or session row. Test: the events table has no user_id, username, IP or user-agent column |
+| R18.3 | Raw events expire | Raw events older than 90 days are deleted by the weekly cron. Daily totals per event type are kept |
+| R18.4 | Admins see the funnel | Admin-only **Stats** page: weekly first-visit → place opened → saved → ranked funnel, the share of first visits that open a place within 2 minutes, and searches with no result. Non-admins get 403 |
+| R18.5 | Events never leave the stack | No third-party analytics scripts or requests (checked in the e2e network log) |
+
 ## Stretch
 
 - **S1: Photos on rankings**: _Why stretch:_ storage and moderation cost; notes cover the MVP.
@@ -196,6 +244,10 @@ _Replaces the separate My rankings and Want to go pages and the map toggle. The 
 - **S17: Open on the nearest city via geolocation**. _Why stretch:_ last-used city + Tokyo default is enough; avoids a permission prompt on first load.
 - **S18: Notify the submitter when a manual add is approved or rejected**. _Why stretch:_ needs a notification surface (like S12); "My submissions" covers it for now.
 - **S19: Multi-select category chips** (e.g. Food + Sights). _Why stretch:_ single-select keeps the UI states simple.
+- **S20: First-visit tour**: a 3-step, skippable tooltip tour on the map ("Pick a city" → "Tap a category" → "Top picks are here"), shown once per browser. _Why stretch:_ the user wants it after the MVP.
+- **S21: Original mascot** for empty states and onboarding. _Why stretch:_ needs illustration work; emoji cover the playful tone for now.
+- **S22: Daily streaks / ranking goals**. _Why stretch:_ celebrations with per-city counts (R16.5) give the reward loop for the MVP.
+- **S23: Real walking routes** (self-hosted OSRM with Japan data) instead of the straight-line estimate. _Why stretch:_ several GB of data and another service to run.
 - **S15: Kana/romaji search normalization** (e.g. a stored `name_romaji` via pykakasi) so "Sensoji" and "せんそうじ" find 浅草寺. _Why stretch:_ trigram search covers exact-script matches for the MVP.
 
 ## Out-of-Scope
@@ -211,6 +263,8 @@ _Replaces the separate My rankings and Want to go pages and the map toggle. The 
 - **X9: A separate full search-results page**: the map's suggestions dropdown is the only search UI; `/search` redirects (R3.5).
 - **X10: Nationwide (cross-city) search**: search is always scoped to the selected city (R11.3); change city to search elsewhere.
 - **X11: Email/push alerts to admins about pending places**: the in-app count (R13.9) is enough for now.
+- **X12: Copying Duolingo's branding**: the style is inspired by Duolingo, not a copy. No owl or look-alike character, not their exact green (#58CC02), not their Feather / DIN Round font.
+- **X13: A landing or welcome page before the map**: the first screen is always the map (R11.1).
 
 ## Non-functional
 
@@ -222,6 +276,7 @@ _Replaces the separate My rankings and Want to go pages and the map toggle. The 
 | N1.2 | Search and map queries stay fast at scale | API p95 < 300ms at 50 concurrent users (k6) with 50,000 synthetic places loaded |
 | N1.3 | Duplicate check is fast enough for the submit flow | Nearby-match query (R2.6) p95 < 200ms at 50,000 places |
 | N1.4 | Suggestions keep up with typing | Suggest endpoint (R12) p95 < 150ms at 50 concurrent users with 50,000 places (k6); out-of-order responses are discarded so a stale result never replaces a newer one |
+| N1.5 | The font doesn't slow the first paint | Nunito is self-hosted (no Google Fonts CDN), uses `font-display: swap`, and only the weights in use are shipped; map home LCP stays < 2.5s (N1.1) |
 
 ### N2: Security & privacy
 
@@ -241,8 +296,9 @@ _Replaces the separate My rankings and Want to go pages and the map toggle. The 
 | N3.3 | Adding a place works without precise touch | Add-place also accepts "use my location" or searching an address to set the pin, then nudging with arrow keys |
 | N3.4 | Search bar is an accessible combobox | It follows the ARIA combobox pattern: arrow keys move through suggestions, Enter picks, Esc closes, and the result count is announced. Playwright test picks an area and a place by keyboard only |
 | N3.5 | Colour is never the only category cue | Pin colours have ≥ 3:1 contrast against the base map (WCAG 1.4.11); chips and the legend carry text labels; each pin's accessible name includes its category |
-| N3.6 | Fly-to respects reduced motion | With `prefers-reduced-motion: reduce`, R11.3/R11.4/R12.4 jump to the view instead of animating |
+| N3.6 | Motion respects reduced motion | With `prefers-reduced-motion: reduce`, R11.3/R11.4/R12.4/R15.3 jump to the view instead of animating, button presses don't bounce, and R16.5 celebrations show the message without confetti |
 | N3.7 | The + button is usable | It has the accessible name "Add place", is at least 48×48px, and is reachable by keyboard |
+| N3.8 | Bright colours stay readable | Text on every coloured button, chip, badge and pin score is ≥ 4.5:1 (dark text on bright greens and yellows where needed); axe finds no colour-contrast issues |
 
 ### N4: Compatibility & platforms
 
@@ -274,6 +330,13 @@ _Attribution:_ map tiles and addresses © OpenStreetMap contributors (ODbL) (sho
 
 _Skipped areas:_ Reliability & availability: local-only MVP, revisit with deployment; Scalability: local MVP, covered by the N1 load bars; Cost: self-hosted locally with no paid services; Usability: covered by R2/R4 flow criteria and N3.
 
+### N7: Usability
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| N7.1 | Recommendations are findable by instinct | Hallway test with 5 people who have never seen the app: given "Find a well-rated ramen place near Roppongi" and no instructions, at least 4 of 5 open a top pick's summary within 60 seconds |
+| N7.2 | Approachable feel | The same 5 testers rate "this feels friendly and easy" ≥ 4/5 on average |
+
 ## Implementation decisions
 
 | ID | Decision |
@@ -294,5 +357,7 @@ _Skipped areas:_ Reliability & availability: local-only MVP, revisit with deploy
 | D14 | Test seams: (1) backend HTTP API, the primary seam; (2) CLI entrypoints (seed, dump) run in-process against the test DB; (3) Playwright in the browser for core flows, keyboard ranking, axe and escaping. No separate unit seam for the client-side insertion search |
 
 ## Open Questions
+
+- **Launch content:** before launch, the team ranks at least 10 places per launch city in-app, so Top picks has real scores on day one (R17.8 covers the gaps). Launch is blocked until this is done. Owner: team.
 
 - **Seed data accuracy:** `data/seed_places.csv` (225 places; every launch city has ≥25 places with at least one in each top category), `data/cities.csv` and `data/locations.csv` (62 named locations + 8 catch-alls) were drafted from general knowledge, not from a dataset. Place coordinates are approximate (to ~100m) and some places may have moved or closed; location centroids are rough area centres. Process: seed as Unverified, then team members review each city in-app and fix pins and tags with admin edits. Launch is blocked until every seed place has been reviewed once.
