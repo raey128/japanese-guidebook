@@ -12,7 +12,8 @@ _Last updated: 2026-11-08_
 ## Glossary
 
 - **City**: a launch city (Tokyo, Kyoto, Osaka, Nara, Hiroshima, Fukuoka, Sapporo, Kanazawa), curated in `data/cities.csv`. Carries `country_code` and a centroid.
-- **Location**: a curated general area inside a city (Asakusa, Gion & Higashiyama, Miyajima…), curated in `data/locations.csv` as a name + centroid point, with no boundary. Day-trip areas belong to the nearest launch city (Miyajima → Hiroshima, Dazaifu → Fukuoka, Ikaruga → Nara, Mitaka → Tokyo, Otaru → Sapporo). Each city also has one catch-all location, "Elsewhere in <City>", which has no centroid.
+- **Location**: a curated general area inside a city (Asakusa, Gion & Higashiyama, Miyajima…), curated in `data/locations.csv` as a name + centroid point, with no boundary. Day-trip areas belong to the nearest launch city (Miyajima → Hiroshima, Dazaifu → Fukuoka, Ikaruga → Nara, Mitaka → Tokyo, Otaru → Sapporo). Each city also has one catch-all location, "Elsewhere in <City>", which has no centroid. Shown to users as **Area** (e.g. "Roppongi & Azabu").
+- **Pending place**: a place added through "Add manually" from search (R13). It is hidden from everyone except its submitter until an admin approves it.
 - **Place**: a user-created pin, tagged with exactly one location (and therefore one city) and one subcategory.
 - **List**: one user's ranked places for a (city, subcategory, bucket). Personal scores are derived from position in the list.
 
@@ -37,20 +38,23 @@ _Last updated: 2026-11-08_
 | R2.4 | Address auto-filled by reverse geocoding through the backend, which calls the public OSM Nominatim API for the MVP | Within 2s of placing the pin, the address field fills in; the backend throttles to ≤1 req/s globally, caches by coordinates rounded to 4 decimals, and sends an identifying User-Agent; if geocoding fails or is throttled, submit still works with the address blank. The geocoder URL is a config value so the API can be swapped for a self-hosted instance |
 | R2.5 | Place tagged with a curated location | When the pin is set, the location picker pre-selects the non-catch-all location with the nearest centroid; the user can change it to any location of that city, including "Elsewhere in <City>". If the nearest location centroid is more than 30 km away (config value), submit is blocked with "We only cover these cities for now" and the list of cities. Moving the pin does not change the tag once the user has picked one |
 | R2.6 | Duplicate warning on submit | If a same-subcategory place lies within 50m, or a fuzzy-similar name within 200m, the user sees those matches and must pick one (which opens ranking) or confirm "this is different" |
-| R2.7 | Place goes live immediately, marked "Unverified" | New place appears on the map, in search and in lists at once with an "Unverified" badge; the badge clears once 2 users other than the creator have ranked it (for seed places, any 2 users) |
+| R2.7 | Place added by pin-drop goes live immediately, marked "Unverified" (places added via "Add manually" from search follow R13 instead) | New place appears on the map, in search and in lists at once with an "Unverified" badge; the badge clears once 2 users other than the creator have ranked it (for seed places, any 2 users) |
 | R2.8 | Creator can edit name, pin, subcategory and location for 24h; after that, admin only | Edit button is hidden after 24h for the creator; an API edit attempt then returns 403. A subcategory or location change that moves the place to a different city/subcategory re-inserts its rankings (see R4.9) |
 | R2.9 | Submission rate limit | Accounts younger than 7 days can create 5 places per rolling 24h, older accounts 20; the next one returns 429 with a clear message |
 | R2.10 | Data model carries country and is not Japan-specific | `country_code` on cities; cities and locations are data, not code; no Japan-only columns or hard-coded city logic |
 | R2.11 | Seed scripts load cities, locations and places | `make seed-locations` loads `data/cities.csv` and `data/locations.csv`; `make seed-places` loads `data/seed_places.csv` (columns: name, name_ja, lat, lng, subcategory, location) as places owned by the reserved system user `guidebook`, marked Unverified. Rows with an unknown subcategory or location fail the run; reruns are idempotent (no duplicates by name + 50m, locations upserted by slug); admin view lists seed places with a 'reviewed' checkbox and a per-city count of unreviewed places. The 'reviewed' flag is independent of the Unverified badge |
 
-### R3: Search & ranking entry
+### R3: Search & ranking entry `🟡 changed`
+
+_The search UI moves onto the map (R12). R3.1 is now the backend that powers the suggestions._
 
 | ID | Requirement | Acceptance criterion |
 |----|-------------|----------------------|
 | R3.1 | Search places by English or Japanese name, optionally filtered by city, location and category | Searching a seeded name returns it within 300ms; filters narrow results. Matching is trigram-based; kana/romaji variants of a kanji name are not matched (see S15) |
 | R3.2 | Signed-in user can rank any live place | The Rank button on detail page, search result and map pin starts the R4 flow |
 | R3.3 | One ranking per user per place | Ranking an already-ranked place opens re-rank instead of creating a second entry |
-| R3.4 | Empty search result state | No-match search shows "Not found" with an "Add it on the map" link that opens R2.1 |
+| R3.4 | Empty search result state | A search with no match shows "Not found" plus an "Add manually" option that starts R13 (pending approval). _Changed: it used to link to the live pin-drop flow_ |
+| R3.5 | The standalone search page is retired | `/search` (with any query string) redirects to `/` and keeps `q`, `city` and `category`, so the map's search bar opens with them filled in |
 
 ### R4: Pairwise ranking
 
@@ -75,14 +79,16 @@ _Last updated: 2026-11-08_
 | R5.3 | Place detail page | Shows name (EN + JA), address, location + city, category, map pin, public score, ranker count, creator username, and notes with author username (or "Anonymous" for private users) |
 | R5.4 | Empty list state | A city+category with no rankings shows "No rankings yet" plus a prompt to rank or add a place |
 
-### R6: Map view
+### R6: Map view `🟡 changed`
+
+_The map is now the home screen (R11). Picking an area moves the map there and no longer filters pins by location tag._
 
 | ID | Requirement | Acceptance criterion |
 |----|-------------|----------------------|
-| R6.1 | Map of all live places (MapLibre with OpenFreeMap vector tiles for the MVP; tile URL is a config value) filterable by category and location | Panning loads pins for the visible bbox only; p95 bbox query < 300ms. Below zoom 11 (config) the server returns grid clusters with counts; at zoom ≥ 11 it returns raw points, capped at 2,000 |
+| R6.1 | Map of all live places (MapLibre with OpenFreeMap vector tiles for the MVP; tile URL is a config value), filterable by category (R11.5) | Panning loads pins for the visible bbox only; p95 bbox query < 300ms. Below zoom 11 (config) the server returns grid clusters with counts; at zoom ≥ 11 it returns raw points, capped at 2,000 |
 | R6.2 | Pin tap opens place summary | Shows name, public score, badges, and buttons for Rank, Want-to-go and Flag, plus a link to the detail page |
-| R6.3 | Toggle between all places, "my rankings" and "want-to-go" pins | Toggle switches pin sets without a page reload |
-| R6.4 | "Add place here" from the map | Long-press (mobile) or right-click (desktop) on the map starts R2.1 with the pin at that spot |
+| R6.3 | ~~Toggle between all places, "my rankings" and "want-to-go" pins~~ _Replaced by the Lists tab (R14): the map always shows all live places plus the user's own pending places_ | Map has no pin-set toggle |
+| R6.4 | "Add place here" from the map | The floating + button (R11.8) starts R2.1 with the pin at the map centre; long-press (mobile) or right-click (desktop) on the map starts R2.1 with the pin at that spot |
 
 ### R7: Want-to-go list
 
@@ -116,6 +122,59 @@ _Last updated: 2026-11-08_
 | R10.1 | CLI job exports places (name, coordinates, address, subcategory, location, city), rankings, notes and public scores as CSV + Parquet | `make dump` writes the files plus a LICENSE (CC BY-SA 4.0, with "Address data © OpenStreetMap contributors, ODbL" attribution for the address column) |
 | R10.2 | Dump respects privacy and moderation | Private users appear as an opaque ID with no username; hidden items are absent (verified by test) |
 | R10.3 | Dump runs on a schedule | Weekly via a cron container in Docker Compose; writes `dumps/YYYY-MM-DD/`; the scheduled and manual runs share one entrypoint |
+| R10.4 | Pending and rejected places are never dumped | Test: a pending place and its rankings are absent from the dump; after approval they appear in the next dump |
+
+### R11: Map-first home screen `⬜ new`
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| R11.1 | The first screen is a full-screen map | `/` renders the map edge to edge (100dvw × 100dvh) with no site header or footer; `/map` redirects to `/` and keeps its query string. The OSM attribution stays visible as the map's attribution control |
+| R11.2 | Navigation sits behind a menu button over the map | A menu button in a top corner opens a drawer with: Sign in/out, Lists (R14), My submissions (R13.7), Settings, Admin (admins only, with the pending count from R13.9), and the CC BY-SA notice. Other pages keep the normal header |
+| R11.3 | A floating search bar on the map holds the city picker | The bar is pinned to the top of the map: [City ▾][search input]. The city is always set. Changing the city flies the map to that city's centroid at zoom 12 |
+| R11.4 | Picking an area flies the map there | An area picker (in the bar under the city, listing that city's areas) and area suggestions (R12.2) fly the map to the area centroid at zoom 15 in ≤ 1.5s. Pins outside the area stay visible. "Elsewhere in <City>" has no centroid, so it flies to the city view (zoom 12) |
+| R11.5 | Category chips under the search bar filter pins | A row of 4 single-select top-category chips (Food, Sights, Stays, Experiences & Nightlife), each in its pin colour. Tapping one filters pins and suggestions to it and shows its subcategory chips. Tapping a subcategory narrows further. Tapping the active chip again clears it. The filter is kept in the URL (`category=`) |
+| R11.6 | Pins are coloured by top category | Each of the 4 top categories has its own pin colour. A legend is reachable from the map (a "Key" button or the chip row itself). Selected pins keep a distinct ring. Clusters stay neutral (brand colour) |
+| R11.7 | The map opens on the last-used city | On first visit the map opens on Tokyo. Afterwards it opens on the last city picked in that browser (localStorage, wrapped in try/catch, falling back to Tokyo). URL `lat/lng/z` params, when present, win |
+| R11.8 | "Add place" is a floating + button on the map | A round + button floats at the bottom right, above the zoom controls, and is always visible. Tapping it starts the pin-drop add (R2.1, goes live). Logged-out users go to sign in first and come back to the form |
+
+### R12: Type-ahead search suggestions `⬜ new`
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| R12.1 | Suggestions appear as soon as the user types | After the first character, a dropdown shows suggestions within 300ms of the last keystroke (150ms debounce + API). Clearing the input closes it |
+| R12.2 | Suggestions are grouped: areas, categories, places | Up to 3 matching areas of the selected city ("Roppo" → Roppongi & Azabu; picking one runs R11.4), up to 3 matching subcategories ("ram" → Ramen; picking one sets the R11.5 chip), then places. Areas and subcategories match their EN and JA names |
+| R12.3 | Place suggestions favour the area currently on screen | Places come in two groups: "On the map" (inside the current viewport, up to 5) and "Elsewhere in <City>" (rest of the selected city, up to 5). The category chip filter applies to both. Each row shows the name, area and a category colour dot |
+| R12.4 | Picking a place suggestion shows it on the map | If needed the map flies to the place (zoom ≥ 16), then highlights its pin and opens its summary (R6.2) |
+| R12.5 | "Add manually" is always the last row | The row is there once at least 1 character is typed, even when other suggestions show, and reads "Can't find it? Add '<typed text>' manually". It starts R13 |
+| R12.6 | Searching is open to everyone; adding is not | Logged-out users get suggestions. Picking "Add manually" while logged out sends them to sign in, then back into R13 with the name kept |
+
+### R13: Manual add with admin approval `⬜ new`
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| R13.1 | "Add manually" opens the existing add-place form, pre-filled | Same form as R2.1–R2.5 (pin, EN/JA name, subcategory, location) with the English name pre-filled from the search text and the pin started at the map centre. R2.6 duplicate warning and R2.9 rate limit apply as normal |
+| R13.2 | A manually added place is created as pending | It is saved with status `pending` and is absent for everyone else: map, search, suggestions, lists, other profiles and public scores. API test: another user's map/search query does not return it |
+| R13.3 | The submitter sees and can use their pending place | The submitter sees it on their map and in their suggestions with a "Pending review" badge, and can rank, note and bookmark it. Their ranking stays in their personal list but does not count toward public scores or the category prior until approval |
+| R13.4 | Admins review pending places in a queue | The admin page lists pending places oldest first with name, pin on a mini map, subcategory, location, submitter, and nearby places within 200m. Non-admins get 403 |
+| R13.5 | Approve makes the place live | Approval puts it on the map, in search and in lists immediately, with the normal "Unverified" badge (R2.7). The submitter's ranking starts counting in public scores. Admin can fix name, pin, subcategory or location before approving |
+| R13.6 | Reject removes the place | A rejected place disappears from the submitter's map too, and its rankings and bookmarks are deleted. Admin can add an optional reason (≤ 200 chars). The status is kept for the submitter (R13.7) |
+| R13.7 | The submitter can track their submissions | "My submissions" (in the menu) lists the user's manual adds with status Pending / Approved / Rejected (with the reason, if given) |
+| R13.8 | Pin-drop adds are unaffected | Places added with the + button, long-press or right-click (R2, R6.4) still go live immediately. Test: a pin-drop place appears to other users at once and a manual add does not |
+| R13.9 | Admins can see when places are waiting | When there are pending places, the menu button shows a dot for admins and the drawer's Admin entry shows the count ("Admin · 3 pending"). The count updates on page load and whenever the drawer opens. No email or push |
+| R13.10 | Manual adds count toward the daily submission limit | A manual add uses up the same R2.9 quota as a pin-drop add. Test: a new account that has made 5 places in 24h (any mix) gets 429 on the 6th |
+
+### R14: Lists tab (Beli-style) `🟡 changed`
+
+_Replaces the separate My rankings and Want to go pages and the map toggle. The pages exist today as `MyRankings.tsx` and `WantToGo.tsx`._
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| R14.1 | One Lists tab holds all lists | `/lists` is a single page with three segments at the top: **All** (public ranked lists), **My rankings**, **Want to go**. Switching segments doesn't reload the page and the chosen segment is in the URL (`?tab=`). `/me/rankings` and `/me/want-to-go` redirect to the matching segment |
+| R14.2 | All shows the public ranked lists | City (defaults to the map's current city) × top category, then subcategory, using the R5.2 lists |
+| R14.3 | My rankings shows the user's ranked places | Grouped by city, then subcategory, in rank order with the personal score (R4.3). Pending places show their "Pending review" badge |
+| R14.4 | Want to go shows bookmarks | Grouped by city. Ranking a place removes it from here (R7.2) |
+| R14.5 | Every row links back to the map | Each place row has "Show on map", which opens `/` with the map flown to that place and its pin summary open (same as R12.4) |
+| R14.6 | Logged-out view | Logged out, the All segment works; My rankings and Want to go show a "Sign in to see your lists" prompt |
 
 ## Stretch
 
@@ -133,6 +192,10 @@ _Last updated: 2026-11-08_
 - **S12: Notify flaggers of the outcome**: _Why stretch:_ needs a notification surface.
 - **S13: Real authentication**: Google OAuth (Authlib), emailed magic links (single-use, 15 min expiry, Mailpit locally, 6th request per email per hour → 429), and account deletion with a "delete everything" / "anonymize" choice that leaves no PII behind. No password column ever. Plugs into the existing sessions table. _Why stretch:_ the MVP runs locally only; **this blocks any public deployment** (X2).
 - **S14: User-proposed locations**: users suggest a new location, admins approve. _Why stretch:_ the MVP keeps the location list team-curated via CSV.
+- **S16: Subcategory icons inside pins** (ramen bowl, torii…) on top of the category colour. _Why stretch:_ 4 colours cover the MVP; icon set is design work.
+- **S17: Open on the nearest city via geolocation**. _Why stretch:_ last-used city + Tokyo default is enough; avoids a permission prompt on first load.
+- **S18: Notify the submitter when a manual add is approved or rejected**. _Why stretch:_ needs a notification surface (like S12); "My submissions" covers it for now.
+- **S19: Multi-select category chips** (e.g. Food + Sights). _Why stretch:_ single-select keeps the UI states simple.
 - **S15: Kana/romaji search normalization** (e.g. a stored `name_romaji` via pykakasi) so "Sensoji" and "せんそうじ" find 浅草寺. _Why stretch:_ trigram search covers exact-script matches for the MVP.
 
 ## Out-of-Scope
@@ -144,7 +207,10 @@ _Last updated: 2026-11-08_
 - **X5: Payments/monetization**: open community project; no revenue model for the MVP.
 - **X6: Public read API**: the periodic dump is the open-data channel.
 - **X7: External POI datasets (Foursquare, Overture, OSM POIs)**: places come only from user pins and the team's seed CSV. OSM is used for base map tiles and reverse geocoding only.
-- **X8: Administrative boundary data (e.g. MLIT N03)**: cities and locations are a curated tagging system, not polygons.
+- **X8: Administrative boundary data (e.g. MLIT N03)**: cities and locations are a curated tagging system, not polygons. So the map never draws area outlines, and picking an area moves the map without filtering pins (R11.4).
+- **X9: A separate full search-results page**: the map's suggestions dropdown is the only search UI; `/search` redirects (R3.5).
+- **X10: Nationwide (cross-city) search**: search is always scoped to the selected city (R11.3); change city to search elsewhere.
+- **X11: Email/push alerts to admins about pending places**: the in-app count (R13.9) is enough for now.
 
 ## Non-functional
 
@@ -155,6 +221,7 @@ _Last updated: 2026-11-08_
 | N1.1 | List, map and detail pages load fast on phones | LCP < 2.5s in Lighthouse mobile (simulated 4G) against the local Docker stack |
 | N1.2 | Search and map queries stay fast at scale | API p95 < 300ms at 50 concurrent users (k6) with 50,000 synthetic places loaded |
 | N1.3 | Duplicate check is fast enough for the submit flow | Nearby-match query (R2.6) p95 < 200ms at 50,000 places |
+| N1.4 | Suggestions keep up with typing | Suggest endpoint (R12) p95 < 150ms at 50 concurrent users with 50,000 places (k6); out-of-order responses are discarded so a stale result never replaces a newer one |
 
 ### N2: Security & privacy
 
@@ -169,9 +236,13 @@ _Last updated: 2026-11-08_
 
 | ID | Requirement | Acceptance criterion |
 |----|-------------|----------------------|
-| N3.1 | WCAG 2.1 AA on core pages | axe scan shows zero serious/critical issues on list, detail, ranking flow, add-place, profile and search |
+| N3.1 | WCAG 2.1 AA on core pages | axe scan shows zero serious/critical issues on the map home (search bar open), Lists tab, list, detail, ranking flow, add-place, profile and the admin pending queue |
 | N3.2 | Ranking flow works by keyboard | Playwright test completes a ranking using only the keyboard |
 | N3.3 | Adding a place works without precise touch | Add-place also accepts "use my location" or searching an address to set the pin, then nudging with arrow keys |
+| N3.4 | Search bar is an accessible combobox | It follows the ARIA combobox pattern: arrow keys move through suggestions, Enter picks, Esc closes, and the result count is announced. Playwright test picks an area and a place by keyboard only |
+| N3.5 | Colour is never the only category cue | Pin colours have ≥ 3:1 contrast against the base map (WCAG 1.4.11); chips and the legend carry text labels; each pin's accessible name includes its category |
+| N3.6 | Fly-to respects reduced motion | With `prefers-reduced-motion: reduce`, R11.3/R11.4/R12.4 jump to the view instead of animating |
+| N3.7 | The + button is usable | It has the accessible name "Add place", is at least 48×48px, and is reachable by keyboard |
 
 ### N4: Compatibility & platforms
 
@@ -180,6 +251,7 @@ _Last updated: 2026-11-08_
 | N4.1 | Mobile-first responsive PWA | Usable at 360px width with no horizontal scroll; installable (valid manifest + service worker) |
 | N4.2 | Browser support | Core flows pass e2e on the last 2 versions of iOS Safari, Chrome (Android/desktop) and Firefox |
 | N4.3 | English UI; place names shown in English with Japanese where provided | Detail page shows both names when both exist |
+| N4.4 | Map overlay fits small phones | At 360×640 the search bar, chip row (scrolls sideways inside itself), menu button and + button leave ≥ 50% of the map visible; the + button never covers the suggestions dropdown or the pin summary; the open dropdown covers ≤ 60% of the viewport height and never causes page scroll |
 
 ### N5: Maintainability & operability
 
@@ -189,6 +261,7 @@ _Last updated: 2026-11-08_
 | N5.2 | CI on every PR | GitHub Actions runs lint, pytest, Vitest and Playwright; a failing check blocks merge |
 | N5.3 | Ranking, scoring, duplicate-detection and flag-threshold logic is well tested | pytest coverage ≥ 80% on those modules |
 | N5.4 | Core flow e2e | Playwright: sign in with a username → add a place by pin → rank 3 places → see them in the personal and public lists |
+| N5.6 | Map-first flow e2e | Playwright: open `/` → pick Tokyo → type "Roppo" → pick the area (map centre within 300m of the Roppongi & Azabu centroid) → tap Food → type an unknown name → "Add manually" → submit → place is pending for the submitter and invisible to a second user → admin sees "1 pending" → approves → second user sees it |
 | N5.5 | Structured logs | API logs JSON with request ID, route, status and latency; errors include stack traces |
 
 ### N6: Data
