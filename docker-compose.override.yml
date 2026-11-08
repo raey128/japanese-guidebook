@@ -1,0 +1,17 @@
+# Local development: picked up automatically by `docker compose up`.
+# Mounts the source into the containers so edits show up without a rebuild
+# (the backend reloads on save; the frontend hot-reloads in the browser).
+services:
+  api:
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
+    volumes:
+      - ./backend:/app/backend
+      - ./data:/app/data:ro
+
+  web:
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend:/app/frontend
+      # keep the container's installed packages instead of the host folder's
+      - /app/frontend/node_modules
