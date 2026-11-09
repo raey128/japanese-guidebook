@@ -145,3 +145,18 @@ class PlaceLookupResult(BaseModel):
 
 class PlaceLookupResponse(BaseModel):
     results: list[PlaceLookupResult]
+
+
+class AreaLookupResult(BaseModel):
+    """An area or station found by name in OpenStreetMap, for the map search bar (R12.7)."""
+
+    name: str
+    detail: str | None  # "Minato, Tokyo"
+    kind: Literal["area", "station"]
+    lat: float
+    lng: float
+    zoom: int  # a good map zoom for it
+
+
+class AreaLookupResponse(BaseModel):
+    results: list[AreaLookupResult]

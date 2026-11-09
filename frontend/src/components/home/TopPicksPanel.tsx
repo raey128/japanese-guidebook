@@ -126,7 +126,7 @@ export default function TopPicksPanel({
       </div>
         </section>
       ) : null}
-      {/* Compact (emoji + count) so it hugs the left edge and leaves the map clear. */}
+      {/* Emoji, name and count; hugs the left edge of the bottom row. */}
       <button
         type="button"
         onClick={() => onOpenChange(!open)}
@@ -138,6 +138,9 @@ export default function TopPicksPanel({
       >
         <span aria-hidden="true" className="text-xl">
           {emoji}
+        </span>
+        <span aria-hidden="true" className="max-w-[10rem] truncate">
+          {title}
         </span>
         {items.length ? (
           <span aria-hidden="true" className={`badge ${open ? "bg-white/25 text-white" : "bg-brand-soft text-brand-dark"}`}>

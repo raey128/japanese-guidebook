@@ -329,3 +329,110 @@ async def lookup_places(q: str, lat: float | None, lng: float | None) -> list[Lo
     while len(_lookup_cache) > _CACHE_MAX:
         _lookup_cache.popitem(last=False)
     return results
+
+
+# --- Area lookup for the map search bar (R12.7): "Shimbashi" flies the map there -----------
+
+AREA_PLACE_VALUES = {
+    "city",
+    "town",
+    "village",
+    "borough",
+    "suburb",
+    "quarter",
+    "neighbourhood",
+    "locality",
+    "hamlet",
+    "city_block",
+}
+AREA_ZOOM = {"city": 12, "town": 13, "borough": 13, "suburb": 14, "village": 14}
+STATION_ZOOM = 16
+DEFAULT_AREA_ZOOM = 15
+
+
+@dataclass(frozen=True)
+class AreaResult:
+    name: str
+    detail: str | None  # "Minato, Tokyo"
+    kind: str  # "area" | "station"
+    lat: float
+    lng: float
+    zoom: int
+
+
+def parse_photon_areas(data: Any) -> list[AreaResult]:
+    """Neighbourhoods, districts and stations in Japan; anything else is skipped."""
+    if not isinstance(data, dict) or not isinstance(data.get("features"), list):
+        return []
+    out: list[AreaResult] = []
+    seen: set[tuple[str, str]] = set()
+    for feature in data["features"]:
+        try:
+            props = feature["properties"]
+            name = str(props.get("name") or "").strip()
+            if not name or (props.get("countrycode") or "JP").upper() != "JP":
+                continue
+            key, value = props.get("osm_key"), props.get("osm_value")
+            if key == "place" and value in AREA_PLACE_VALUES:
+                kind, zoom = "area", AREA_ZOOM.get(value, DEFAULT_AREA_ZOOM)
+            elif value == "station" and key in ("railway", "public_transport"):
+                kind, zoom = "station", STATION_ZOOM
+            else:
+                continue
+            lng, lat = (float(c) for c in feature["geometry"]["coordinates"][:2])
+            parts = [props.get(k) for k in ("district", "city", "state")]
+            detail = ", ".join(dict.fromkeys(str(p) for p in parts if p and str(p) != name)) or None
+            dedupe = (name.lower(), kind)
+            if dedupe in seen:  # a station often appears once per operator
+                continue
+            seen.add(dedupe)
+            out.append(AreaResult(name[:120], detail, kind, lat, lng, zoom))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return out
+
+
+_area_cache: OrderedDict[tuple[str, float | None, float | None], tuple[float, list]] = OrderedDict()
+
+
+async def lookup_areas(q: str, lat: float | None, lng: float | None) -> list[AreaResult]:
+    """Search areas and stations by name, nearest first when a point is given. Cached in-process
+    for a day; never raises (failures give [])."""
+    q = q.strip()
+    if len(q) < 2:
+        return []
+    bias = (round(lat, 2), round(lng, 2)) if lat is not None and lng is not None else (None, None)
+    key = (q.lower(), *bias)
+    now = time.monotonic()
+    hit = _area_cache.get(key)
+    if hit and now - hit[0] < _CACHE_TTL_S:
+        _area_cache.move_to_end(key)
+        return hit[1]
+    s = get_settings()
+    params: list[tuple[str, str | int | float | bool | None]] = [
+        ("q", q),
+        ("limit", 10),
+        ("lang", "en"),
+        ("bbox", JAPAN_BBOX),
+        ("osm_tag", "place"),
+        ("osm_tag", "railway:station"),
+        ("osm_tag", "public_transport:station"),
+    ]
+    if bias[0] is not None:
+        params += [("lat", bias[0]), ("lon", bias[1]), ("zoom", 12), ("location_bias_scale", 0.2)]
+    try:
+        async with httpx.AsyncClient(
+            timeout=s.place_lookup_timeout_s, headers={"User-Agent": s.geocoder_user_agent}
+        ) as http:
+            r = await http.get(s.place_lookup_url, params=params)
+        if r.status_code != 200:
+            log.warning("area lookup returned %s", r.status_code)
+            return []
+        results = parse_photon_areas(r.json())[:5]
+    except Exception as e:
+        log.warning("area lookup failed: %s", type(e).__name__)
+        return []
+    _area_cache[key] = (now, results)
+    while len(_area_cache) > _CACHE_MAX:
+        _area_cache.popitem(last=False)
+    return results

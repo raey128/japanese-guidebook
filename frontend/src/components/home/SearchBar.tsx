@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import type { Schemas } from "../../api/client";
 import { COPY } from "../../copy";
-import { useSuggest } from "../../hooks/map";
+import { useAreaLookup, useSuggest } from "../../hooks/map";
 import { topCategoryInfo } from "../../lib/categories";
 import { track } from "../../lib/track";
 import type { Bbox } from "../map/geo";
@@ -18,7 +18,10 @@ export type Option =
   | { kind: "area"; loc: Loc }
   | { kind: "sub"; sub: Sub }
   | { kind: "place"; place: Place; group: "on_map" | "elsewhere" }
+  | { kind: "spot"; spot: Spot }
   | { kind: "add"; text: string };
+
+type Spot = Schemas["AreaLookupResult"];
 
 /** Debounce a value (150 ms by default, R12.1). */
 function useDebounced<T>(value: T, ms = 150): T {
@@ -45,6 +48,7 @@ export default function SearchBar({
   onPickArea,
   onPickSubcategory,
   onPickPlace,
+  onPickSpot,
   onAddManually,
   onOpenChange,
 }: {
@@ -57,6 +61,8 @@ export default function SearchBar({
   onPickArea: (loc: Loc) => void;
   onPickSubcategory: (sub: Sub) => void;
   onPickPlace: (place: Place) => void;
+  /** An area or station from the map (e.g. "Shimbashi"): fly there (R12.7). */
+  onPickSpot: (spot: Spot) => void;
   onAddManually: (text: string) => void;
   onOpenChange?: (open: boolean) => void;
 }) {
@@ -68,6 +74,10 @@ export default function SearchBar({
   const term = useDebounced(text.trim());
   const cityData = cities.find((c) => c.slug === city);
   const suggest = useSuggest(term, city, category, bbox);
+  // Areas and stations from the map (slower, external): a longer debounce.
+  const spotTerm = useDebounced(text.trim(), 300);
+  const centre = bbox ? { lat: (bbox.minLat + bbox.maxLat) / 2, lng: (bbox.minLng + bbox.maxLng) / 2 } : cityData ?? null;
+  const spots = useAreaLookup(spotTerm, centre);
   const typed = text.trim();
 
   const groups = useMemo(() => {
@@ -81,6 +91,12 @@ export default function SearchBar({
     const d = term === typed ? suggest.data : undefined;
     if (d) {
       if (d.areas.length) out.push({ label: "Areas", options: d.areas.map((loc) => ({ kind: "area", loc })) });
+    }
+    // Neighbourhoods and stations from the map, unless one of our areas already has that name.
+    const known = new Set((d?.areas ?? []).map((a) => a.name.toLowerCase()));
+    const mapSpots = spotTerm === typed ? (spots.data?.results ?? []).filter((x) => !known.has(x.name.toLowerCase())) : [];
+    if (mapSpots.length) out.push({ label: "Go to on the map", options: mapSpots.map((spot) => ({ kind: "spot", spot })) });
+    if (d) {
       if (d.subcategories.length) out.push({ label: "Categories", options: d.subcategories.map((sub) => ({ kind: "sub", sub })) });
       if (d.on_map.length) out.push({ label: "On the map", options: d.on_map.map((place) => ({ kind: "place", place, group: "on_map" })) });
       if (d.elsewhere.length)
@@ -92,7 +108,7 @@ export default function SearchBar({
     // "Add manually" is always the last row once something is typed (R12.5).
     out.push({ label: "Can't find it?", options: [{ kind: "add", text: typed }] });
     return out;
-  }, [typed, term, suggest.data, cityData]);
+  }, [typed, term, suggest.data, cityData, spotTerm, spots.data]);
 
   const flat = groups.flatMap((g) => g.options);
   const placeCount = flat.filter((o) => o.kind !== "add").length;
@@ -122,6 +138,9 @@ export default function SearchBar({
     } else if (o.kind === "sub") {
       setText("");
       onPickSubcategory(o.sub);
+    } else if (o.kind === "spot") {
+      setText(o.spot.name);
+      onPickSpot(o.spot);
     } else if (o.kind === "place") {
       setText(o.place.name);
       track("place_open", "search");
@@ -243,6 +262,20 @@ function OptionBody({ option: o }: { option: Option }) {
         ) : null}
       </>
     );
+  if (o.kind === "spot") {
+    return (
+      <>
+        <span aria-hidden="true">{o.spot.kind === "station" ? "🚉" : "🗺️"}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-bold">{o.spot.name}</span>
+          <span className="block truncate text-xs text-muted">
+            {o.spot.kind === "station" ? "Station" : "Area"}
+            {o.spot.detail ? ` · ${o.spot.detail}` : ""}
+          </span>
+        </span>
+      </>
+    );
+  }
   if (o.kind === "sub") {
     const info = topCategoryInfo(o.sub.top_category);
     return (

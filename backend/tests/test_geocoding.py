@@ -178,3 +178,63 @@ def test_parse_photon_skips_malformed_features():
     ]
     out = parse_photon({"features": [*bad, good]})
     assert [(r.name, r.lat, r.lng, r.address) for r in out] == [("Cafe A", 35.6, 139.7, None)]
+
+
+# --- Area lookup for the map search bar (R12.7) ------------------------------------------------
+
+AREA_BODY = {
+    "features": [
+        {
+            "geometry": {"coordinates": [139.7583, 35.6663]},
+            "properties": {
+                "name": "Shimbashi",
+                "osm_key": "railway",
+                "osm_value": "station",
+                "district": "Minato",
+                "city": "Tokyo",
+                "countrycode": "JP",
+            },
+        },
+        {
+            "geometry": {"coordinates": [139.7584, 35.6664]},
+            "properties": {
+                "name": "Shimbashi",
+                "osm_key": "public_transport",
+                "osm_value": "station",
+            },
+        },
+        {
+            "geometry": {"coordinates": [139.757, 35.667]},
+            "properties": {
+                "name": "Shinbashi",
+                "osm_key": "place",
+                "osm_value": "quarter",
+                "city": "Tokyo",
+            },
+        },
+        {
+            "geometry": {"coordinates": [139.75, 35.66]},
+            "properties": {"name": "Some Cafe", "osm_key": "amenity", "osm_value": "cafe"},
+        },
+    ]
+}
+
+
+async def test_area_lookup_is_public_and_flies_to_areas_and_stations(client, geocoder_stub):
+    geocoder_stub.body = AREA_BODY
+    r = await client.get("/api/geo/areas", params={"q": "shimbashi", "lat": 35.68, "lng": 139.76})
+    assert r.status_code == 200, r.text
+    results = r.json()["results"]
+    assert [(x["name"], x["kind"], x["zoom"]) for x in results] == [
+        ("Shimbashi", "station", 16),  # the duplicate station is dropped
+        ("Shinbashi", "area", 15),
+    ]
+    assert results[0]["detail"] == "Minato, Tokyo"
+    call = geocoder_stub.calls[0]
+    assert call.path == "/lookup" and call.params["q"] == "shimbashi"
+
+
+async def test_area_lookup_failure_is_empty(client, geocoder_stub):
+    geocoder_stub.status = 500
+    r = await client.get("/api/geo/areas", params={"q": "nowhere"})
+    assert r.status_code == 200 and r.json() == {"results": []}

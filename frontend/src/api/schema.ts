@@ -235,6 +235,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/geo/areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lookup Areas
+         * @description Neighbourhoods, districts and stations by name (e.g. "Shimbashi") so the map search bar
+         *     can fly there (R12.7). Public; cached; empty `results` when the lookup service is down.
+         */
+        get: operations["lookupAreas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/geocode/reverse": {
         parameters: {
             query?: never;
@@ -892,6 +913,32 @@ export interface components {
         AddressSearchResponse: {
             /** Results */
             results: components["schemas"]["AddressResult"][];
+        };
+        /** AreaLookupResponse */
+        AreaLookupResponse: {
+            /** Results */
+            results: components["schemas"]["AreaLookupResult"][];
+        };
+        /**
+         * AreaLookupResult
+         * @description An area or station found by name in OpenStreetMap, for the map search bar (R12.7).
+         */
+        AreaLookupResult: {
+            /** Name */
+            name: string;
+            /** Detail */
+            detail: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "area" | "station";
+            /** Lat */
+            lat: number;
+            /** Lng */
+            lng: number;
+            /** Zoom */
+            zoom: number;
         };
         /** BookmarkList */
         BookmarkList: {
@@ -2514,6 +2561,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlaceLookupResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lookupAreas: {
+        parameters: {
+            query: {
+                q: string;
+                lat?: number | null;
+                lng?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AreaLookupResponse"];
                 };
             };
             /** @description Validation Error */

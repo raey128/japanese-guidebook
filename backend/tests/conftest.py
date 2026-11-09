@@ -121,6 +121,7 @@ def geocoder_stub() -> Iterator[GeocoderStub]:
     settings = get_settings()
     previous = settings.geocoder_url, settings.geocoder_search_url, settings.place_lookup_url
     geocoding._lookup_cache.clear()
+    geocoding._area_cache.clear()
     with GeocoderStub() as stub:
         settings.geocoder_url = stub.url
         settings.geocoder_search_url = stub.url.replace("/reverse", "/search")

@@ -115,3 +115,19 @@ export function usePendingCount(enabled: boolean) {
     queryFn: async () => unwrap(await api.GET("/api/admin/pending/count")),
   });
 }
+
+/** Areas and stations by name from OpenStreetMap (R12.7), nearest to `near` first. */
+export function useAreaLookup(q: string, near: { lat: number; lng: number } | null) {
+  const term = q.trim();
+  const lat = near ? Number(near.lat.toFixed(2)) : undefined;
+  const lng = near ? Number(near.lng.toFixed(2)) : undefined;
+  return useQuery({
+    queryKey: ["areaLookup", term.toLowerCase(), lat, lng],
+    enabled: term.length >= 2,
+    staleTime: 10 * 60_000,
+    retry: false,
+    placeholderData: keepPreviousData,
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET("/api/geo/areas", { signal, params: { query: { q: term, lat, lng } } })),
+  });
+}

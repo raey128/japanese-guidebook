@@ -9,6 +9,7 @@ import { PlusIcon } from "../components/ui/icons";
 import Loading from "../components/ui/Loading";
 import { COPY } from "../copy";
 import { useMe } from "../hooks/auth";
+import { useWheelScrollX } from "../lib/useWheelScrollX";
 
 export type ListsTab = "all" | "mine" | "want_to_go";
 
@@ -24,6 +25,7 @@ export function parseTab(v: string | null): ListsTab {
 
 /** One Beli-style Lists tab: public lists, my rankings and want-to-go in one place (R14). */
 export default function Lists() {
+  const wheelRow = useWheelScrollX<HTMLDivElement>();
   const [sp, setSp] = useSearchParams();
   const tab = parseTab(sp.get("tab"));
   const me = useMe();
@@ -50,7 +52,7 @@ export default function Lists() {
       <h1 className="sr-only">Lists</h1>
       {/* Segments on the left, Add a place on the right, on one line. */}
       <div className="flex items-center gap-3">
-        <div role="group" aria-label="List" className="flex min-w-0 flex-1 gap-2 overflow-x-auto py-1">
+        <div ref={wheelRow} role="group" aria-label="List" className="flex min-w-0 flex-1 gap-2 overflow-x-auto py-1">
           {TABS.map((t) => (
             <Chip key={t.value} pressed={tab === t.value} onClick={() => select(t.value)}>
               {t.label}

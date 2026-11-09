@@ -25,6 +25,8 @@ from app.schemas.common import Message, MyRanking, PlaceDetail
 from app.schemas.places import (
     AddressResult,
     AddressSearchResponse,
+    AreaLookupResponse,
+    AreaLookupResult,
     DuplicateCheckResponse,
     OutsideCoverageError,
     PlaceCheckRequest,
@@ -267,6 +269,34 @@ async def lookup_place(
                 lng=r.lng,
                 kind=r.kind,
                 subcategory_id=slugs.get(r.slug) if r.slug else None,
+            )
+            for r in results
+        ]
+    )
+
+
+@router.get(
+    "/geo/areas",
+    response_model=AreaLookupResponse,
+    operation_id="lookupAreas",
+)
+async def lookup_areas(
+    q: Annotated[str, Query(min_length=2, max_length=120)],
+    lat: Annotated[float | None, Query(ge=-90, le=90)] = None,
+    lng: Annotated[float | None, Query(ge=-180, le=180)] = None,
+) -> AreaLookupResponse:
+    """Neighbourhoods, districts and stations by name (e.g. "Shimbashi") so the map search bar
+    can fly there (R12.7). Public; cached; empty `results` when the lookup service is down."""
+    results = await geocoding.lookup_areas(q, lat, lng)
+    return AreaLookupResponse(
+        results=[
+            AreaLookupResult(
+                name=r.name,
+                detail=r.detail,
+                kind=r.kind,  # type: ignore[arg-type]
+                lat=r.lat,
+                lng=r.lng,
+                zoom=r.zoom,
             )
             for r in results
         ]

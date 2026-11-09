@@ -12,6 +12,7 @@ import CityPicker from "../ui/CityPicker";
 import EmptyState from "../ui/EmptyState";
 import ErrorState from "../ui/ErrorState";
 import Loading from "../ui/Loading";
+import { useWheelScrollX } from "../../lib/useWheelScrollX";
 
 type Featured = Schemas["FeaturedList"];
 
@@ -75,6 +76,7 @@ function ListCard({ list, city }: { list: Featured; city: string }) {
  * top and every kind in it. `city` and `category` are in the URL so lists are linkable.
  */
 export default function AllLists() {
+  const wheelRow = useWheelScrollX<HTMLDivElement>();
   const [sp, setSp] = useSearchParams();
   const cities = useCities();
   const cityList = Array.isArray(cities.data) ? cities.data : [];
@@ -104,7 +106,7 @@ export default function AllLists() {
           update({ city: slug });
         }}
       />
-      <div role="group" aria-label="Category" className="flex gap-2 overflow-x-auto pb-1">
+      <div ref={wheelRow} role="group" aria-label="Category" className="flex gap-2 overflow-x-auto pb-1">
         <Chip pressed={category === ""} emoji="🏆" onClick={() => update({ category: "" })}>
           Overall Ranking
         </Chip>

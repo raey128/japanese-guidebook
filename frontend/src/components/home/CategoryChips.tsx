@@ -1,6 +1,7 @@
 import type { Schemas } from "../../api/client";
 import { TOP_CATEGORY_INFO, topCategoryInfo } from "../../lib/categories";
 import Chip from "../ui/Chip";
+import { useWheelScrollX } from "../../lib/useWheelScrollX";
 
 /**
  * Single-select category chips (R11.5): 4 top categories in their pin colours, then the active
@@ -25,9 +26,12 @@ export default function CategoryChips({
   const activeSub = subcategories.find((s) => s.slug === category);
   const activeTop = topCategoryInfo(category)?.slug ?? activeSub?.top_category ?? "";
   const subs = subcategories.filter((s) => s.top_category === activeTop);
+  // Mouse wheels scroll these rows sideways.
+  const topRow = useWheelScrollX<HTMLDivElement>();
+  const subRow = useWheelScrollX<HTMLDivElement>();
   return (
     <div className="space-y-2">
-      <div role="group" aria-label="Category" className="flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+      <div ref={topRow} role="group" aria-label="Category" className="flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
         {showSaved ? (
           <Chip pressed={savedOnly} onClick={() => onSavedOnly(!savedOnly)} className="shadow-sm">
             Saved
@@ -48,7 +52,7 @@ export default function CategoryChips({
         ))}
       </div>
       {activeTop ? (
-        <div role="group" aria-label="Subcategory" className="flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+        <div ref={subRow} role="group" aria-label="Subcategory" className="flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
           {subs.map((s) => {
             const info = topCategoryInfo(s.top_category);
             return (

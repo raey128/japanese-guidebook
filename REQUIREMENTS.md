@@ -149,6 +149,7 @@ _The map is now the home screen (R11). Picking an area moves the map there and n
 | R12.4 | Picking a place suggestion shows it on the map | If needed the map flies to the place (zoom ≥ 16), then highlights its pin and opens its summary (R6.2) |
 | R12.5 | "Add manually" is always the last row | The row is there once at least 1 character is typed, even when other suggestions show, and reads "Can't find it? Add '<typed text>' manually". It starts R13 |
 | R12.6 | Searching is open to everyone; adding is not | Logged-out users get suggestions. Picking "Add manually" while logged out sends them to sign in, then back into R13 with the name kept |
+| R12.7 | Any neighbourhood or station name flies the map there | Typing a name that isn't one of our areas (e.g. "Shimbashi") shows "Go to on the map" suggestions from OpenStreetMap (areas 🗺️ and stations 🚉, nearest first, up to 5); picking one moves the map there at a sensible zoom (station 16, neighbourhood 15, district 14). If the lookup is down, the rest of search still works |
 
 ### R13: Manual add with admin approval `⬜ new`
 

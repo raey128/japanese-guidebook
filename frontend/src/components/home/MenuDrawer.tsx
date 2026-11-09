@@ -5,6 +5,7 @@ import { COPY } from "../../copy";
 import { useMe, useSignOut } from "../../hooks/auth";
 import { usePendingCount } from "../../hooks/map";
 import LicenceNotice from "../LicenceNotice";
+import { GearIcon } from "../ui/icons";
 import { Legend } from "./CategoryChips";
 
 /** Navigation behind a menu button over the map (R11.2). Admins see a pending-review dot (R13.9). */
@@ -41,13 +42,11 @@ export default function MenuDrawer() {
         onClick={() => setOpen(true)}
         className="btn btn-secondary btn-icon relative size-14 shrink-0 shadow-lg"
       >
-        <span aria-hidden="true" className="text-3xl leading-none">
-          ⚙️
-        </span>
+        <GearIcon className="size-8" />
         {count > 0 ? <span aria-hidden="true" className="absolute -right-1 -top-1 size-3.5 rounded-full border-2 border-white bg-brand" /> : null}
       </button>
       {open ? (
-        <div className="fixed inset-0 z-40 bg-black/30" onClick={close}>
+        <div className="fixed inset-0 z-40 flex justify-end bg-black/30" onClick={close}>
           <div
             ref={panelRef}
             role="dialog"
@@ -57,7 +56,7 @@ export default function MenuDrawer() {
             onKeyDown={(e) => {
               if (e.key === "Escape") close();
             }}
-            className="flex h-full w-80 max-w-[85vw] flex-col gap-1 overflow-y-auto border-r-2 border-line bg-white p-4"
+            className="flex h-full w-80 max-w-[85vw] flex-col gap-1 overflow-y-auto border-l-2 border-line bg-white p-4"
           >
             <div className="flex items-center justify-between pb-2">
               <p className="text-xl font-extrabold text-brand">{COPY.appName}</p>

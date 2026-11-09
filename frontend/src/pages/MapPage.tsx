@@ -446,8 +446,11 @@ export default function MapPage() {
 
       {/* Top overlay: menu + search bar, then category chips (hidden while adding a place). */}
       <div className={`pointer-events-none absolute inset-x-0 top-0 z-20 space-y-2 pt-3 ${showAdd ? "hidden" : ""}`}>
-        <div className="pointer-events-auto mx-auto flex max-w-2xl items-start gap-2 px-3">
+        {/* Settings sits top-right, its right edge in line with the zoom buttons below it. */}
+        <div className="pointer-events-auto absolute right-3 top-3 z-30">
           <MenuDrawer />
+        </div>
+        <div className="pointer-events-auto mx-auto flex max-w-2xl items-start gap-2 pl-3 pr-[4.75rem] min-[860px]:pr-3">
           <div className="min-w-0 flex-1">
             <SearchBar
               cities={cityList}
@@ -459,6 +462,7 @@ export default function MapPage() {
               onPickArea={pickArea}
               onPickSubcategory={(s) => setParam({ category: s.slug })}
               onPickPlace={(p) => selectPlace(p, "search")}
+              onPickSpot={(spot) => goTo(spot.lng, spot.lat, spot.zoom)}
               onAddManually={(text) => startAdd({ source: "manual", name: text })}
               onOpenChange={(open) => {
                 if (open && window.innerWidth < 640) setPicksOpen(false);
