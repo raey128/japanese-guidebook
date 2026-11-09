@@ -1,7 +1,7 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Map, { AttributionControl, Marker, NavigationControl, type MapRef } from "react-map-gl/maplibre";
+import Map, { AttributionControl, Marker, type MapRef } from "react-map-gl/maplibre";
 import { useSearchParams } from "react-router";
 
 import type { Schemas } from "../api/client";
@@ -13,7 +13,7 @@ import CategoryChips from "../components/home/CategoryChips";
 import MenuDrawer from "../components/home/MenuDrawer";
 import PlacePin from "../components/home/PlacePin";
 import SearchBar from "../components/home/SearchBar";
-import TopPicksSheet from "../components/home/TopPicksSheet";
+import TopPicksPanel, { loadPicksOpen, savePicksOpen } from "../components/home/TopPicksPanel";
 import { createLongPress, roundBbox, type Bbox, type LatLng } from "../components/map/geo";
 import PinSummary from "../components/map/PinSummary";
 import { CLUSTER_MAX_ZOOM, DEFAULT_VIEW, TILE_STYLE_URL } from "../config";
@@ -73,7 +73,11 @@ export default function MapPage() {
     return id ? { id, source: "list" } : null;
   });
   const [mapReady, setMapReady] = useState(false);
-  const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [picksOpen, setPicksOpenState] = useState(loadPicksOpen);
+  const setPicksOpen = useCallback((v: boolean) => {
+    setPicksOpenState(v);
+    savePicksOpen(v);
+  }, []);
   const [userLoc, setUserLoc] = useState<LatLng | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   // Add a place happens right here on the map (R13.12): `?add=1` opens the panel, `addPin` is the one pin.
@@ -264,7 +268,6 @@ export default function MapPage() {
   const selectPlace = useCallback(
     (place: { id: number; lat: number; lng: number }, source: Source) => {
       setSelected({ id: place.id, source });
-      setSheetExpanded(false);
       const map = mapRef.current;
       if (map) goTo(place.lng, place.lat, Math.max(map.getZoom(), PLACE_ZOOM));
     },
@@ -361,7 +364,6 @@ export default function MapPage() {
           onDragStart={() => longPress.cancel()}
           onZoomStart={() => longPress.cancel()}
         >
-          <NavigationControl position="top-right" showCompass={false} />
           <AttributionControl position="top-right" compact />
 
           {showAdd && addPin ? (
@@ -432,7 +434,6 @@ export default function MapPage() {
                   showScore={showScores}
                   onSelect={() => {
                     setSelected({ id: p.id, source: "pin" });
-                    setSheetExpanded(false);
                     track("place_open", "pin");
                   }}
                 />
@@ -458,7 +459,7 @@ export default function MapPage() {
               onPickPlace={(p) => selectPlace(p, "search")}
               onAddManually={(text) => startAdd({ source: "manual", name: text })}
               onOpenChange={(open) => {
-                if (open) setSheetExpanded(false);
+                if (open && window.innerWidth < 640) setPicksOpen(false);
               }}
             />
           </div>
@@ -492,7 +493,51 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* Bottom overlay: floating buttons sit above the sheet / place summary, never on top of them. */}
+      {/* Zoom controls, always there (R13.14): in, out, and back to the whole city. */}
+      <div
+        role="group"
+        aria-label="Map zoom"
+        className="absolute right-3 z-20 flex flex-col overflow-hidden rounded-(--radius-chunky) border-2 border-b-4 border-line bg-white shadow-lg"
+        style={{ top: showAdd ? "1rem" : "9.5rem" }}
+      >
+        <button type="button" aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()} className="flex size-11 items-center justify-center text-2xl font-extrabold hover:bg-stone-100">
+          <span aria-hidden="true">+</span>
+        </button>
+        <button type="button" aria-label="Zoom out" onClick={() => mapRef.current?.zoomOut()} className="flex size-11 items-center justify-center border-t-2 border-line text-2xl font-extrabold hover:bg-stone-100">
+          <span aria-hidden="true">−</span>
+        </button>
+        <button
+          type="button"
+          aria-label={`Show all of ${cityData?.name ?? "the city"}`}
+          title={`Show all of ${cityData?.name ?? "the city"}`}
+          onClick={() => {
+            if (cityData) goTo(cityData.lng, cityData.lat, CITY_ZOOM);
+          }}
+          className="flex size-11 items-center justify-center border-t-2 border-line text-xl hover:bg-stone-100"
+        >
+          <span aria-hidden="true">🗾</span>
+        </button>
+      </div>
+
+      {/* Top picks: a side panel you can hide (R15.6). */}
+      {!showAdd ? (
+        <div className="pointer-events-none absolute left-0 z-10 flex items-start" style={{ top: "9.5rem", bottom: "5.5rem" }}>
+          <TopPicksPanel
+            data={picks.data}
+            open={picksOpen}
+            onOpenChange={setPicksOpen}
+            userLoc={userLoc}
+            onPick={(p) => {
+              track("place_open", pickSource);
+              selectPlace(p, pickSource);
+              if (window.innerWidth < 640) setPicksOpen(false);
+            }}
+            onAddPlace={() => startAdd()}
+          />
+        </div>
+      ) : null}
+
+      {/* Bottom overlay: floating buttons sit above the place summary, never on top of it. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 mx-auto flex max-w-2xl flex-col">
         {showAdd ? (
           <div
@@ -527,15 +572,6 @@ export default function MapPage() {
           </div>
         ) : null}
         <div className={`flex items-end gap-2 px-3 pb-3 ${showAdd ? "hidden" : ""}`}>
-          {(view?.zoom ?? 0) >= SCORE_ZOOM && cityData ? (
-            <button
-              type="button"
-              onClick={() => goTo(cityData.lng, cityData.lat, CITY_ZOOM)}
-              className="pointer-events-auto btn btn-secondary shadow-lg"
-            >
-              <span aria-hidden="true">🗾</span> All {cityData.name}
-            </button>
-          ) : null}
           <span className="flex-1" />
           <button type="button" onClick={nearMe} className="pointer-events-auto btn btn-secondary shadow-lg">
             <span aria-hidden="true">📍</span> {COPY.nearMe}
@@ -558,19 +594,7 @@ export default function MapPage() {
               saveSource={selected.source === "near_me" ? "top_pick" : selected.source}
             />
           </div>
-        ) : (
-          <TopPicksSheet
-            data={picks.data}
-            expanded={sheetExpanded}
-            onExpandedChange={setSheetExpanded}
-            userLoc={userLoc}
-            onPick={(p) => {
-              track("place_open", pickSource);
-              selectPlace(p, pickSource);
-            }}
-            onAddPlace={() => startAdd()}
-          />
-        )}
+        ) : null}
       </div>
     </div>
   );

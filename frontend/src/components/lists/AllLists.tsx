@@ -1,89 +1,109 @@
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
-import { TOP_CATEGORIES, useCities, useSubcategories } from "../../hooks/lists";
+import type { Schemas } from "../../api/client";
+import { useCities, useFeaturedLists } from "../../hooks/lists";
 import { topCategoryInfo } from "../../lib/categories";
-import Chip from "../ui/Chip";
 import { getLastCity, setLastCity } from "../../lib/lastCity";
-import PublicListView from "./PublicListView";
+import Badges from "../Badges";
+import PlaceNames from "../PlaceNames";
+import Score from "../Score";
+import Chip from "../ui/Chip";
+import EmptyState from "../ui/EmptyState";
+import ErrorState from "../ui/ErrorState";
+import Loading from "../ui/Loading";
 
+type Featured = Schemas["FeaturedList"];
+
+function emojiFor(list: Featured): string {
+  if (list.kind === "all") return "🏆";
+  return topCategoryInfo(list.top_category)?.emoji ?? "📋";
+}
+
+/** One list on the Lists tab: its top places, and "See all" for the full ranked list. */
+function ListCard({ list, city }: { list: Featured; city: string }) {
+  const info = topCategoryInfo(list.top_category);
+  const headingId = `list-${list.key}`;
+  return (
+    <section aria-labelledby={headingId} className="card space-y-2 p-0">
+      <div
+        className="flex items-center justify-between gap-2 rounded-t-[calc(var(--radius-card)-2px)] px-4 py-3"
+        style={{ background: info ? `color-mix(in srgb, ${info.color} 12%, white)` : "var(--color-brand-soft)" }}
+      >
+        <h2 id={headingId} className="text-lg font-extrabold">
+          <span aria-hidden="true">{emojiFor(list)} </span>
+          {list.title}
+        </h2>
+        <Link to={`/lists/${city}/${list.key}`} className="link shrink-0 text-sm">
+          See all {list.total}
+          <span className="sr-only">: {list.title}</span>
+        </Link>
+      </div>
+      <ol className="px-4 pb-3">
+        {list.items.map((p) => (
+          <li key={p.id} className="flex items-center gap-3 border-b-2 border-line py-2 last:border-b-0">
+            <span className="w-6 text-right text-lg font-extrabold text-brand">
+              <span aria-hidden="true">{p.rank ?? "·"}</span>
+              <span className="sr-only">{p.rank ? `Rank ${p.rank}` : "Not ranked yet"}</span>
+            </span>
+            <div className="min-w-0 flex-1">
+              <Link to={`/?place=${p.id}`} className="font-bold underline-offset-2 hover:underline">
+                <PlaceNames name={p.name} nameJa={p.name_ja} as="span" />
+              </Link>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <Score score={p.public_score} rankerCount={p.ranker_count} />
+                <Badges badges={p.badges} />
+                <span className="hint">
+                  {list.kind === "sub" ? "" : `${p.subcategory.name} · `}
+                  {p.location.is_catch_all ? p.city.name : p.location.name}
+                </span>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+      {list.ranked === 0 ? (
+        <p className="px-4 pb-3 text-sm text-muted">Nobody has rated these yet. Rate one you've been to and it'll lead the list!</p>
+      ) : null}
+    </section>
+  );
+}
 
 /**
- * Public ranked lists (R14.2): city → top category → optional subcategory.
- * State lives in the URL (`city`, `category`) so lists are linkable.
+ * The Lists tab (R14.7): ready-made rankings for a city, "Top rated in Tokyo", then each
+ * category ("Top Food in Tokyo") and the busiest kinds ("Top Ramen in Tokyo"). The city is in
+ * the URL (`city`) so it's linkable.
  */
 export default function AllLists() {
   const [sp, setSp] = useSearchParams();
   const cities = useCities();
-  const subs = useSubcategories();
   const cityList = Array.isArray(cities.data) ? cities.data : [];
-  const subList = Array.isArray(subs.data) ? subs.data : [];
-
   const city = sp.get("city") || getLastCity();
-  const category = sp.get("category") || TOP_CATEGORIES[0]!.slug;
-  const top = TOP_CATEGORIES.some((t) => t.slug === category)
-    ? category
-    : (subList.find((s) => s.slug === category)?.top_category ?? TOP_CATEGORIES[0]!.slug);
+  const featured = useFeaturedLists(city);
 
-  const update = (changes: Record<string, string>) => {
+  const chooseCity = (slug: string) => {
+    setLastCity(slug);
     const next = new URLSearchParams(sp);
-    for (const [k, v] of Object.entries(changes)) next.set(k, v);
+    next.set("city", slug);
     setSp(next, { replace: true });
   };
 
   return (
     <div className="space-y-4">
-      <div>
-        <label htmlFor="lists-city" className="label">
-          City
-        </label>
-        <select
-          id="lists-city"
-          value={city}
-          onChange={(e) => {
-            setLastCity(e.target.value);
-            update({ city: e.target.value });
-          }}
-          className="field"
-        >
-          {cityList.map((c) => (
-            <option key={c.id} value={c.slug}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+      <div role="group" aria-label="City" className="flex gap-2 overflow-x-auto pb-1">
+        {cityList.map((c) => (
+          <Chip key={c.id} pressed={c.slug === city} onClick={() => chooseCity(c.slug)}>
+            {c.name}
+          </Chip>
+        ))}
       </div>
-
-      <div role="group" aria-label="Category" className="flex flex-wrap gap-2">
-        {TOP_CATEGORIES.map((t) => {
-          const info = topCategoryInfo(t.slug);
-          return (
-            <Chip
-              key={t.slug}
-              pressed={top === t.slug}
-              emoji={info?.emoji}
-              color={info?.color}
-              colorDark={info?.colorDark}
-              onClick={() => update({ category: t.slug })}
-            >
-              {t.name}
-            </Chip>
-          );
-        })}
+      {featured.isPending ? <Loading /> : null}
+      {featured.isError ? <ErrorState onRetry={() => void featured.refetch()} /> : null}
+      {featured.data && featured.data.lists.length === 0 ? (
+        <EmptyState emoji="🌱" title={`No places in ${featured.data.city.name} yet.`} />
+      ) : null}
+      <div className="grid gap-4 md:grid-cols-2">
+        {featured.data?.lists.map((l) => <ListCard key={l.key} list={l} city={city} />)}
       </div>
-      <div role="group" aria-label="Subcategory" className="flex flex-wrap gap-2">
-        <Chip pressed={category === top} onClick={() => update({ category: top })}>
-          All {TOP_CATEGORIES.find((t) => t.slug === top)?.name}
-        </Chip>
-        {subList
-          .filter((s) => s.top_category === top)
-          .map((s) => (
-            <Chip key={s.id} pressed={category === s.slug} onClick={() => update({ category: s.slug })}>
-              {s.name}
-            </Chip>
-          ))}
-      </div>
-
-      <PublicListView city={city} category={category} headingLevel={2} showOnMap />
     </div>
   );
 }

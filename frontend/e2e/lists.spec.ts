@@ -50,3 +50,12 @@ test("logged out: All works, personal segments ask to sign in", async ({ page })
   await expect(page.getByText("to see your lists.")).toBeVisible();
   await expect(signIn).toHaveAttribute("href", "/sign-in?next=%2Flists%3Ftab%3Dwant_to_go");
 });
+
+test("the Lists tab shows ready-made rankings for the city (R14.7)", async ({ page }) => {
+  await page.goto("/lists?city=tokyo");
+  await expect(page.getByRole("heading", { level: 2, name: "Top rated in Tokyo" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Top Food in Tokyo" })).toBeVisible();
+  await page.getByRole("link", { name: /See all .*Top rated in Tokyo/ }).click();
+  await expect(page).toHaveURL(/\/lists\/tokyo\/all$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Top rated in Tokyo" })).toBeVisible();
+});

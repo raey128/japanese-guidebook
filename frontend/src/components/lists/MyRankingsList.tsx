@@ -52,7 +52,7 @@ export default function MyRankingsList() {
                       {b.items.map((it) => (
                         <li key={it.ranking_id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
                           <span className="w-6 text-right text-lg font-extrabold text-brand">{it.position}</span>
-                          <Link className="min-w-0 flex-1 hover:underline" to={`/places/${it.place_id}`}>
+                          <Link className="min-w-0 flex-1 hover:underline" to={`/?place=${it.place_id}`}>
                             <PlaceNames name={it.name} nameJa={it.name_ja} as="span" />
                           </Link>
                           {it.rating ? <Stars rating={it.rating} className="text-sm" /> : null}
@@ -60,7 +60,7 @@ export default function MyRankingsList() {
                           <Badges badges={it.badges} />
                           <ShowOnMapLink placeId={it.place_id} name={it.name} />
                           <Link className="btn btn-secondary btn-sm" to={`/places/${it.place_id}/rank`}>
-                            Re-rank<span className="sr-only"> {it.name}</span>
+                            Re-rate<span className="sr-only"> {it.name}</span>
                           </Link>
                           <button
                             type="button"

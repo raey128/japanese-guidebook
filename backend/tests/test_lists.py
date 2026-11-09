@@ -45,10 +45,17 @@ async def test_sorted_by_score_then_unranked_last_by_name(client, db):
 async def test_top_category_rollup_and_location_filter(client, db):
     maker = await make_user(db, "maker")
     ramen = await make_place(db, name="Asakusa Ramen", creator=maker)
-    cafe = await make_place(db, name="Shibuya Cafe", creator=maker, subcategory_slug="cafe",
-                            location_slug="shibuya-harajuku")
+    cafe = await make_place(
+        db,
+        name="Shibuya Cafe",
+        creator=maker,
+        subcategory_slug="cafe",
+        location_slug="shibuya-harajuku",
+    )
     temple = await make_place(db, name="Old Temple", creator=maker, subcategory_slug="temple")
-    kyoto = await make_place(db, name="Kyoto Ramen", creator=maker, location_slug="gion-higashiyama")
+    kyoto = await make_place(
+        db, name="Kyoto Ramen", creator=maker, location_slug="gion-higashiyama"
+    )
     await sign_in(client, "alice")
     for p in (ramen, cafe, temple, kyoto):
         await rank(client, p, "liked", 1)
@@ -75,7 +82,9 @@ async def test_empty_list_and_unknown_slugs(client, db):
     assert out["title"] == "Hostel in Kyoto"
     assert (await client.get("/api/lists/atlantis/ramen")).status_code == 404
     assert (await client.get("/api/lists/tokyo/not-a-category")).status_code == 404
-    assert (await client.get("/api/lists/tokyo/ramen", params={"location": "nowhere"})).status_code == 404
+    assert (
+        await client.get("/api/lists/tokyo/ramen", params={"location": "nowhere"})
+    ).status_code == 404
     # A real location in another city doesn't match.
     other = await client.get("/api/lists/tokyo/ramen", params={"location": "gion-higashiyama"})
     assert other.status_code == 404
@@ -134,3 +143,39 @@ async def test_hidden_places_do_not_move_the_prior_in_lists(client, db):
     out = await get_list(client, "tokyo", "ramen")
     assert [i["name"] for i in out["items"]] == ["Visible"]
     assert out["items"][0]["public_score"] == pytest.approx(1.7, abs=0.006)
+
+
+# --- "all" and the Lists tab's featured lists (R14.7) ------------------------------------------
+
+
+async def test_all_categories_list(client, db):
+    maker = await make_user(db, "all_maker")
+    ramen = await make_place(db, name="All Ramen", creator=maker)
+    await make_place(db, name="All Temple", creator=maker, subcategory_slug="temple")
+    await sign_in(client, "all_u")
+    await rank(client, ramen, "liked", 1)
+    out = await get_list(client, "tokyo", "all")
+    assert out["title"] == "Top rated in Tokyo"
+    assert out["top_category"] is None and out["subcategory"] is None
+    assert [i["name"] for i in out["items"]] == ["All Ramen", "All Temple"]
+
+
+async def test_featured_lists_for_the_lists_tab(client, db):
+    maker = await make_user(db, "feat_maker")
+    r1 = await make_place(db, name="Feat Ramen 1", creator=maker)
+    await make_place(db, name="Feat Ramen 2", creator=maker)
+    await make_place(db, name="Feat Temple", creator=maker, subcategory_slug="temple")
+    await make_place(db, name="Kyoto Only", creator=maker, location_slug="gion-higashiyama")
+    await sign_in(client, "feat_u")
+    await rank(client, r1, "liked", 1)
+
+    r = await client.get("/api/lists/tokyo")
+    assert r.status_code == 200, r.text
+    lists = r.json()["lists"]
+    keys = [(x["key"], x["kind"]) for x in lists]
+    assert keys == [("all", "all"), ("food", "top"), ("sights", "top"), ("ramen", "sub")]
+    assert lists[0]["title"] == "Top rated in Tokyo" and lists[0]["total"] == 3
+    assert lists[1]["title"] == "Top Food in Tokyo" and lists[1]["ranked"] == 1
+    assert lists[3]["title"] == "Top Ramen in Tokyo"
+    assert lists[3]["items"][0]["name"] == "Feat Ramen 1" and lists[3]["items"][0]["rank"] == 1
+    assert (await client.get("/api/lists/atlantis")).status_code == 404

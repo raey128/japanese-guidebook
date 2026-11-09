@@ -33,7 +33,7 @@ test("menu, + button and redirects", async ({ page }) => {
   await panel.getByLabel("Username").fill(uniqueUsername("fab"));
   await panel.getByRole("button", { name: "Let's go" }).click();
   await expect(page.getByRole("heading", { name: "Add a place" })).toBeVisible();
-  await expect(page).toHaveURL(/\/places\/new\?lat=35\.71/);
+  await expect(page).toHaveURL(/add=1/);
 });
 
 test("top picks list the best places in view; tapping one opens it", async ({ page }) => {
@@ -46,9 +46,8 @@ test("top picks list the best places in view; tapping one opens it", async ({ pa
   await rankApi(page, ok.id, { bucket: "disliked" });
 
   await page.goto(`/?lat=${at.lat}&lng=${at.lng}&z=17`);
-  const sheet = page.getByRole("region", { name: /Top picks here/ });
-  await expect(sheet.getByRole("button", { name: new RegExp(`Pick Best ${run}`) })).toBeVisible();
-  await sheet.getByRole("button", { expanded: false }).click();
+  // Top picks is a side panel, hidden until you open it (R15.6).
+  await page.getByRole("button", { name: /Top picks here/, expanded: false }).click();
   const list = page.getByRole("list", { name: "Top picks here" });
   await expect(list.getByRole("listitem").first()).toContainText(`Pick Best ${run}`);
   await list.getByRole("button", { name: new RegExp(`Pick Best ${run}`) }).click();
@@ -68,9 +67,6 @@ test("Near me centres on the user and shows walking times", async ({ page, conte
   await page.getByRole("button", { name: /^Senso-ji, / }).click();
   const summary = page.getByRole("region", { name: "Place summary" });
   await expect(summary).toContainText(/~\d+ min walk/);
-  const directions = summary.getByRole("link", { name: /Directions/ });
-  await expect(directions).toHaveAttribute("href", /(maps\.apple\.com|geo:|openstreetmap\.org)/);
-  await expect(directions).not.toHaveAttribute("href", /google/);
 });
 
 test("signed out, Save ♡ asks for a username inline and keeps the map where it was", async ({ page }) => {

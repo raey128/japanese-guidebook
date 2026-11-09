@@ -28,8 +28,21 @@ function stubApi(user: unknown = null) {
           return json([{ id: 1, slug: "ramen", name: "Ramen", top_category: "food" }]);
         default:
           if (url.pathname.startsWith("/api/lists/")) {
-            const [, , , city, category] = url.pathname.split("/");
-            return json({ title: `${category} in ${city}`, city: tokyo, items: [], total: 0, offset: 0, limit: 50 });
+            const [, , , city] = url.pathname.split("/");
+            const c = city === "kyoto" ? kyoto : tokyo;
+            const place = {
+              id: 7, name: `Best in ${c.name}`, name_ja: null, address: null, lat: c.lat, lng: c.lng,
+              subcategory: { id: 1, slug: "ramen", name: "Ramen", top_category: "food" },
+              location: { id: 1, slug: "x", name: "Centre", name_ja: null, city_id: c.id, is_catch_all: true, lat: null, lng: null },
+              city: c, public_score: 8.1, ranker_count: 2, badges: [], status: "live", rank: 1,
+            };
+            return json({
+              city: c,
+              lists: [
+                { key: "all", kind: "all", title: `Top rated in ${c.name}`, top_category: null, total: 1, ranked: 1, items: [place] },
+                { key: "food", kind: "top", title: `Top Food in ${c.name}`, top_category: "food", total: 1, ranked: 1, items: [place] },
+              ],
+            });
           }
           return new Response("not found", { status: 404 });
       }
@@ -64,7 +77,11 @@ test("defaults to the All segment with the last-used city's food list", async ()
   setLastCity("kyoto");
   renderAt("/lists");
   expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
-  expect(await screen.findByRole("heading", { level: 2, name: "food in kyoto" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 2, name: "Top rated in Kyoto" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 2, name: "Top Food in Kyoto" })).toBeInTheDocument();
+  // Each place opens on the map, in the same card as everything else.
+  expect(screen.getAllByRole("link", { name: "Best in Kyoto" })[0]).toHaveAttribute("href", "/?place=7");
+  expect(screen.getByRole("link", { name: /See all 1.*Top rated in Kyoto/ })).toHaveAttribute("href", "/lists/kyoto/all");
 });
 
 test("switching segments updates the URL without leaving the page", async () => {

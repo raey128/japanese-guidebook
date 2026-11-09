@@ -7,6 +7,7 @@ import Dialog from "./moderation/Dialog";
 import { flagErrorMessage } from "./moderation/errors";
 import { buildFlagBody, type FlagType } from "./moderation/flagBody";
 import PinMap from "./PinMap";
+import { FlagIcon } from "./ui/icons";
 
 type Place = Schemas["PlaceSummary"];
 
@@ -26,17 +27,25 @@ const TOP_LABEL: Record<string, string> = {
   experiences: "Experiences",
 };
 
-export default function FlagButton({ place }: { place: Place }) {
+export default function FlagButton({ place, icon = false }: { place: Place; icon?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="btn btn-ghost btn-sm"
-      >
-        Flag
-      </button>
+      {icon ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Flag"
+          title="Report a problem with this place"
+          className="btn btn-ghost btn-sm btn-icon size-10 text-muted"
+        >
+          <FlagIcon />
+        </button>
+      ) : (
+        <button type="button" onClick={() => setOpen(true)} className="btn btn-ghost btn-sm">
+          Flag
+        </button>
+      )}
       {open && <FlagDialog place={place} onClose={() => setOpen(false)} />}
     </>
   );

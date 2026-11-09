@@ -74,9 +74,11 @@ test.describe("ranking flow", () => {
     await page.getByTestId("choose-new").click();
     await page.getByRole("link", { name: "Cancel" }).click();
 
-    await expect(page).toHaveURL(new RegExp(`/places/${target.id}$`));
-    await expect(page.getByRole("button", { name: "Rank", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Your ranking" })).toHaveCount(0);
+    // Back on the map with the place card open.
+    await expect(page).toHaveURL(/^[^?]*\/(\?|$)/);
+    const summary = page.getByRole("region", { name: "Place summary" });
+    await expect(summary.getByRole("button", { name: "Rate", exact: true })).toBeVisible();
+    await expect(summary.getByRole("heading", { name: "Your ranking" })).toHaveCount(0);
     expect((await snapshotApi(page, target.id)).my_ranking).toBeNull();
 
     await page.goto("/lists?tab=mine");

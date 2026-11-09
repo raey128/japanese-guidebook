@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 
 import PublicListView from "../components/lists/PublicListView";
 import { TOP_CATEGORIES, useCities, useSubcategories } from "../hooks/lists";
@@ -17,6 +17,9 @@ export default function RankedList() {
 
   return (
     <div className="space-y-4">
+      <Link to={`/lists?city=${city}`} className="link text-sm">
+        ‹ All lists
+      </Link>
       <div className="flex flex-wrap gap-3">
         <div>
           <label htmlFor="list-category" className="label">
@@ -29,6 +32,7 @@ export default function RankedList() {
             className="field"
           >
             <optgroup label="All of a type">
+              <option value="all">Everything (top rated)</option>
               {TOP_CATEGORIES.map((c) => (
                 <option key={c.slug} value={c.slug}>
                   {c.name}

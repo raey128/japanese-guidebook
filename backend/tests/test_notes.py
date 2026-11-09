@@ -87,3 +87,32 @@ async def test_editing_a_note_updates_the_public_view(client, db):
     assert [n["note"] for n in await notes(client, place)] == ["v2"]
     await client.patch(f"/api/rankings/{rid}", json={"note": None})
     assert await notes(client, place) == []
+
+
+async def test_notes_can_be_sorted_by_rating(client_factory, db):
+    from tests.factories import make_place, make_user, sign_in
+    from tests.test_ranking import rank
+
+    maker = await make_user(db, "sort_maker")
+    place = await make_place(db, name="Sorted", creator=maker)
+    for name, bucket, note in (
+        ("s_low", "disliked", "Meh"),
+        ("s_high", "liked", "Great"),
+        ("s_mid", "fine", "Okay"),
+    ):
+        c = client_factory()
+        await sign_in(c, name)
+        assert (await rank(c, place, bucket, 1, note=note)).status_code == 200
+    anon = client_factory()
+
+    async def order(sort):
+        r = await anon.get(f"/api/places/{place.id}/notes", params={"sort": sort})
+        assert r.status_code == 200, r.text
+        return [n["note"] for n in r.json()["notes"]]
+
+    assert await order("highest") == ["Great", "Okay", "Meh"]
+    assert await order("lowest") == ["Meh", "Okay", "Great"]
+    assert await order("newest") == ["Okay", "Great", "Meh"]
+    assert (
+        await anon.get(f"/api/places/{place.id}/notes", params={"sort": "random"})
+    ).status_code == 422

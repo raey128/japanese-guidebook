@@ -224,7 +224,7 @@ export interface paths {
         /**
          * Lookup Place
          * @description Signed-in only. Businesses matching a name, near (lat, lng) when given, for the add-place
-         *     type-ahead (R13.6). Empty `results` when the lookup service is down or slow.
+         *     type-ahead (R13.11). Empty `results` when the lookup service is down or slow.
          */
         get: operations["lookupPlace"];
         put?: never;
@@ -352,7 +352,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Place Notes */
+        /**
+         * Place Notes
+         * @description Reviews with a comment. `sort`: newest first (default), or by star rating, highest or
+         *     lowest first (unrated ones last, newest first within a rating).
+         */
         get: operations["getPlaceNotes"];
         put?: never;
         post?: never;
@@ -371,6 +375,27 @@ export interface paths {
         };
         /** Get Public List */
         get: operations["getPublicList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lists/{city_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Featured Lists
+         * @description The Lists tab (R14.7): "Top rated in <city>", then the top of each category that has
+         *     places, then the busiest kinds (most ranked, then most places). Empty lists are left out.
+         */
+        get: operations["getFeaturedLists"];
         put?: never;
         post?: never;
         delete?: never;
@@ -989,6 +1014,35 @@ export interface components {
             /** Source */
             source?: string | null;
         };
+        /**
+         * FeaturedList
+         * @description One list on the Lists tab (R14.7): the top few places, with a link to the full list.
+         */
+        FeaturedList: {
+            /** Key */
+            key: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "all" | "top" | "sub";
+            /** Title */
+            title: string;
+            /** Top Category */
+            top_category: ("food" | "sights" | "stays" | "experiences") | null;
+            /** Total */
+            total: number;
+            /** Ranked */
+            ranked: number;
+            /** Items */
+            items: components["schemas"]["ListItem"][];
+        };
+        /** FeaturedLists */
+        FeaturedLists: {
+            city: components["schemas"]["CityOut"];
+            /** Lists */
+            lists: components["schemas"]["FeaturedList"][];
+        };
         /** FlagCreated */
         FlagCreated: {
             /** Id */
@@ -1559,11 +1613,8 @@ export interface components {
             title: string;
             city: components["schemas"]["CityOut"];
             subcategory: components["schemas"]["SubcategoryOut"] | null;
-            /**
-             * Top Category
-             * @enum {string}
-             */
-            top_category: "food" | "sights" | "stays" | "experiences";
+            /** Top Category */
+            top_category: ("food" | "sights" | "stays" | "experiences") | null;
             location: components["schemas"]["LocationOut"] | null;
             /** Total */
             total: number;
@@ -1782,7 +1833,7 @@ export interface components {
         };
         /**
          * SubcategoryCreate
-         * @description A new subcategory from the add-place form (R13.8), e.g. "Curry" under food.
+         * @description A new subcategory from the add-place form (R13.13), e.g. "Curry" under food.
          */
         SubcategoryCreate: {
             /** Name */
@@ -2738,6 +2789,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                sort?: "newest" | "highest" | "lowest";
             };
             header?: never;
             path: {
@@ -2806,6 +2858,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicList"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getFeaturedLists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                city_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeaturedLists"];
                 };
             };
             /** @description Not Found */

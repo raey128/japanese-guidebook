@@ -166,7 +166,7 @@ _The map is now the home screen (R11). Picking an area moves the map there and n
 | R13.11 | Typing a name on Add a place suggests businesses | From 2 letters, a dropdown shows places already in the app ("Already on the map", opening them instead of adding a duplicate) and businesses from OpenStreetMap, nearest first. Picking one fills in the name and address, drops the pin and guesses the subcategory where it can. If the lookup service is down, the form still works by hand |
 | R13.12 | Adding a place happens on the main map, search first | Tapping + opens an Add panel over the same map with the name field focused; the map doesn't move or zoom. Typing shows suggestions (places already in the app, then OpenStreetMap). Picking one moves the map there and pins it. The form is just Name and Category: no Japanese name, address or "Where is it?" fields (the address and area come from the pin). The pin is fixed unless the user taps "Edit pin" (or "Place the pin yourself" when it isn't listed); then dragging it or tapping the map moves it, until Done. After adding, the panel closes, "📍 Pin added!" shows, and the new place's summary opens |
 | R13.13 | Category is chosen with chips, and users can add one | The group (Food / Sights / Stays / Experiences) and its kinds are chips styled like the rest of the app, not a dropdown. "+ New" adds a kind under the chosen group (2–40 characters, signed-in users); a name that already exists (any case) selects the existing one |
-| R13.14 | Easy to zoom back out | When zoomed in past street level, the map shows "🗾 All <city>", which flies back to the whole city |
+| R13.14 | Zoom controls are always on the map | A zoom group (+, −, 🗾 whole city) sits on the right of the map at all times, including while adding a place; 🗾 flies back to the default view of the current city |
 
 ### R14: Lists tab (Beli-style) `🟡 changed`
 
@@ -180,6 +180,7 @@ _Replaces the separate My rankings and Want to go pages and the map toggle. The 
 | R14.4 | Want to go shows bookmarks | Grouped by city. Ranking a place removes it from here (R7.2) |
 | R14.5 | Every row links back to the map | Each place row has "Show on map", which opens `/` with the map flown to that place and its pin summary open (same as R12.4) |
 | R14.6 | Lists is the second main tab | A tab bar at the bottom of the map and the Lists page shows Map (1st) and Lists (2nd); one tap switches. The active tab is marked (`aria-current`) and the map ends above the bar |
+| R14.7 | The Lists tab shows ready-made rankings | For the chosen city (chips): "Top rated in <city>", then "Top <category> in <city>" for each category with places, then the busiest kinds (e.g. "Top Ramen in Tokyo"), each with its top 5 and "See all N". Empty lists are left out. Tapping a place opens its card on the map |
 
 ### R15: Recommendations on the map `⬜ new`
 
@@ -192,6 +193,7 @@ _Goal: a first-time visitor finds a good recommendation from the map by instinct
 | R15.3 | Tapping a pick shows it on the map | The map flies to the place (zoom ≥ 16), highlights its pin, opens the pin summary (R6.2) and collapses the sheet to peek |
 | R15.4 | Friendly empty state | With no ranked places in view, the sheet says "Nothing ranked here yet. Be the first!" with a button that starts the pin-drop add |
 | R15.5 | Sheet, search and buttons don't fight | Opening the search dropdown collapses the sheet. The + button floats above the sheet. At 360×640 the peek sheet leaves ≥ 50% of the map visible |
+| R15.6 | Top picks is a side panel you can hide | Top picks sits on the left edge of the map, hidden by default as a small tab ("⭐ Top picks here ›"); one tap opens it, ‹ hides it, and the choice is remembered per browser. Hidden while adding a place |
 
 ### R16: Friendly, playful look and feel (Duolingo-inspired) `⬜ new`
 
@@ -218,6 +220,7 @@ _Own discovery, saving and ranking; hand off only turn-by-turn directions._
 | R17.6 | Get directions hands off to a maps app | iPhone/iPad → `https://maps.apple.com/?daddr=<lat>,<lng>`; Android → `geo:<lat>,<lng>?q=<lat>,<lng>(<name>)`; desktop → OpenStreetMap directions to the place in a new tab. Never a Google link |
 | R17.7 | The place popup gives a decision in seconds | Order: name → score & ranker count → category emoji · area · walk time (if located) → one-line quote of the most recent note from a "Liked" ranking (if any) → buttons **Save ♡ · Directions · Rank** → "View details". Flag sits under a "…" menu |
 | R17.8 | Top picks never empty in a covered city | If nothing in view is ranked, the sheet shows **Team picks**: reviewed seed places in view, nearest to the map centre first, marked "Team pick". "Nothing here yet" only shows when there are no places in view at all |
+| R17.9 | Everything about a place is in its card | Tapping a pin opens one scrollable card: Rate (the main button, first), a bookmark icon to save, a flag icon to report, and edit for the creator. Then score, category, area, address, your rating, and reviews, which can be sorted Newest / Top rated / Lowest. There's no Directions or "View details" button; the card is where details live |
 
 ### R18: Usage counts (self-hosted, anonymous) `⬜ new`
 

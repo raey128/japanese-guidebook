@@ -1,4 +1,4 @@
-import { type QueryClient, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, type QueryClient, useQuery } from "@tanstack/react-query";
 
 import { api, ApiError, unwrap } from "../api/client";
 
@@ -14,12 +14,16 @@ export function usePlace(id: number) {
   });
 }
 
-export function usePlaceNotes(id: number) {
+export type NoteSort = "newest" | "highest" | "lowest";
+
+export function usePlaceNotes(id: number, sort: NoteSort = "newest") {
   return useQuery({
-    queryKey: ["notes", id],
+    queryKey: ["notes", id, sort],
     enabled: Number.isFinite(id),
     retry: retryUnlessClientError,
-    queryFn: async () => unwrap(await api.GET("/api/places/{place_id}/notes", { params: { path: { place_id: id } } })),
+    placeholderData: keepPreviousData,
+    queryFn: async () =>
+      unwrap(await api.GET("/api/places/{place_id}/notes", { params: { path: { place_id: id }, query: { sort } } })),
   });
 }
 

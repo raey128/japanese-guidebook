@@ -46,7 +46,7 @@ export default function MySubmissions() {
                   {s.status === "rejected" ? (
                     <p className="font-extrabold">{s.name}</p>
                   ) : (
-                    <Link to={`/places/${s.place_id}`} className="font-extrabold hover:underline">
+                    <Link to={`/?place=${s.place_id}`} className="font-extrabold hover:underline">
                       {s.name}
                     </Link>
                   )}

@@ -1,6 +1,7 @@
 """Pairwise ranking (R3.2, R3.3, R4.x): snapshot, write, note edit, delete, my rankings, notes."""
 
 from collections.abc import Iterable
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -29,6 +30,13 @@ from app.schemas.rankings import (
 from app.visibility import can_see, can_use
 
 router = APIRouter(tags=["rankings"])
+
+# Fixed ORDER BY clauses for the notes list (never built from user input).
+NOTE_ORDER = {
+    "newest": "r.created_at DESC, r.id DESC",
+    "highest": "r.rating DESC NULLS LAST, r.created_at DESC, r.id DESC",
+    "lowest": "r.rating ASC NULLS LAST, r.created_at DESC, r.id DESC",
+}
 
 
 def _item(r: Ranking, p: Place) -> RankingItem:
@@ -289,7 +297,10 @@ async def place_notes(
     viewer: OptionalUser,
     limit: int = Query(100, ge=1, le=200),
     offset: int = Query(0, ge=0),
+    sort: Literal["newest", "highest", "lowest"] = "newest",
 ):  # type: ignore[no-untyped-def]
+    """Reviews with a comment. `sort`: newest first (default), or by star rating, highest or
+    lowest first (unrated ones last, newest first within a rating)."""
     place = await db.get(Place, place_id)
     if place is None or not can_see(place, viewer):
         raise HTTPException(404, "Place not found.")
@@ -297,12 +308,12 @@ async def place_notes(
         return RedirectResponse(f"/api/places/{place.merged_into_id}/notes", status_code=308)
     rows = await db.execute(
         text(
-            """
+            f"""
             SELECT r.id, r.user_id, r.note, r.visit_month, r.visit_year, r.bucket, r.rating,
                    r.created_at, u.username, u.is_private
             FROM rankings r JOIN users u ON u.id = r.user_id
             WHERE r.place_id = :pid AND r.note IS NOT NULL AND btrim(r.note) <> ''
-            ORDER BY r.created_at DESC, r.id DESC
+            ORDER BY {NOTE_ORDER[sort]}
             LIMIT :limit OFFSET :offset
             """
         ),

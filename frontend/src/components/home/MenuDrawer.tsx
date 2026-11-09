@@ -42,7 +42,7 @@ export default function MenuDrawer() {
         className="btn btn-secondary btn-icon relative size-12 shrink-0 shadow-lg"
       >
         <span aria-hidden="true" className="text-xl">
-          ☰
+          ⚙️
         </span>
         {count > 0 ? <span aria-hidden="true" className="absolute -right-1 -top-1 size-3.5 rounded-full border-2 border-white bg-brand" /> : null}
       </button>

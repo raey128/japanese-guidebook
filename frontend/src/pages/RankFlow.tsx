@@ -181,7 +181,8 @@ export default function RankFlow() {
 
   const p = place.data;
   const reRank = snap.my_ranking != null;
-  const back_to = `/places/${p.id}`;
+  // Back to the place card on the map (its details and reviews live there, R17.9).
+  const back_to = `/?place=${p.id}`;
   const cancel = (
     <Link to={back_to} className="btn btn-secondary">
       Cancel
@@ -206,7 +207,7 @@ export default function RankFlow() {
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <h1 className="text-3xl font-extrabold">
-        {reRank ? "Re-rank " : "Rank "}
+        {reRank ? "Re-rate " : "Rate "}
         <PlaceNames name={p.name} nameJa={p.name_ja} as="span" />
       </h1>
       <p className="hint">

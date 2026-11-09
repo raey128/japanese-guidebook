@@ -49,7 +49,7 @@ export default function Profile() {
                 {l.items.map((it, i) => (
                   <li key={it.place.id} className="flex flex-wrap items-center gap-x-3 py-2">
                     <span className="w-6 text-right font-bold">{i + 1}</span>
-                    <Link className="min-w-0 flex-1 hover:underline" to={`/places/${it.place.id}`}>
+                    <Link className="min-w-0 flex-1 hover:underline" to={`/?place=${it.place.id}`}>
                       <PlaceNames name={it.place.name} nameJa={it.place.name_ja} as="span" />
                     </Link>
                     <span className="hint">{LABEL[it.bucket]}</span>

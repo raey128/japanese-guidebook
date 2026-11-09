@@ -34,7 +34,8 @@ export default function PlaceRow({
         </span>
       ) : null}
       <div className="min-w-0 flex-1">
-        <Link to={`/places/${place.id}`} className="underline-offset-2 hover:underline">
+        {/* Opens the place card on the map, where all its details and reviews are (R17.9). */}
+        <Link to={`/?place=${place.id}`} className="font-bold underline-offset-2 hover:underline">
           <PlaceNames name={place.name} nameJa={place.name_ja} as="span" />
         </Link>
         <div className="flex flex-wrap items-center gap-2">

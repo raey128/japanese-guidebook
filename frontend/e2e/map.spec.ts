@@ -33,10 +33,12 @@ test("pan/zoom reloads the pins, and a pin opens its summary and detail page", a
   await expect(summary).toBeVisible();
   await expect(summary.getByRole("heading", { name: /Senso-ji/ })).toBeVisible();
   await expect(pin).toHaveAttribute("aria-pressed", "true");
-  await summary.getByRole("link", { name: "View details" }).click();
-
-  await expect(page).toHaveURL(/\/places\/\d+$/);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Senso-ji");
+  // Everything is in the card itself: actions first, then details and reviews (R17.9).
+  await expect(summary.getByRole("button", { name: /^Rate/ })).toBeVisible();
+  await expect(summary.getByRole("button", { name: "Save" })).toBeVisible();
+  await expect(summary.getByRole("link", { name: "View details" })).toHaveCount(0);
+  await expect(summary.getByRole("link", { name: /Directions/ })).toHaveCount(0);
+  await expect(summary.getByRole("heading", { name: /^Reviews/ })).toBeVisible();
 });
 
 test("the summary closes with the close button", async ({ page }) => {

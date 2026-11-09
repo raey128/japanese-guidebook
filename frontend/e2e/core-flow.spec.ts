@@ -40,7 +40,7 @@ test("sign in, add a place by pin, rank three places, see them in both lists", a
   const c = await createPlaceApi(page, { name: `Corefl Tonkotsu ${run}` });
 
   // 3. Rank all three through the RankFlow UI: A first, then B (A is better), then C (B is better).
-  await summary.getByRole("button", { name: "Rank", exact: true }).click();
+  await summary.getByRole("button", { name: "Rate", exact: true }).click();
   await expect(page).toHaveURL(/\/places\/\d+\/rank$/);
   const idA = Number(/\/places\/(\d+)\/rank$/.exec(page.url())?.[1]);
   expect(await rankViaUi(page, idA)).toBe(0);

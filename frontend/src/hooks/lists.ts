@@ -26,6 +26,17 @@ export function useSubcategories() {
   });
 }
 
+/** The Lists tab's featured lists for a city (R14.7). */
+export function useFeaturedLists(city: string) {
+  return useQuery({
+    queryKey: ["list", "featured", city],
+    enabled: city.length > 0,
+    retry: retryUnlessClientError,
+    placeholderData: keepPreviousData,
+    queryFn: async () => unwrap(await api.GET("/api/lists/{city_slug}", { params: { path: { city_slug: city } } })),
+  });
+}
+
 const PAGE = 50;
 
 export function usePublicList(city: string, category: string, location: string | undefined) {

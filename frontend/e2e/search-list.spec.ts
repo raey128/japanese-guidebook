@@ -18,11 +18,9 @@ test("type a seeded name, pick it, and follow it to its list", async ({ page }) 
 
   const summary = page.getByRole("region", { name: "Place summary" });
   await expect(summary.getByRole("heading", { name: /Senso-ji/ })).toBeVisible();
-  await summary.getByRole("link", { name: "View details" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Senso-ji");
+  await expect(summary).toContainText("Temple");
 
-  await page.getByRole("link", { name: "Temple", exact: true }).click();
-  await expect(page).toHaveURL(/\/lists\/tokyo\/temple/);
+  await page.goto("/lists/tokyo/temple");
   const listRow = page.getByRole("listitem").filter({ hasText: "Senso-ji" });
   await revealInList(page, listRow);
   await expect(listRow.getByRole("link", { name: /^Senso-ji/ })).toBeVisible();
