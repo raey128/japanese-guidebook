@@ -43,6 +43,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        # The version comes from frontend/package.json ("packageManager"), not the repo root.
+        with: { package_json_file: frontend/package.json }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       # No lockfile is committed yet; switch to `pnpm install --frozen-lockfile` once it is.
@@ -68,12 +70,16 @@ jobs:
           --health-retries 30
     env:
       GUIDEBOOK_DATABASE_URL: postgresql+asyncpg://guidebook:guidebook@localhost:5432/guidebook
-      # e2e never calls the public geocoder.
+      # e2e never calls the public geocoder or place lookup.
       GUIDEBOOK_GEOCODER_URL: http://127.0.0.1:9/disabled
+      GUIDEBOOK_GEOCODER_SEARCH_URL: http://127.0.0.1:9/disabled
+      GUIDEBOOK_PLACE_LOOKUP_URL: http://127.0.0.1:9/disabled
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - uses: pnpm/action-setup@v4
+        # The version comes from frontend/package.json ("packageManager"), not the repo root.
+        with: { package_json_file: frontend/package.json }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - name: Start API

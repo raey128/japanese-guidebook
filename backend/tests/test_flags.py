@@ -118,12 +118,18 @@ async def test_note_flags(client_factory, db):
     no_note = await rank(db, other_user, place, bucket="fine")
 
     anon = client_factory()
-    assert (await anon.post(f"/api/rankings/{with_note.id}/flags", json={"flag_type": "spam"})).status_code == 401
+    assert (
+        await anon.post(f"/api/rankings/{with_note.id}/flags", json={"flag_type": "spam"})
+    ).status_code == 401
 
     c = await signed_in(client_factory, "visitor7")
     url = f"/api/rankings/{with_note.id}/flags"
-    assert (await c.post(f"/api/rankings/{no_note.id}/flags", json={"flag_type": "spam"})).status_code == 404
-    assert (await c.post("/api/rankings/987654/flags", json={"flag_type": "spam"})).status_code == 404
+    assert (
+        await c.post(f"/api/rankings/{no_note.id}/flags", json={"flag_type": "spam"})
+    ).status_code == 404
+    assert (
+        await c.post("/api/rankings/987654/flags", json={"flag_type": "spam"})
+    ).status_code == 404
     assert (await c.post(url, json={"flag_type": "closed"})).status_code == 422
     ok = await c.post(url, json={"flag_type": "spam"})
     assert ok.status_code == 201
@@ -147,7 +153,9 @@ async def test_notes_on_hidden_places_cannot_be_flagged(client_factory, db):
     place.is_hidden = True
     await db.flush()
     c = await signed_in(client_factory, "visitor8")
-    assert (await c.post(f"/api/rankings/{r.id}/flags", json={"flag_type": "spam"})).status_code == 404
+    assert (
+        await c.post(f"/api/rankings/{r.id}/flags", json={"flag_type": "spam"})
+    ).status_code == 404
 
 
 # ---- Thresholds -------------------------------------------------------------------------------
@@ -231,8 +239,12 @@ async def test_three_closed_flaggers_mark_reported_closed(client_factory, client
         )
     # The flags stay open for the admin.
     status = (
-        await db.execute(
-            text("SELECT DISTINCT status FROM flags WHERE place_id = :p"), {"p": place.id}
+        (
+            await db.execute(
+                text("SELECT DISTINCT status FROM flags WHERE place_id = :p"), {"p": place.id}
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert list(status) == ["open"]

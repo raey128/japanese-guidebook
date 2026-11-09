@@ -22,8 +22,14 @@ async def test_profile_visible_logged_out_and_grouped(client, db):
     b = await make_place(db, name="Ramen B", creator=creator)
     c = await make_place(db, name="Ramen C", creator=creator)
     d = await make_place(db, name="Cafe D", creator=creator, subcategory_slug="cafe")
-    k = await make_place(db, name="Kyoto Ramen", creator=creator,
-                         location_slug="gion-higashiyama", lat=35.0, lng=135.779)
+    k = await make_place(
+        db,
+        name="Kyoto Ramen",
+        creator=creator,
+        location_slug="gion-higashiyama",
+        lat=35.0,
+        lng=135.779,
+    )
     await rank(db, fan.id, c, "disliked")
     await rank(db, fan.id, a, "liked")
     await rank(db, fan.id, b, "liked")
@@ -55,8 +61,10 @@ async def test_unknown_and_system_user_are_404(client, db):
     from sqlalchemy import text
 
     await db.execute(
-        text("INSERT INTO users (username, is_system) VALUES ('guidebook', true) "
-             "ON CONFLICT DO NOTHING")
+        text(
+            "INSERT INTO users (username, is_system) VALUES ('guidebook', true) "
+            "ON CONFLICT DO NOTHING"
+        )
     )
     assert (await client.get("/api/users/guidebook")).status_code == 404
 

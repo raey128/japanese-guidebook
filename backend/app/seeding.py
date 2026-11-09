@@ -57,7 +57,8 @@ async def seed_locations(db: AsyncSession, data_dir: Path | None = None) -> dict
         data_dir / "cities.csv", ["slug", "name", "name_ja", "country_code", "lat", "lng"]
     )
     locations = _read_csv(
-        data_dir / "locations.csv", ["slug", "name", "name_ja", "city", "lat", "lng", "is_catch_all"]
+        data_dir / "locations.csv",
+        ["slug", "name", "name_ja", "city", "lat", "lng", "is_catch_all"],
     )
 
     errors: list[str] = []

@@ -22,9 +22,7 @@ async def test_synthetic_cli_creates_visible_ranked_places(db, client):
     assert n == 200
 
     # Search finds a synthetic name.
-    name = (
-        await db.execute(text("SELECT name FROM places ORDER BY id DESC LIMIT 1"))
-    ).scalar_one()
+    name = (await db.execute(text("SELECT name FROM places ORDER BY id DESC LIMIT 1"))).scalar_one()
     word = name.split()[0]
     r = await client.get("/api/search", params={"q": word})
     assert r.status_code == 200
@@ -39,9 +37,13 @@ async def test_synthetic_cli_creates_visible_ranked_places(db, client):
     assert sum(c["count"] for c in r.json()["clusters"]) >= 200
 
     # Aggregates are populated and consistent with the rankings.
-    stats = (await db.execute(text("SELECT coalesce(sum(rank_count), 0) FROM place_stats"))).scalar_one()
+    stats = (
+        await db.execute(text("SELECT coalesce(sum(rank_count), 0) FROM place_stats"))
+    ).scalar_one()
     rankings = (await db.execute(text("SELECT count(*) FROM rankings"))).scalar_one()
     assert rankings > 0
     assert stats == rankings
-    cats = (await db.execute(text("SELECT coalesce(sum(rank_count), 0) FROM category_stats"))).scalar_one()
+    cats = (
+        await db.execute(text("SELECT coalesce(sum(rank_count), 0) FROM category_stats"))
+    ).scalar_one()
     assert cats == rankings

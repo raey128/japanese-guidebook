@@ -107,7 +107,11 @@ async def test_merge_moves_rankings_and_bookmarks(client_factory, client, db):
     snap = await ranking.get_snapshot(db, u4.id, source.city_id, source.subcategory_id)
     with pytest.raises(ranking.RankingNotAllowed):
         await ranking.place_ranking(
-            db, user_id=u4.id, place=source, bucket="liked", position=1,
+            db,
+            user_id=u4.id,
+            place=source,
+            bucket="liked",
+            position=1,
             expected_version=snap["liked"].version,
         )
 

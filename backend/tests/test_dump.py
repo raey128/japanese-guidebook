@@ -94,7 +94,10 @@ async def test_dump_csv_contents(db, tmp_path):
     assert len(rankings) == 4
     mine = next(r for r in rankings if r["place_id"] == str(p1.id) and r["user"] == "pubalice")
     assert (mine["bucket"], mine["position"], mine["city"], mine["subcategory"]) == (
-        "liked", "1", "tokyo", "ramen",
+        "liked",
+        "1",
+        "tokyo",
+        "ramen",
     )
     assert 6.7 <= float(mine["personal_score"]) <= 10
 
@@ -150,9 +153,9 @@ async def test_private_users_are_only_opaque_ids(db, tmp_path):
         assert b"sneaky_sam" not in data, path.name
         assert b"sneaky" not in data, path.name
 
-    anon_ids = {
-        r["user"] for r in read_csv(folder / "rankings.csv") if r["user"] != "pubalice"
-    } | {r["creator"] for r in read_csv(folder / "places.csv") if r["creator"] != "pubalice"}
+    anon_ids = {r["user"] for r in read_csv(folder / "rankings.csv") if r["user"] != "pubalice"} | {
+        r["creator"] for r in read_csv(folder / "places.csv") if r["creator"] != "pubalice"
+    }
     assert len(anon_ids) == 1 and ANON.match(next(iter(anon_ids)))
 
     # The id is stable across runs, so a private user's rankings stay linkable.

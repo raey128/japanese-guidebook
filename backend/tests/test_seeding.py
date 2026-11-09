@@ -31,9 +31,13 @@ async def test_seed_locations_upserts_changed_names(db, tmp_path: Path):
     for name in ("subcategories.csv", "cities.csv", "locations.csv"):
         (tmp_path / name).write_text((data / name).read_text(encoding="utf-8"), encoding="utf-8")
     p = tmp_path / "locations.csv"
-    p.write_text(p.read_text(encoding="utf-8").replace("Asakusa,浅草", "Asakusa Area,浅草"), encoding="utf-8")
+    p.write_text(
+        p.read_text(encoding="utf-8").replace("Asakusa,浅草", "Asakusa Area,浅草"), encoding="utf-8"
+    )
     await seed_locations(db, tmp_path)
-    assert (await db.execute(text("SELECT name FROM locations WHERE slug='asakusa'"))).scalar_one() == "Asakusa Area"
+    assert (
+        await db.execute(text("SELECT name FROM locations WHERE slug='asakusa'"))
+    ).scalar_one() == "Asakusa Area"
 
 
 async def test_seed_locations_bad_row_fails_whole_run(db, tmp_path: Path):
@@ -53,12 +57,17 @@ async def test_seed_places_loads_unverified_places_owned_by_guidebook(db, client
     message = await run_in_session(db, "seed-places", {})
     assert "225 created" in message
     assert await count(db, "SELECT count(*) FROM places") == 225
-    assert await count(
-        db,
-        "SELECT count(*) FROM places p JOIN users u ON u.id = p.creator_id "
-        "WHERE u.username = 'guidebook' AND p.is_seed AND NOT p.seed_reviewed",
-    ) == 225
-    place_id = (await db.execute(text("SELECT id FROM places WHERE name = 'Senso-ji'"))).scalar_one()
+    assert (
+        await count(
+            db,
+            "SELECT count(*) FROM places p JOIN users u ON u.id = p.creator_id "
+            "WHERE u.username = 'guidebook' AND p.is_seed AND NOT p.seed_reviewed",
+        )
+        == 225
+    )
+    place_id = (
+        await db.execute(text("SELECT id FROM places WHERE name = 'Senso-ji'"))
+    ).scalar_one()
     r = await client.get(f"/api/places/{place_id}")
     assert r.status_code == 200
     body = r.json()
@@ -98,9 +107,13 @@ async def test_seed_places_unknown_reference_fails_whole_run(db, tmp_path: Path,
 
 async def test_seed_command_reports_failure(db, monkeypatch, tmp_path: Path):
     bad = tmp_path / "seed_places.csv"
-    bad.write_text("name,name_ja,lat,lng,subcategory,location\nX,,1,1,pizza,asakusa\n", encoding="utf-8")
+    bad.write_text(
+        "name,name_ja,lat,lng,subcategory,location\nX,,1,1,pizza,asakusa\n", encoding="utf-8"
+    )
     for name in ("subcategories.csv", "cities.csv", "locations.csv"):
-        (tmp_path / name).write_text((get_settings().data_dir / name).read_text(encoding="utf-8"), encoding="utf-8")
+        (tmp_path / name).write_text(
+            (get_settings().data_dir / name).read_text(encoding="utf-8"), encoding="utf-8"
+        )
     monkeypatch.setattr(get_settings(), "data_dir", tmp_path)
     with pytest.raises(CommandError):
         await run_in_session(db, "seed-places", {})

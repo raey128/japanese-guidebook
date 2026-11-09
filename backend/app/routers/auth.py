@@ -26,7 +26,9 @@ async def sign_in(body: SignInRequest, response: Response, db: DB) -> SignInResp
 
     user = await identity.find_user(db, username)
     if user is not None and user.is_system:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That username is reserved. Please pick another.")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "That username is reserved. Please pick another."
+        )
     if user is None:
         if not body.create:
             return SignInResponse(status="needs_confirmation", username=username)
@@ -48,7 +50,9 @@ async def sign_in(body: SignInRequest, response: Response, db: DB) -> SignInResp
         secure=s.cookie_secure,
         path="/",
     )
-    return SignInResponse(status="signed_in", username=user.username, user=UserOut.model_validate(user))
+    return SignInResponse(
+        status="signed_in", username=user.username, user=UserOut.model_validate(user)
+    )
 
 
 @router.post("/auth/sign-out", status_code=204, operation_id="signOut")

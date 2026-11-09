@@ -3,7 +3,15 @@ from sqlalchemy import text
 
 from app import ranking
 from app.models import Place
-from tests.factories import GION, location, make_place, make_user, sign_in, subcategory, user_by_name
+from tests.factories import (
+    GION,
+    location,
+    make_place,
+    make_user,
+    sign_in,
+    subcategory,
+    user_by_name,
+)
 from tests.test_places import NAHA, place_body
 
 
@@ -27,8 +35,13 @@ async def test_creator_can_edit_within_window(client, db):
     sushi = await subcategory(db, "sushi")
     r = await client.patch(
         f"/api/places/{place['id']}",
-        json={"name": "Renamed", "name_ja": "改名", "subcategory_id": sushi.id,
-              "lat": 35.7125, "lng": 139.7965},
+        json={
+            "name": "Renamed",
+            "name_ja": "改名",
+            "subcategory_id": sushi.id,
+            "lat": 35.7125,
+            "lng": 139.7965,
+        },
     )
     assert r.status_code == 200, r.text
     data = r.json()
@@ -117,9 +130,7 @@ async def test_edit_validation(client, db):
 async def test_moving_pin_outside_coverage_is_blocked(client, db):
     await sign_in(client, "maker")
     place = await create(client, db)
-    r = await client.patch(
-        f"/api/places/{place['id']}", json={"lat": NAHA[0], "lng": NAHA[1]}
-    )
+    r = await client.patch(f"/api/places/{place['id']}", json={"lat": NAHA[0], "lng": NAHA[1]})
     assert r.status_code == 422
     assert r.json()["detail"] == "We only cover these cities for now"
 
@@ -131,9 +142,7 @@ async def test_moving_pin_to_another_city_needs_a_matching_location(client, db):
     r = await client.patch(url, json={"lat": GION[0], "lng": GION[1]})
     assert r.status_code == 422  # still tagged with a Tokyo location
     gion = await location(db, "gion-higashiyama")
-    r = await client.patch(
-        url, json={"lat": GION[0], "lng": GION[1], "location_id": gion.id}
-    )
+    r = await client.patch(url, json={"lat": GION[0], "lng": GION[1], "location_id": gion.id})
     assert r.status_code == 200, r.text
     assert r.json()["city"]["slug"] == "kyoto"
 

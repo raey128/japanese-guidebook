@@ -34,8 +34,9 @@ async def near_asakusa(db, creator, n, **kw):
 async def test_cluster_vs_points_switch(client, db):
     owner = await make_user(db, "mapper")
     await near_asakusa(db, owner, 3)
-    await make_place(db, name="Far", creator=owner, lat=35.0037, lng=135.7788,
-                     location_slug="gion-higashiyama")
+    await make_place(
+        db, name="Far", creator=owner, lat=35.0037, lng=135.7788, location_slug="gion-higashiyama"
+    )
     r = (await client.get("/api/map", params={**JAPAN, "zoom": 10})).json()
     assert r["kind"] == "clusters" and r["points"] == [] and r["truncated"] is False
     assert sorted(c["count"] for c in r["clusters"]) == [1, 3]
@@ -46,8 +47,18 @@ async def test_cluster_vs_points_switch(client, db):
     assert r["kind"] == "points" and r["clusters"] == []
     assert len(r["points"]) == 4 and r["truncated"] is False
     p = r["points"][0]
-    assert {"id", "lat", "lng", "name", "name_ja", "subcategory_slug", "top_category",
-            "public_score", "ranker_count", "badges"} <= set(p)
+    assert {
+        "id",
+        "lat",
+        "lng",
+        "name",
+        "name_ja",
+        "subcategory_slug",
+        "top_category",
+        "public_score",
+        "ranker_count",
+        "badges",
+    } <= set(p)
     assert p["subcategory_slug"] == "ramen" and p["top_category"] == "food"
 
 
@@ -96,12 +107,20 @@ async def test_invalid_bbox_is_422(client, box):
 async def test_category_and_location_filters(client, db):
     owner = await make_user(db, "filterer")
     await make_place(db, name="Ramen A", creator=owner, lat=35.712, lng=139.796)
-    await make_place(db, name="Cafe A", creator=owner, subcategory_slug="cafe",
-                     lat=35.713, lng=139.796)
-    await make_place(db, name="Temple A", creator=owner, subcategory_slug="temple",
-                     lat=35.714, lng=139.796)
-    await make_place(db, name="Ramen Shibuya", creator=owner, location_slug="shibuya-harajuku",
-                     lat=35.711, lng=139.797)
+    await make_place(
+        db, name="Cafe A", creator=owner, subcategory_slug="cafe", lat=35.713, lng=139.796
+    )
+    await make_place(
+        db, name="Temple A", creator=owner, subcategory_slug="temple", lat=35.714, lng=139.796
+    )
+    await make_place(
+        db,
+        name="Ramen Shibuya",
+        creator=owner,
+        location_slug="shibuya-harajuku",
+        lat=35.711,
+        lng=139.797,
+    )
 
     async def names(**extra):
         r = await client.get("/api/map", params={**ASA, "zoom": 14, **extra})

@@ -93,7 +93,9 @@ async def search_places(
         ranking_ids = {
             r.place_id: r.id
             for r in await db.execute(
-                text("SELECT id, place_id FROM rankings WHERE user_id = :u AND place_id = ANY(:ids)"),
+                text(
+                    "SELECT id, place_id FROM rankings WHERE user_id = :u AND place_id = ANY(:ids)"
+                ),
                 {"u": viewer.id, "ids": ids},
             )
         }

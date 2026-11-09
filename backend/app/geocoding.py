@@ -56,7 +56,8 @@ async def _take_throttle(db: AsyncSession) -> bool:
         await db.execute(
             text(
                 "SELECT (last_called_at IS NULL "
-                "OR clock_timestamp() - last_called_at >= make_interval(secs => CAST(:i AS float8)))"
+                "OR clock_timestamp() - last_called_at"
+                " >= make_interval(secs => CAST(:i AS float8)))"
                 " AS ok FROM geocode_throttle WHERE id = 1"
             ),
             {"i": interval},
@@ -299,7 +300,7 @@ async def lookup_places(q: str, lat: float | None, lng: float | None) -> list[Lo
         _lookup_cache.move_to_end(key)
         return hit[1]
     s = get_settings()
-    params: list[tuple[str, str | int | float]] = [
+    params: list[tuple[str, str | int | float | bool | None]] = [
         ("q", q),
         ("limit", LOOKUP_LIMIT),
         ("lang", "en"),

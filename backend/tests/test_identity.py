@@ -1,9 +1,8 @@
+import pytest
 from sqlalchemy import inspect, text
 
 from app.cli.commands import run_in_session
 from tests.factories import sign_in
-
-import pytest
 
 
 async def test_new_username_needs_confirmation_then_creates(client):
@@ -37,7 +36,17 @@ async def test_usernames_are_case_insensitive(client_factory):
 
 @pytest.mark.parametrize(
     "username",
-    ["ab", "a" * 21, "has space", "dash-name", "émile", "名前さん", "guidebook", "admin", "GuideBook"],
+    [
+        "ab",
+        "a" * 21,
+        "has space",
+        "dash-name",
+        "émile",
+        "名前さん",
+        "guidebook",
+        "admin",
+        "GuideBook",
+    ],
 )
 async def test_invalid_or_reserved_usernames_are_rejected(client, username):
     r = await client.post("/api/auth/sign-in", json={"username": username, "create": True})
@@ -64,7 +73,9 @@ async def test_session_cookie_is_opaque_httponly_lax_30_days(client):
 
 async def test_sign_in_creates_and_sign_out_deletes_session_row(client, db):
     await sign_in(client, "momo")
-    count = text("SELECT count(*) FROM sessions s JOIN users u ON u.id = s.user_id WHERE u.username='momo'")
+    count = text(
+        "SELECT count(*) FROM sessions s JOIN users u ON u.id = s.user_id WHERE u.username='momo'"
+    )
     assert (await db.execute(count)).scalar_one() == 1
     r = await client.post("/api/auth/sign-out")
     assert r.status_code == 204

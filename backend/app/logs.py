@@ -48,8 +48,20 @@ def configure_logging(level: str = "INFO") -> None:
 
 
 def _route_template(request: Request) -> str:
+    """The route's template with its router prefix, e.g. "/api/lists/{city_slug}/{category}".
+
+    Newer FastAPI keeps an included router's routes un-prefixed (route.path is "/lists/..."),
+    so the prefix is taken from the real URL: everything before the template's segments."""
     route = request.scope.get("route")
-    return getattr(route, "path", None) or request.url.path
+    template = getattr(route, "path", None)
+    if not template:
+        return request.url.path
+    url_parts = request.url.path.rstrip("/").split("/")
+    n = len(template.rstrip("/").split("/")) - 1  # segments in the template
+    prefix = "/".join(url_parts[: len(url_parts) - n]) if n else request.url.path.rstrip("/")
+    return (
+        template if prefix in ("", "/") or template.startswith(prefix + "/") else prefix + template
+    )
 
 
 class RequestLogMiddleware(BaseHTTPMiddleware):

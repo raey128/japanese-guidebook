@@ -76,10 +76,14 @@ async def get_map(
         where.append("p.location_id IN (SELECT id FROM locations WHERE slug = :location)")
         params["location"] = location
     if mode == "mine" and user is not None:
-        where.append("EXISTS (SELECT 1 FROM rankings r WHERE r.place_id = p.id AND r.user_id = :uid)")
+        where.append(
+            "EXISTS (SELECT 1 FROM rankings r WHERE r.place_id = p.id AND r.user_id = :uid)"
+        )
         params["uid"] = user.id
     elif mode == "want_to_go" and user is not None:
-        where.append("EXISTS (SELECT 1 FROM bookmarks b WHERE b.place_id = p.id AND b.user_id = :uid)")
+        where.append(
+            "EXISTS (SELECT 1 FROM bookmarks b WHERE b.place_id = p.id AND b.user_id = :uid)"
+        )
         params["uid"] = user.id
     where_sql = " AND ".join(where)
 
@@ -128,9 +132,7 @@ async def get_map(
     if not ids:
         return MapResponse(kind="points", clusters=[], points=[], truncated=False)
 
-    detail = (
-        await db.execute(text(POINT_DETAIL_SQL), {"ids": ids, **scores.score_params()})
-    ).all()
+    detail = (await db.execute(text(POINT_DETAIL_SQL), {"ids": ids, **scores.score_params()})).all()
     by_id = {r.id: r for r in detail}
     saved: set[int] = set()
     ranked: set[int] = set()

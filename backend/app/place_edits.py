@@ -57,7 +57,9 @@ async def apply_place_changes(
         raise PlaceEditError("Give both lat and lng.")
     if lat is not None and lng is not None:
         await db.execute(
-            text("UPDATE places SET geom = ST_SetSRID(ST_MakePoint(:lng, :lat), 4326) WHERE id = :id"),
+            text(
+                "UPDATE places SET geom = ST_SetSRID(ST_MakePoint(:lng, :lat), 4326) WHERE id = :id"
+            ),
             {"lat": lat, "lng": lng, "id": place.id},
         )
 

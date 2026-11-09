@@ -8,8 +8,7 @@ from app import scores
 from app.deps import DB
 from app.models import TOP_CATEGORIES
 from app.place_views import load_reference, summary_from_row
-from app.schemas.common import Message
-from app.schemas.common import CityOut, LocationOut
+from app.schemas.common import CityOut, LocationOut, Message
 from app.schemas.lists import FeaturedList, FeaturedLists, ListItem, PublicList
 
 router = APIRouter(tags=["lists"])

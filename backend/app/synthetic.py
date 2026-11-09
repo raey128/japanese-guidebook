@@ -24,12 +24,48 @@ BATCH = 5000
 
 # Search words (also used by perf/k6.js): every synthetic name is "<ADJ> <NOUN> <subcategory> <n>".
 ADJECTIVES = [
-    "Golden", "Quiet", "Little", "Old", "Hidden", "Grand", "Lucky", "Misty", "Red", "Blue",
-    "Happy", "Sunny", "Secret", "Royal", "Tiny", "Eastern", "Northern", "Lazy", "Bright", "Calm",
+    "Golden",
+    "Quiet",
+    "Little",
+    "Old",
+    "Hidden",
+    "Grand",
+    "Lucky",
+    "Misty",
+    "Red",
+    "Blue",
+    "Happy",
+    "Sunny",
+    "Secret",
+    "Royal",
+    "Tiny",
+    "Eastern",
+    "Northern",
+    "Lazy",
+    "Bright",
+    "Calm",
 ]
 NOUNS = [
-    "Dragon", "Lantern", "Crane", "Bamboo", "Maple", "Koi", "Fox", "Tiger", "Sakura", "Fuji",
-    "Harbor", "Garden", "Bridge", "Temple", "Pine", "River", "Moon", "Mountain", "Wave", "Lotus",
+    "Dragon",
+    "Lantern",
+    "Crane",
+    "Bamboo",
+    "Maple",
+    "Koi",
+    "Fox",
+    "Tiger",
+    "Sakura",
+    "Fuji",
+    "Harbor",
+    "Garden",
+    "Bridge",
+    "Temple",
+    "Pine",
+    "River",
+    "Moon",
+    "Mountain",
+    "Wave",
+    "Lotus",
 ]
 NOUNS_JA = ["龍", "提灯", "鶴", "竹", "紅葉", "鯉", "狐", "虎", "桜", "富士"]
 SUFFIX_JA = ["の店", "亭", "屋", "庵", "堂"]
@@ -120,7 +156,9 @@ async def _generate_rankings(
     n_users = max(10, min(2000, count // 25))
     names = [f"{USER_PREFIX}{i:05d}" for i in range(n_users)]
     await db.execute(
-        text("INSERT INTO users (username) SELECT unnest(CAST(:n AS text[])) ON CONFLICT DO NOTHING"),
+        text(
+            "INSERT INTO users (username) SELECT unnest(CAST(:n AS text[])) ON CONFLICT DO NOTHING"
+        ),
         {"n": names},
     )
     user_ids = [
@@ -162,7 +200,9 @@ async def _generate_rankings(
                     CAST(:sub AS int[]), CAST(:bucket AS text[]), CAST(:pos AS int[]),
                     CAST(:score AS float8[])
                 )
-                ON CONFLICT DO NOTHING
+                -- Name the arbiter: the list-position constraint is deferrable, which a bare
+                -- ON CONFLICT can't use.
+                ON CONFLICT (user_id, place_id) DO NOTHING
                 """
             ),
             part,

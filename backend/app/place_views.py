@@ -161,7 +161,9 @@ async def place_detail(db: AsyncSession, place: Place, viewer: User | None) -> P
 
 
 async def _top_note(db: AsyncSession, place_id: int) -> TopNote | None:
-    """Most recent non-empty note on a "Liked" ranking (moderators remove notes by clearing them)."""
+    """Most recent non-empty note on a "Liked" ranking.
+
+    Moderators remove notes by clearing them."""
     row = (
         await db.execute(
             text(

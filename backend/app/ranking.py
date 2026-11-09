@@ -19,7 +19,7 @@ from sqlalchemy import delete, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import scores
-from app.models import BUCKETS, Bookmark, Place, RankList, Ranking
+from app.models import BUCKETS, Bookmark, Place, Ranking, RankList
 from app.visibility import can_use
 
 BANDS: dict[str, tuple[float, float]] = {

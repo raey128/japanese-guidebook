@@ -15,8 +15,13 @@ async def search(client, **params):
 
 async def test_english_search_and_response_shape(client, db):
     maker = await make_user(db, "maker")
-    p = await make_place(db, name="Ichiran Shibuya", creator=maker, name_ja="一蘭 渋谷店",
-                         location_slug="shibuya-harajuku")
+    p = await make_place(
+        db,
+        name="Ichiran Shibuya",
+        creator=maker,
+        name_ja="一蘭 渋谷店",
+        location_slug="shibuya-harajuku",
+    )
     await make_place(db, name="Totally Different", creator=maker)
     for q in ("ichiran", "Ichiran Shib", "ICHIRAN SHIBUYA"):
         items = await search(client, q=q)
@@ -36,10 +41,12 @@ async def test_close_misspelling_matches_by_trigram(client, db):
 
 async def test_japanese_search_full_and_substring(client, db):
     maker = await make_user(db, "maker")
-    sensoji = await make_place(db, name="Senso-ji", creator=maker, name_ja="浅草寺",
-                               subcategory_slug="temple")
-    gate = await make_place(db, name="Kaminarimon", creator=maker, name_ja="雷門",
-                            subcategory_slug="landmark")
+    sensoji = await make_place(
+        db, name="Senso-ji", creator=maker, name_ja="浅草寺", subcategory_slug="temple"
+    )
+    gate = await make_place(
+        db, name="Kaminarimon", creator=maker, name_ja="雷門", subcategory_slug="landmark"
+    )
     assert [i["id"] for i in await search(client, q="浅草寺")] == [sensoji.id]
     assert [i["id"] for i in await search(client, q="浅草")] == [sensoji.id]
     assert [i["id"] for i in await search(client, q="雷")] == [gate.id]
@@ -64,10 +71,16 @@ async def test_like_wildcards_in_query_are_literal(client, db):
 async def test_filters_by_city_location_and_category(client, db):
     maker = await make_user(db, "maker")
     t_ramen = await make_place(db, name="Moon Ramen", creator=maker)
-    t_cafe = await make_place(db, name="Moon Cafe", creator=maker, subcategory_slug="cafe",
-                              location_slug="shibuya-harajuku")
-    k_ramen = await make_place(db, name="Moon Kyoto", creator=maker,
-                               location_slug="gion-higashiyama")
+    t_cafe = await make_place(
+        db,
+        name="Moon Cafe",
+        creator=maker,
+        subcategory_slug="cafe",
+        location_slug="shibuya-harajuku",
+    )
+    k_ramen = await make_place(
+        db, name="Moon Kyoto", creator=maker, location_slug="gion-higashiyama"
+    )
     temple = await make_place(db, name="Moon Temple", creator=maker, subcategory_slug="temple")
 
     def ids(items):

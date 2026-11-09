@@ -1,7 +1,7 @@
 """Public (Bayesian) scores, prior fallbacks, ranker counts and the Unverified rule."""
 
 import pytest
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from app import scores
 from app.config import get_settings
@@ -79,7 +79,9 @@ async def test_score_approaches_the_raw_mean_as_rankers_grow(client, db):
 
 async def test_prior_falls_back_through_the_levels(client, db):
     maker = await make_user(db, "maker")
-    k_ramen = await make_place(db, name="Kyoto Ramen", creator=maker, location_slug="gion-higashiyama")
+    k_ramen = await make_place(
+        db, name="Kyoto Ramen", creator=maker, location_slug="gion-higashiyama"
+    )
     t_ramen = await make_place(db, name="Tokyo Ramen", creator=maker)
     t_cafe = await make_place(db, name="Tokyo Cafe", creator=maker, subcategory_slug="cafe")
     await rank_as(client, "u_one", k_ramen, "liked")  # 8.35
@@ -102,9 +104,7 @@ async def test_prior_falls_back_through_the_levels(client, db):
     )
 
     # 3. Without any ramen aggregate: the mean of all remaining rankings (Tokyo cafe = 5.05).
-    await db.execute(
-        text("DELETE FROM category_stats WHERE subcategory_id = :s"), {"s": sub_id}
-    )
+    await db.execute(text("DELETE FROM category_stats WHERE subcategory_id = :s"), {"s": sub_id})
     assert (await public(client, k_ramen))["public_score"] == pytest.approx(
         bayes(5.05, 8.35, 1), abs=0.006
     )
@@ -125,8 +125,12 @@ async def test_aggregates_follow_rerank_and_delete(client, db):
     await rank(client, a, "liked", 1)  # A 8.35
     await rank(client, b, "liked", 2)  # A 9.175, B 7.525
     prior = (9.175 + 7.525) / 2
-    assert (await public(client, a))["public_score"] == pytest.approx(bayes(prior, 9.175, 1), abs=0.006)
-    assert (await public(client, b))["public_score"] == pytest.approx(bayes(prior, 7.525, 1), abs=0.006)
+    assert (await public(client, a))["public_score"] == pytest.approx(
+        bayes(prior, 9.175, 1), abs=0.006
+    )
+    assert (await public(client, b))["public_score"] == pytest.approx(
+        bayes(prior, 7.525, 1), abs=0.006
+    )
 
     ranking_a = (await client.get("/api/rankings/snapshot", params={"place_id": a.id})).json()[
         "my_ranking"
@@ -135,7 +139,9 @@ async def test_aggregates_follow_rerank_and_delete(client, db):
     assert (await public(client, a))["public_score"] is None
     assert (await public(client, a))["ranker_count"] == 0
     # B is now alone at the band midpoint.
-    assert (await public(client, b))["public_score"] == pytest.approx(bayes(8.35, 8.35, 1), abs=0.006)
+    assert (await public(client, b))["public_score"] == pytest.approx(
+        bayes(8.35, 8.35, 1), abs=0.006
+    )
 
 
 async def test_unverified_clears_after_two_distinct_non_creator_rankers(client, db):
@@ -155,9 +161,14 @@ async def test_unverified_clears_after_two_distinct_non_creator_rankers(client, 
 
 
 async def test_seed_place_needs_any_two_users(client, db):
-    guidebook = User(username="guidebook", is_system=True)
-    db.add(guidebook)
-    await db.flush()
+    # The system "guidebook" user is created by the migrations; reuse it.
+    guidebook = (
+        await db.execute(select(User).where(User.username == "guidebook"))
+    ).scalar_one_or_none()
+    if guidebook is None:
+        guidebook = User(username="guidebook", is_system=True)
+        db.add(guidebook)
+        await db.flush()
     p = await make_place(db, name="Seed Ramen", creator=guidebook, is_seed=True)
     assert "unverified" in (await public(client, p))["badges"]
     await rank_as(client, "first", p)

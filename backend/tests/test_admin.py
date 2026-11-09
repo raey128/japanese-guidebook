@@ -53,7 +53,7 @@ async def test_queue_groups_by_target_newest_first(client_factory, db):
     ranked.visit_month, ranked.visit_year = 5, 2025
     await db.flush()
 
-    a, b, c = (await signed_in(client_factory, n) for n in ("qflaga", "qflagb", "qflagc"))
+    a, b, c = [await signed_in(client_factory, n) for n in ("qflaga", "qflagb", "qflagc")]
     admin = await admin_client(client_factory, db)
     await flag(a, p1.id, "closed")
     await flag(b, p2.id, "spam")
@@ -94,7 +94,7 @@ async def test_queue_shows_duplicate_target_and_info_suggestions(client_factory,
     place = await make_place(db, name="Maybe Dup", creator=owner)
     other = await make_place(db, name="Original", creator=owner)
     sub = await subcategory(db, "sushi")
-    loc = await location(db, "shibuya")
+    loc = await location(db, "shibuya-harajuku")
     u = await signed_in(client_factory, "qflagd")
     await flag(u, place.id, "duplicate", {"other_place_id": other.id})
     await flag(u, place.id, "wrong_info", {"subcategory_id": sub.id, "location_id": loc.id})
@@ -103,7 +103,7 @@ async def test_queue_shows_duplicate_target_and_info_suggestions(client_factory,
     by_type = {f["flag_type"]: f for f in group["flags"]}
     assert by_type["duplicate"]["duplicate_place"]["name"] == "Original"
     assert by_type["wrong_info"]["suggested_subcategory"]["slug"] == "sushi"
-    assert by_type["wrong_info"]["suggested_location"]["slug"] == "shibuya"
+    assert by_type["wrong_info"]["suggested_location"]["slug"] == "shibuya-harajuku"
     assert by_type["wrong_info"]["duplicate_place"] is None
 
 
@@ -197,7 +197,11 @@ async def test_close_reopen(client_factory, client, db):
     snap = await ranking.get_snapshot(db, newcomer.id, place.city_id, place.subcategory_id)
     with pytest.raises(ranking.RankingNotAllowed):
         await ranking.place_ranking(
-            db, user_id=newcomer.id, place=place, bucket="liked", position=1,
+            db,
+            user_id=newcomer.id,
+            place=place,
+            bucket="liked",
+            position=1,
             expected_version=snap["liked"].version,
         )
 
@@ -205,7 +209,11 @@ async def test_close_reopen(client_factory, client, db):
     assert r.status_code == 200
     assert "closed" not in r.json()["badges"]
     await ranking.place_ranking(
-        db, user_id=newcomer.id, place=place, bucket="liked", position=1,
+        db,
+        user_id=newcomer.id,
+        place=place,
+        bucket="liked",
+        position=1,
         expected_version=snap["liked"].version,
     )
 
@@ -259,9 +267,7 @@ async def test_apply_wrong_info_subcategory_reinserts_ranking(client_factory, cl
     assert await list_names(db, user.id, "ramen") == ["Ramen 0", "Ramen 2", "Ramen 3"]
     scores = (
         await db.execute(
-            text(
-                "SELECT personal_score FROM rankings WHERE user_id = :u AND place_id = :p"
-            ),
+            text("SELECT personal_score FROM rankings WHERE user_id = :u AND place_id = :p"),
             {"u": user.id, "p": moved.id},
         )
     ).scalar_one()
@@ -273,7 +279,7 @@ async def test_apply_wrong_info_subcategory_reinserts_ranking(client_factory, cl
 
 async def test_apply_wrong_info_name_and_location(client_factory, client, db):
     place = await make_place(db, name="Old Name", creator=await make_user(db, "applyown2"))
-    loc = await location(db, "shibuya")
+    loc = await location(db, "shibuya-harajuku")
     u = await signed_in(client_factory, "qflagh")
     f = (await flag(u, place.id, "wrong_info", {"name": "New Name", "location_id": loc.id})).json()
     admin = await admin_client(client_factory, db)
@@ -281,7 +287,7 @@ async def test_apply_wrong_info_name_and_location(client_factory, client, db):
     assert r.status_code == 200
     body = (await client.get(f"/api/places/{place.id}")).json()
     assert body["name"] == "New Name"
-    assert body["location"]["slug"] == "shibuya"
+    assert body["location"]["slug"] == "shibuya-harajuku"
     assert (await admin.post(f"/api/admin/flags/{f['id']}/apply")).status_code == 409
 
 
@@ -326,7 +332,9 @@ async def test_remove_note_resolves_its_flags(client_factory, db):
     author = await make_user(db, "spamwriter")
     r = await rank(db, author, place, note="spam spam spam")
     u = await signed_in(client_factory, "qflagl")
-    assert (await u.post(f"/api/rankings/{r.id}/flags", json={"flag_type": "spam"})).status_code == 201
+    assert (
+        await u.post(f"/api/rankings/{r.id}/flags", json={"flag_type": "spam"})
+    ).status_code == 201
     admin = await admin_client(client_factory, db)
 
     out = await admin.post(f"/api/admin/notes/{r.id}/remove")
@@ -351,7 +359,9 @@ async def test_seed_review_counts_and_toggle(client_factory, db):
     guide = await make_user(db, "seedowner")
     t1 = await make_place(db, name="Seed T1", creator=guide, is_seed=True)
     t2 = await make_place(db, name="Seed T2", creator=guide, is_seed=True)
-    k1 = await make_place(db, name="Seed K1", creator=guide, location_slug="gion", is_seed=True)
+    k1 = await make_place(
+        db, name="Seed K1", creator=guide, location_slug="gion-higashiyama", is_seed=True
+    )
     plain = await make_place(db, name="Not Seed", creator=guide)
     admin = await admin_client(client_factory, db)
 
@@ -381,6 +391,8 @@ async def test_seed_review_counts_and_toggle(client_factory, db):
 
     r = await admin.put(f"/api/admin/seeds/{t1.id}", json={"reviewed": False})
     assert r.json()["reviewed"] is False
-    assert (await admin.put(f"/api/admin/seeds/{plain.id}", json={"reviewed": True})).status_code == 404
+    assert (
+        await admin.put(f"/api/admin/seeds/{plain.id}", json={"reviewed": True})
+    ).status_code == 404
     assert (await admin.get("/api/admin/seeds?city=atlantis")).status_code == 404
     assert t2.id and k1.id

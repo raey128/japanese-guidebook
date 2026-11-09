@@ -1,4 +1,4 @@
-from tests.factories import ASAKUSA, location, make_place, make_user, sign_in, subcategory
+from tests.factories import ASAKUSA, make_place, make_user, sign_in, subcategory
 from tests.test_places import place_body
 
 # ~0.0009 deg of latitude is ~100 m.
@@ -64,7 +64,9 @@ async def test_similar_name_at_300m_is_not_flagged(client, db):
 
 
 async def test_japanese_name_trigram_similarity(client, db):
-    other = await existing(db, name="Unrelated English", name_ja="浅草ラーメン", subcategory_slug="ramen")
+    other = await existing(
+        db, name="Unrelated English", name_ja="浅草ラーメン", subcategory_slug="ramen"
+    )
     await sign_in(client, "adder")
     izakaya = await subcategory(db, "izakaya")
     body = await place_body(
@@ -91,8 +93,9 @@ async def test_confirm_not_duplicate_creates_anyway(client, db):
 
 async def test_hidden_and_merged_places_are_not_candidates(client, db):
     await existing(db, name="Hidden One", subcategory_slug="ramen", is_hidden=True)
-    survivor = await existing(db, name="Survivor", subcategory_slug="sushi", owner="dup2",
-                              lat=ASAKUSA[0] + 0.01)
+    survivor = await existing(
+        db, name="Survivor", subcategory_slug="sushi", owner="dup2", lat=ASAKUSA[0] + 0.01
+    )
     merged = await existing(db, name="Merged One", subcategory_slug="ramen", owner="dup3")
     merged.merged_into_id = survivor.id
     await db.flush()

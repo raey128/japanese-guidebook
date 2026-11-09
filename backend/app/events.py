@@ -71,13 +71,13 @@ async def rollup_and_expire(db: AsyncSession) -> tuple[int, int]:
                 """
             )
         )
-    ).rowcount
+    ).rowcount  # type: ignore[attr-defined]  # a CursorResult for INSERT/DELETE
     deleted = (
         await db.execute(
             text("DELETE FROM events WHERE created_at < now() - make_interval(days => :d)"),
             {"d": RETENTION_DAYS},
         )
-    ).rowcount
+    ).rowcount  # type: ignore[attr-defined]
     return rolled or 0, deleted or 0
 
 

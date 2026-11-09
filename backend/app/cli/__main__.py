@@ -26,7 +26,9 @@ def main(argv: list[str] | None = None) -> int:
     admin.add_argument("--revoke", action="store_true")
     dump = sub.add_parser("dump", help="Write the open data dump")
     dump.add_argument("--out", default=None, help="Base directory (default: dumps/)")
-    sub.add_parser("rollup-events", help="Roll usage events into daily totals; expire old raw events")
+    sub.add_parser(
+        "rollup-events", help="Roll usage events into daily totals; expire old raw events"
+    )
     synth = sub.add_parser("synthetic", help="Load synthetic places/rankings for load testing")
     synth.add_argument("--count", type=int, default=50000)
     synth.add_argument("--seed", type=int, default=42)

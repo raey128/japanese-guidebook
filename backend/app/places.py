@@ -150,7 +150,8 @@ async def create_place(
     address: str | None,
     pending: bool = False,
 ) -> Place:
-    """Insert a place. Manual adds from search (R13) are stored pending and hidden until reviewed."""
+    """Insert a place. Manual adds from search (R13) are stored pending and hidden until
+    reviewed."""
     place_id = (
         await db.execute(
             text(

@@ -61,7 +61,11 @@ async def _close_flags(
     ranking_id: int | None = None,
 ) -> None:
     """Move the matching OPEN flags to `status` ('resolved' or 'dismissed')."""
-    stmt = update(Flag).where(Flag.status == "open", Flag.flag_type.in_(flag_types))
+    stmt = (
+        update(Flag)
+        .where(Flag.status == "open", Flag.flag_type.in_(flag_types))
+        .values(status=status)
+    )
     if place_id is not None:
         stmt = stmt.where(Flag.target_type == "place", Flag.place_id == place_id)
     if ranking_id is not None:
@@ -106,7 +110,10 @@ async def _validate_place_payload(
             raise ModerationError(422, "The suggested pin is the same as the current pin.")
     elif flag_type == "wrong_info":
         assert payload is not None
-        if "subcategory_id" in payload and await db.get(Subcategory, payload["subcategory_id"]) is None:
+        if (
+            "subcategory_id" in payload
+            and await db.get(Subcategory, payload["subcategory_id"]) is None
+        ):
             raise ModerationError(422, "Unknown subcategory.")
         if "location_id" in payload and await db.get(Location, payload["location_id"]) is None:
             raise ModerationError(422, "Unknown location.")
@@ -210,9 +217,7 @@ async def flag_queue(db: AsyncSession, status: str) -> FlagQueue:
     stmt = select(Flag).order_by(Flag.created_at.desc(), Flag.id.desc())
     if status != "all":
         stmt = stmt.where(Flag.status == status)
-    flags = list(
-        (await db.execute(stmt.execution_options(populate_existing=True))).scalars()
-    )
+    flags = list((await db.execute(stmt.execution_options(populate_existing=True))).scalars())
     if not flags:
         return FlagQueue(groups=[])
 
@@ -220,7 +225,9 @@ async def flag_queue(db: AsyncSession, status: str) -> FlagQueue:
     rankings: dict[int, tuple[Ranking, User]] = {}
     if ranking_ids:
         rows = await db.execute(
-            select(Ranking, User).join(User, User.id == Ranking.user_id).where(Ranking.id.in_(ranking_ids))
+            select(Ranking, User)
+            .join(User, User.id == Ranking.user_id)
+            .where(Ranking.id.in_(ranking_ids))
         )
         rankings = {r.id: (r, u) for r, u in rows.all()}
 

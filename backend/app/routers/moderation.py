@@ -41,7 +41,9 @@ ERRORS: dict[int | str, dict] = {
     operation_id="flagPlace",
 )
 async def flag_place(place_id: int, body: PlaceFlagIn, db: DB, user: CurrentUser) -> FlagCreated:
-    payload = body.payload.model_dump(exclude_none=True) if isinstance(body.payload, BaseModel) else None
+    payload = (
+        body.payload.model_dump(exclude_none=True) if isinstance(body.payload, BaseModel) else None
+    )
     flag, action = await moderation.flag_place(db, user, place_id, body.flag_type, payload)
     await db.commit()
     return FlagCreated(

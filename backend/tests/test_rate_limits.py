@@ -6,9 +6,7 @@ from tests.test_places import place_body
 
 async def add(client, db, i, lat0=35.70):
     """Add a distinct place far enough from the others to never look like a duplicate."""
-    body = await place_body(
-        db, name=f"Spam Place {i} Xq{i}", lat=lat0 + i * 0.004, lng=139.796
-    )
+    body = await place_body(db, name=f"Spam Place {i} Xq{i}", lat=lat0 + i * 0.004, lng=139.796)
     body["confirm_not_duplicate"] = True
     return await client.post("/api/places", json=body)
 

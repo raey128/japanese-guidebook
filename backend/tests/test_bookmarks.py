@@ -57,7 +57,11 @@ async def test_ranking_removes_bookmark(client, db):
     await client.put(f"/api/bookmarks/{place.id}")
     snap = await ranking.get_snapshot(db, me["id"], place.city_id, place.subcategory_id)
     await ranking.place_ranking(
-        db, user_id=me["id"], place=place, bucket="liked", position=1,
+        db,
+        user_id=me["id"],
+        place=place,
+        bucket="liked",
+        position=1,
         expected_version=snap["liked"].version,
     )
     await db.flush()

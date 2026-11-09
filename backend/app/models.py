@@ -117,7 +117,9 @@ class Place(Base):
     seed_reviewed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     merged_into_id: Mapped[int | None] = mapped_column(ForeignKey("places.id"))
     # Manual adds (R13): 'pending' until an admin approves ('live') or rejects ('rejected').
-    status: Mapped[str] = mapped_column(String(10), default="live", server_default="live", nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(10), default="live", server_default="live", nullable=False
+    )
     review_reason: Mapped[str | None] = mapped_column(String(200))
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
@@ -150,7 +152,9 @@ class RankList(Base):
 
     __tablename__ = "rank_lists"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
     city_id: Mapped[int] = mapped_column(ForeignKey("cities.id"), primary_key=True)
     subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), primary_key=True)
     bucket: Mapped[str] = mapped_column(String(10), primary_key=True)
@@ -192,7 +196,9 @@ class Ranking(Base):
 class Bookmark(Base):
     __tablename__ = "bookmarks"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
     place_id: Mapped[int] = mapped_column(ForeignKey("places.id"), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
