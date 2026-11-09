@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { api, unwrap, type Schemas } from "../../api/client";
 import { invalidateAfterRankingChange } from "../../hooks/ranking";
@@ -10,7 +10,16 @@ import { Stars } from "./StarRating";
 const BUCKET_LABEL = { liked: "Liked", fine: "Fine", disliked: "Disliked" } as const;
 
 /** The viewer's own ranking of a place with inline note editing and delete. */
-export default function MyRankingSummary({ ranking }: { ranking: Schemas["MyRanking"] }) {
+export default function MyRankingSummary({
+  ranking,
+  heading = "Your ranking",
+  headingId = "my-ranking-h",
+}: {
+  ranking: Schemas["MyRanking"];
+  /** Settings lists many: each gets the place's name as its heading. */
+  heading?: ReactNode;
+  headingId?: string;
+}) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState<NoteValue>({ note: "", month: null, year: null });
@@ -42,9 +51,9 @@ export default function MyRankingSummary({ ranking }: { ranking: Schemas["MyRank
   const visit = formatVisit(ranking.visit_month, ranking.visit_year);
 
   return (
-    <section aria-labelledby="my-ranking-h" className="card">
-      <h2 id="my-ranking-h" className="text-lg font-semibold">
-        Your ranking
+    <section aria-labelledby={headingId} className="card">
+      <h2 id={headingId} className="text-lg font-semibold">
+        {heading}
       </h2>
       <p>
         {rating ? (

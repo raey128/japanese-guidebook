@@ -1,5 +1,6 @@
 import type { Schemas } from "../../api/client";
 import { topCategoryInfo } from "../../lib/categories";
+import MapPin from "../ui/MapPin";
 
 type Point = Schemas["MapPoint"];
 
@@ -13,7 +14,7 @@ export function pinLabel(p: Point, categoryName: string, showScore: boolean): st
   return parts.join(", ");
 }
 
-/** A round category-coloured pin with its emoji (R11.6, R16.3), score when zoomed in (R15.1), ♡/✓ marks (R17.2). */
+/** A chunky category-coloured pin with its emoji (R11.6, R16.3), score when zoomed in (R15.1), ♡/✓ marks (R17.2). */
 export default function PlacePin({
   point,
   categoryName,
@@ -42,13 +43,10 @@ export default function PlacePin({
       }}
       className={`relative flex flex-col items-center transition-transform motion-reduce:transition-none ${selected ? "z-10 scale-125" : "hover:scale-110"}`}
     >
-      <span
-        className={`flex size-9 items-center justify-center rounded-full border-[3px] text-lg shadow-md ${
-          selected ? "border-ink" : "border-white"
-        } ${pending ? "opacity-70 outline-2 outline-dashed outline-ink" : ""}`}
-        style={{ background: info?.color ?? "var(--color-brand)" }}
-      >
-        <span aria-hidden="true">{info?.emoji ?? "📍"}</span>
+      <span className={pending ? "opacity-70" : ""}>
+        <MapPin color={info?.color ?? "var(--color-brand)"} colorDark={info?.colorDark ?? "var(--color-brand-dark)"} size={36} ring={selected}>
+          {info?.emoji ?? "📍"}
+        </MapPin>
       </span>
       {score ? (
         <span aria-hidden="true" className="-mt-1.5 rounded-full border-2 border-white bg-ink px-1.5 text-xs font-extrabold leading-4 text-white shadow">

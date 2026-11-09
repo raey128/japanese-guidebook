@@ -39,7 +39,7 @@ export default function MenuDrawer() {
         aria-label={count > 0 ? `Menu, ${count} places waiting for review` : "Menu"}
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className="btn btn-secondary btn-icon relative size-12 shrink-0 shadow-lg"
+        className="btn btn-secondary btn-icon relative size-14 shrink-0 shadow-lg"
       >
         <span aria-hidden="true" className="text-xl">
           ⚙️

@@ -27,13 +27,18 @@ export function useSubcategories() {
 }
 
 /** The Lists tab's featured lists for a city (R14.7). */
-export function useFeaturedLists(city: string) {
+export function useFeaturedLists(city: string, category: string) {
   return useQuery({
-    queryKey: ["list", "featured", city],
+    queryKey: ["list", "featured", city, category],
     enabled: city.length > 0,
     retry: retryUnlessClientError,
     placeholderData: keepPreviousData,
-    queryFn: async () => unwrap(await api.GET("/api/lists/{city_slug}", { params: { path: { city_slug: city } } })),
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/lists/{city_slug}", {
+          params: { path: { city_slug: city }, query: { category: category || undefined } },
+        }),
+      ),
   });
 }
 

@@ -22,6 +22,9 @@ test("adding is search-first on the main map; the pin moves only after Edit pin"
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await expect(page.getByRole("button", { name: "Edit pin" })).toBeVisible();
   // Category chips, including adding a new kind.
+  // Kinds stay hidden until a group is chosen.
+  await expect(page.getByRole("group", { name: "Food kinds" })).toHaveCount(0);
+  await page.getByTestId("add-panel").getByRole("group", { name: "Group" }).getByRole("button", { name: "Food" }).click();
   await page.getByRole("button", { name: "New" }).click();
   await page.getByLabel("New food category").fill(`Curry ${runId()}`);
   await page.getByRole("button", { name: "Add", exact: true }).click();
@@ -41,4 +44,13 @@ test("Lists is the second tab, next to Map", async ({ page }) => {
   await expect(tabs.getByRole("link", { name: "Lists" })).toHaveAttribute("aria-current", "page");
   await tabs.getByRole("link", { name: "Map" }).click();
   await expect(page.getByTestId("map-container")).toBeVisible();
+});
+
+test("the Add place button is visible without scrolling the panel", async ({ page }) => {
+  await stubMapStyle(page);
+  await signInApi(page);
+  await page.setViewportSize({ width: 390, height: 740 });
+  await page.goto("/?lat=35.6620&lng=139.7380&z=15");
+  await page.getByRole("button", { name: "Add a place" }).click();
+  await expect(page.getByRole("button", { name: "Add place", exact: true })).toBeInViewport();
 });

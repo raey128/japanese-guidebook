@@ -6,6 +6,7 @@ import { useSuggest } from "../../hooks/map";
 import { topCategoryInfo } from "../../lib/categories";
 import { track } from "../../lib/track";
 import type { Bbox } from "../map/geo";
+import CityPicker from "../ui/CityPicker";
 
 type City = Schemas["CityWithLocations"];
 type Loc = Schemas["LocationOut"];
@@ -132,23 +133,11 @@ export default function SearchBar({
 
   return (
     <div className="relative">
-      <div className="card flex items-center gap-1 p-1.5 shadow-lg">
-        <label htmlFor={`${listId}-city`} className="sr-only">
-          City
-        </label>
-        <select
-          id={`${listId}-city`}
-          value={city}
-          onChange={(e) => onCity(e.target.value)}
-          className="min-h-10 shrink-0 cursor-pointer rounded-xl bg-brand-soft px-2 text-sm font-extrabold text-brand-dark focus:outline-none focus-visible:outline-3 focus-visible:outline-stays"
-        >
-          {cities.map((c) => (
-            <option key={c.id} value={c.slug}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <span aria-hidden="true" className="pl-1 text-lg">
+      {/* Same height as the ⚙️ menu button beside it (h-14), city · divider · search. */}
+      <div className="card flex h-14 items-center gap-2 py-0 pl-1.5 pr-3 shadow-lg">
+        <CityPicker cities={cities} value={city} onChange={onCity} />
+        <span aria-hidden="true" className="h-7 w-0.5 shrink-0 rounded-full bg-line" />
+        <span aria-hidden="true" className="text-lg">
           🔎
         </span>
         <input
@@ -186,7 +175,7 @@ export default function SearchBar({
               setOpen(false);
             }
           }}
-          className="min-h-10 min-w-0 flex-1 bg-transparent px-1 text-base font-bold placeholder:font-semibold placeholder:text-muted focus:outline-none"
+          className="h-10 min-w-0 flex-1 bg-transparent text-base font-bold placeholder:font-semibold placeholder:text-muted focus:outline-none"
         />
       </div>
 

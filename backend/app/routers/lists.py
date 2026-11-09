@@ -92,9 +92,9 @@ async def get_public_list(
         if loc is None:
             raise HTTPException(404, "Location not found.")
 
-    title = (f"Top rated in {city.name}" if category == ALL else f"{label} in {city.name}") + (
-        f" › {loc.name}" if loc else ""
-    )
+    title = (
+        f"Overall ranking in {city.name}" if category == ALL else f"{label} in {city.name}"
+    ) + (f" › {loc.name}" if loc else "")
     total, items = await _list_page(db, ref, city, sub_ids, loc, limit, offset)
     return PublicList(
         title=title,
@@ -138,9 +138,12 @@ async def _list_page(  # type: ignore[no-untyped-def]
     responses={404: {"model": Message}},
     operation_id="getFeaturedLists",
 )
-async def get_featured_lists(city_slug: str, db: DB) -> FeaturedLists:
-    """The Lists tab (R14.7): "Top rated in <city>", then the top of each category that has
-    places, then the busiest kinds (most ranked, then most places). Empty lists are left out."""
+async def get_featured_lists(city_slug: str, db: DB, category: str | None = None) -> FeaturedLists:
+    """The Lists tab (R14.7). No `category` (Overall Ranking): "Overall ranking in <city>", the
+    top of each category that has places, then the busiest kinds. With a top `category` (e.g.
+    food): "Top Food in <city>" and every kind in it that has places. Empty lists are left out."""
+    if category is not None and category not in TOP_CATEGORIES:
+        raise HTTPException(404, "Category not found.")
     ref = await load_reference(db)
     city = next((c for c in ref.cities.values() if c.slug == city_slug), None)
     if city is None:
@@ -162,17 +165,22 @@ async def get_featured_lists(city_slug: str, db: DB) -> FeaturedLists:
     ).all()
     by_sub = {r.subcategory_id: (r.places, r.ranked) for r in counts}
 
-    plans: list[tuple[str, str, str, str | None, list[int]]] = [
-        (ALL, "all", f"Top rated in {city.name}", None, list(ref.subcategories))
-    ]
-    for top in TOP_CATEGORIES:
+    plans: list[tuple[str, str, str, str | None, list[int]]] = []
+    if category is None:
+        plans.append((ALL, "all", f"Overall ranking in {city.name}", None, list(ref.subcategories)))
+    for top in TOP_CATEGORIES if category is None else (category,):
         ids = [s.id for s in ref.subcategories.values() if s.top_category == top]
         if any(by_sub.get(i, (0, 0))[0] for i in ids):
             plans.append((top, "top", f"Top {TOP_CATEGORY_NAMES[top]} in {city.name}", top, ids))
-    busiest = sorted(
-        (s for s in ref.subcategories.values() if by_sub.get(s.id, (0, 0))[0] >= 2),
-        key=lambda s: (-by_sub[s.id][1], -by_sub[s.id][0], s.name),
-    )[:FEATURED_SUBCATEGORIES]
+    kinds = [
+        s
+        for s in ref.subcategories.values()
+        if by_sub.get(s.id, (0, 0))[0] >= (2 if category is None else 1)
+        and (category is None or s.top_category == category)
+    ]
+    busiest = sorted(kinds, key=lambda s: (-by_sub[s.id][1], -by_sub[s.id][0], s.name))
+    if category is None:
+        busiest = busiest[:FEATURED_SUBCATEGORIES]
     for s in busiest:
         plans.append((s.slug, "sub", f"Top {s.name} in {city.name}", s.top_category, [s.id]))
 

@@ -20,7 +20,7 @@ export const COPY = {
   nearMe: "Near me",
 
   emptyRanked: "Nothing ranked here yet. Be the first!",
-  emptySaved: "No saved spots yet. Tap ♡ on any place to save it.",
+  emptySaved: "No saved spots yet. Tap the bookmark on any place to save it.",
   emptyMine: "You haven't ranked anything yet. Find a place you've been and rank it!",
   signInToSee: "to see your lists.",
   pickUsername: "Pick a username to save places",

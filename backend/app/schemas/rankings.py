@@ -22,6 +22,9 @@ class RankingItem(Out):
     position: int  # 1 = best
     personal_score: float
     rating: int | None = None
+    note: str | None = None  # the user's comment (only their own lists are ever served)
+    visit_month: int | None = None
+    visit_year: int | None = None
     badges: list[Badge]  # "closed" / "reported_closed" / "hidden" (hidden only ever shown to owner)
 
 

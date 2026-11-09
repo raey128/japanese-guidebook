@@ -2,12 +2,13 @@ import { Link, useSearchParams } from "react-router";
 
 import type { Schemas } from "../../api/client";
 import { useCities, useFeaturedLists } from "../../hooks/lists";
-import { topCategoryInfo } from "../../lib/categories";
+import { isTopCategory, TOP_CATEGORY_INFO, topCategoryInfo } from "../../lib/categories";
 import { getLastCity, setLastCity } from "../../lib/lastCity";
 import Badges from "../Badges";
 import PlaceNames from "../PlaceNames";
 import Score from "../Score";
 import Chip from "../ui/Chip";
+import CityPicker from "../ui/CityPicker";
 import EmptyState from "../ui/EmptyState";
 import ErrorState from "../ui/ErrorState";
 import Loading from "../ui/Loading";
@@ -69,37 +70,61 @@ function ListCard({ list, city }: { list: Featured; city: string }) {
 }
 
 /**
- * The Lists tab (R14.7): ready-made rankings for a city, "Top rated in Tokyo", then each
- * category ("Top Food in Tokyo") and the busiest kinds ("Top Ramen in Tokyo"). The city is in
- * the URL (`city`) so it's linkable.
+ * The Lists tab (R14.7): pick the city, then Overall Ranking or a category. Overall shows
+ * "Overall ranking in Tokyo", each category's top and the busiest kinds; a category shows its
+ * top and every kind in it. `city` and `category` are in the URL so lists are linkable.
  */
 export default function AllLists() {
   const [sp, setSp] = useSearchParams();
   const cities = useCities();
   const cityList = Array.isArray(cities.data) ? cities.data : [];
   const city = sp.get("city") || getLastCity();
-  const featured = useFeaturedLists(city);
+  const raw = sp.get("category") ?? "";
+  const category = isTopCategory(raw) ? raw : "";
+  const featured = useFeaturedLists(city, category);
 
-  const chooseCity = (slug: string) => {
-    setLastCity(slug);
+  const update = (changes: Record<string, string>) => {
     const next = new URLSearchParams(sp);
-    next.set("city", slug);
+    for (const [k, v] of Object.entries(changes)) {
+      if (v) next.set(k, v);
+      else next.delete(k);
+    }
     setSp(next, { replace: true });
   };
 
   return (
     <div className="space-y-4">
-      <div role="group" aria-label="City" className="flex gap-2 overflow-x-auto pb-1">
-        {cityList.map((c) => (
-          <Chip key={c.id} pressed={c.slug === city} onClick={() => chooseCity(c.slug)}>
-            {c.name}
+      {/* The city is the big choice; categories narrow it down (R14.7). */}
+      <CityPicker
+        cities={cityList}
+        value={city}
+        variant="title"
+        onChange={(slug) => {
+          setLastCity(slug);
+          update({ city: slug });
+        }}
+      />
+      <div role="group" aria-label="Category" className="flex gap-2 overflow-x-auto pb-1">
+        <Chip pressed={category === ""} emoji="🏆" onClick={() => update({ category: "" })}>
+          Overall Ranking
+        </Chip>
+        {TOP_CATEGORY_INFO.map((c) => (
+          <Chip
+            key={c.slug}
+            pressed={category === c.slug}
+            emoji={c.emoji}
+            color={c.color}
+            colorDark={c.colorDark}
+            onClick={() => update({ category: c.slug })}
+          >
+            {c.slug === "experiences" ? "Experiences" : c.name}
           </Chip>
         ))}
       </div>
       {featured.isPending ? <Loading /> : null}
       {featured.isError ? <ErrorState onRetry={() => void featured.refetch()} /> : null}
       {featured.data && featured.data.lists.length === 0 ? (
-        <EmptyState emoji="🌱" title={`No places in ${featured.data.city.name} yet.`} />
+        <EmptyState emoji="🌱" title={`Nothing here in ${featured.data.city.name} yet.`} />
       ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         {featured.data?.lists.map((l) => <ListCard key={l.key} list={l} city={city} />)}

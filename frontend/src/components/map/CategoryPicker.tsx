@@ -22,7 +22,8 @@ export default function CategoryPicker({ value, onChange, error }: Props) {
   const subs = useSubcategories();
   const all = subs.data ?? [];
   const selected = all.find((s) => s.id === value) ?? null;
-  const [top, setTop] = useState<TopCategory>((selected?.top_category as TopCategory) ?? "food");
+  // No group open until one is tapped (or a guess from the name search picks one).
+  const [top, setTop] = useState<TopCategory | null>((selected?.top_category as TopCategory) ?? null);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
 
@@ -33,7 +34,7 @@ export default function CategoryPicker({ value, onChange, error }: Props) {
 
   const create = useMutation({
     mutationFn: async () =>
-      unwrap(await api.POST("/api/subcategories", { body: { name: newName.trim(), top_category: top } })),
+      unwrap(await api.POST("/api/subcategories", { body: { name: newName.trim(), top_category: top ?? "food" } })),
     onSuccess: (sub: Schemas["SubcategoryOut"]) => {
       qc.setQueryData<Schemas["SubcategoryOut"][]>(["subcategories"], (old) =>
         old && !old.some((s) => s.id === sub.id) ? [...old, sub] : old,
@@ -45,8 +46,8 @@ export default function CategoryPicker({ value, onChange, error }: Props) {
     },
   });
 
-  const info = topCategoryInfo(top)!;
-  const inGroup = all.filter((s) => s.top_category === top);
+  const info = top ? topCategoryInfo(top) : undefined;
+  const inGroup = top ? all.filter((s) => s.top_category === top) : [];
   const createError =
     create.error instanceof ApiError && create.error.status === 422 ? "Give the category a name (2–40 letters)." : create.error?.message;
 
@@ -64,7 +65,7 @@ export default function CategoryPicker({ value, onChange, error }: Props) {
             color={c.color}
             colorDark={c.colorDark}
             onClick={() => {
-              setTop(c.slug);
+              setTop(top === c.slug && !selected ? null : c.slug);
               setAdding(false);
             }}
           >
@@ -72,6 +73,7 @@ export default function CategoryPicker({ value, onChange, error }: Props) {
           </Chip>
         ))}
       </div>
+      {info ? (
       <div role="group" aria-label={`${info.name} kinds`} className="flex flex-wrap gap-2 rounded-(--radius-card) bg-stone-50 p-2">
         {subs.isPending ? <p className="hint px-2">Loading…</p> : null}
         {inGroup.map((s) => (
@@ -96,7 +98,8 @@ export default function CategoryPicker({ value, onChange, error }: Props) {
           </button>
         ) : null}
       </div>
-      {adding ? (
+      ) : null}
+      {adding && info ? (
         <div className="flex flex-wrap items-end gap-2">
           <div className="min-w-40 flex-1">
             <label htmlFor={`${id}-new`} className="label">

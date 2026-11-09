@@ -243,7 +243,19 @@ async def test_patch_note_does_not_change_position_or_scores(client, db):
     assert out["position"] == 2
 
     after = await snapshot(client, a.id)
-    assert after["buckets"] == before["buckets"]  # same versions, positions and scores
+
+    # Same versions, positions and scores (only the note fields differ).
+    def order(snap):
+        return [
+            (
+                b["bucket"],
+                b["version"],
+                [(i["place_id"], i["position"], i["personal_score"]) for i in b["items"]],
+            )
+            for b in snap["buckets"]
+        ]
+
+    assert order(after) == order(before)
     assert after["my_ranking"]["bucket"] == "liked"
 
 

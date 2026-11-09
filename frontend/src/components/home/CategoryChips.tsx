@@ -29,7 +29,7 @@ export default function CategoryChips({
     <div className="space-y-2">
       <div role="group" aria-label="Category" className="flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
         {showSaved ? (
-          <Chip pressed={savedOnly} emoji="♡" onClick={() => onSavedOnly(!savedOnly)} className="shadow-sm">
+          <Chip pressed={savedOnly} onClick={() => onSavedOnly(!savedOnly)} className="shadow-sm">
             Saved
           </Chip>
         ) : null}

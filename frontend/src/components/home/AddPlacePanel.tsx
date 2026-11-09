@@ -304,12 +304,15 @@ export default function AddPlacePanel({
         </p>
       ) : null}
 
-      <button type="submit" disabled={create.isPending || outside || waitingForArea} className="btn btn-primary w-full">
-        {create.isPending ? "Adding…" : waitingForArea ? "Finding the area…" : manual ? "Send for review" : "Add place"}
-      </button>
-      <p className="text-center text-xs text-muted">
-        Map data and addresses © OpenStreetMap contributors. What you add is shared under CC BY-SA 4.0.
-      </p>
+      {/* Always in view at the bottom of the panel, however far the form scrolls (R13.12). */}
+      <div className="sticky -bottom-4 -mx-4 -mb-4 border-t-2 border-line bg-white px-4 pb-4 pt-3">
+        <button type="submit" disabled={create.isPending || outside || waitingForArea} className="btn btn-primary w-full">
+          {create.isPending ? "Adding…" : waitingForArea ? "Finding the area…" : manual ? "Send for review" : "Add place"}
+        </button>
+        <p className="mt-1 text-center text-[11px] text-muted">
+          Map data © OpenStreetMap contributors · shared under CC BY-SA 4.0
+        </p>
+      </div>
     </form>
   );
 }

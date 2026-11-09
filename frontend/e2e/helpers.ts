@@ -214,7 +214,10 @@ export function addNameBox(page: Page): Locator {
   return page.getByTestId("add-panel").getByRole("combobox", { name: /^Name/ });
 }
 
-/** Pick a food category chip on the Add a place panel (Food is the default group). */
+/** Pick a food kind on the Add a place panel: open the Food group, then tap the kind. */
 export async function pickFoodCategory(page: Page, name: string): Promise<void> {
-  await page.getByRole("group", { name: "Food kinds" }).getByRole("button", { name, exact: true }).click();
+  const panel = page.getByTestId("add-panel");
+  const kinds = panel.getByRole("group", { name: "Food kinds" });
+  if (!(await kinds.isVisible())) await panel.getByRole("group", { name: "Group" }).getByRole("button", { name: "Food" }).click();
+  await kinds.getByRole("button", { name, exact: true }).click();
 }

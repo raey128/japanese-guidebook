@@ -14,7 +14,7 @@ test("a ranked place shows under My rankings and 'Show on map' opens it on the m
   await rankApi(page, place.id);
 
   await page.goto("/lists");
-  await page.getByRole("button", { name: "My rankings" }).click();
+  await page.getByRole("button", { name: "My ratings" }).click();
   await expect(page).toHaveURL(/\/lists\?tab=mine$/);
   await expect(page.getByRole("heading", { level: 3, name: "Ramen" })).toBeVisible();
   const row = page.getByRole("listitem").filter({ hasText: place.name });
@@ -34,7 +34,7 @@ test("old list URLs redirect to the matching segment", async ({ page }) => {
   await signInApi(page);
   await page.goto("/me/rankings");
   await expect(page).toHaveURL(/\/lists\?tab=mine$/);
-  await expect(page.getByRole("button", { name: "My rankings" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "My ratings" })).toHaveAttribute("aria-pressed", "true");
   await page.goto("/me/want-to-go");
   await expect(page).toHaveURL(/\/lists\?tab=want_to_go$/);
   await expect(page.getByRole("button", { name: "Saved" })).toHaveAttribute("aria-pressed", "true");
@@ -42,7 +42,7 @@ test("old list URLs redirect to the matching segment", async ({ page }) => {
 
 test("logged out: All works, personal segments ask to sign in", async ({ page }) => {
   await page.goto("/lists");
-  await expect(page.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Rankings" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("heading", { level: 2 })).toBeVisible();
 
   await page.getByRole("button", { name: "Saved" }).click();
@@ -53,9 +53,9 @@ test("logged out: All works, personal segments ask to sign in", async ({ page })
 
 test("the Lists tab shows ready-made rankings for the city (R14.7)", async ({ page }) => {
   await page.goto("/lists?city=tokyo");
-  await expect(page.getByRole("heading", { level: 2, name: "Top rated in Tokyo" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Overall ranking in Tokyo" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "Top Food in Tokyo" })).toBeVisible();
-  await page.getByRole("link", { name: /See all .*Top rated in Tokyo/ }).click();
+  await page.getByRole("link", { name: /See all .*Overall ranking in Tokyo/ }).click();
   await expect(page).toHaveURL(/\/lists\/tokyo\/all$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Top rated in Tokyo" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Overall ranking in Tokyo" })).toBeVisible();
 });

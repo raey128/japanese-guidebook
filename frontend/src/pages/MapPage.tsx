@@ -9,6 +9,7 @@ import { prefersReducedMotion } from "../components/app/Celebration";
 import { useInlineSignIn } from "../components/app/InlineSignIn";
 import { TAB_BAR_HEIGHT } from "../components/app/TabBar";
 import AddPlacePanel from "../components/home/AddPlacePanel";
+import MapPin from "../components/ui/MapPin";
 import CategoryChips from "../components/home/CategoryChips";
 import MenuDrawer from "../components/home/MenuDrawer";
 import PlacePin from "../components/home/PlacePin";
@@ -364,7 +365,8 @@ export default function MapPage() {
           onDragStart={() => longPress.cancel()}
           onZoomStart={() => longPress.cancel()}
         >
-          <AttributionControl position="top-right" compact />
+          {/* Tucked into the bottom-right corner, under the floating buttons (R11.9). */}
+          <AttributionControl position="bottom-right" compact />
 
           {showAdd && addPin ? (
             <Marker
@@ -379,11 +381,11 @@ export default function MapPage() {
                 role="img"
                 aria-label={pinEditing ? "New place pin. Drag it, or tap the map, to move it." : "New place pin"}
                 data-testid="add-pin"
-                className={`block text-5xl leading-none drop-shadow-[0_3px_3px_rgba(0,0,0,0.35)] ${
-                  pinEditing ? "cursor-grab animate-bounce active:cursor-grabbing motion-reduce:animate-none" : ""
-                }`}
+                className={`block ${pinEditing ? "cursor-grab animate-bounce active:cursor-grabbing motion-reduce:animate-none" : ""}`}
               >
-                📍
+                <MapPin color="var(--color-brand)" colorDark="var(--color-brand-dark)" size={48}>
+                  <span className="text-brand">★</span>
+                </MapPin>
               </span>
             </Marker>
           ) : null}
@@ -519,24 +521,6 @@ export default function MapPage() {
         </button>
       </div>
 
-      {/* Top picks: a side panel you can hide (R15.6). */}
-      {!showAdd ? (
-        <div className="pointer-events-none absolute left-0 z-10 flex items-start" style={{ top: "9.5rem", bottom: "5.5rem" }}>
-          <TopPicksPanel
-            data={picks.data}
-            open={picksOpen}
-            onOpenChange={setPicksOpen}
-            userLoc={userLoc}
-            onPick={(p) => {
-              track("place_open", pickSource);
-              selectPlace(p, pickSource);
-              if (window.innerWidth < 640) setPicksOpen(false);
-            }}
-            onAddPlace={() => startAdd()}
-          />
-        </div>
-      ) : null}
-
       {/* Bottom overlay: floating buttons sit above the place summary, never on top of it. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 mx-auto flex max-w-2xl flex-col">
         {showAdd ? (
@@ -571,7 +555,23 @@ export default function MapPage() {
             />
           </div>
         ) : null}
-        <div className={`flex items-end gap-2 px-3 pb-3 ${showAdd ? "hidden" : ""}`}>
+        <div className={`flex items-end gap-2 px-3 pb-8 ${showAdd ? "hidden" : ""}`}>
+          {/* Top picks: opens upwards from here, next to Near me (R15.6). */}
+          <TopPicksPanel
+            data={picks.data}
+            open={picksOpen && selected === null}
+            onOpenChange={(v) => {
+              if (v) setSelected(null);
+              setPicksOpen(v);
+            }}
+            userLoc={userLoc}
+            onPick={(p) => {
+              track("place_open", pickSource);
+              setPicksOpen(false);
+              selectPlace(p, pickSource);
+            }}
+            onAddPlace={() => startAdd()}
+          />
           <span className="flex-1" />
           <button type="button" onClick={nearMe} className="pointer-events-auto btn btn-secondary shadow-lg">
             <span aria-hidden="true">📍</span> {COPY.nearMe}

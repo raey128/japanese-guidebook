@@ -142,9 +142,9 @@ h3 {
   }
 }
 
-/* Full-screen map home: MapLibre's credit sits under our zoom group (+, −, whole city). */
-.map-home .maplibregl-ctrl-top-right {
-  top: 19rem;
+/* Full-screen map home: MapLibre's credit is a small ⓘ in the very bottom-right corner. */
+.map-home .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+  margin: 0 4px 4px 0;
 }
 .map-home .maplibregl-ctrl-group {
   border-radius: var(--radius-chunky);

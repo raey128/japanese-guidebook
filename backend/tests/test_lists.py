@@ -155,7 +155,7 @@ async def test_all_categories_list(client, db):
     await sign_in(client, "all_u")
     await rank(client, ramen, "liked", 1)
     out = await get_list(client, "tokyo", "all")
-    assert out["title"] == "Top rated in Tokyo"
+    assert out["title"] == "Overall ranking in Tokyo"
     assert out["top_category"] is None and out["subcategory"] is None
     assert [i["name"] for i in out["items"]] == ["All Ramen", "All Temple"]
 
@@ -174,8 +174,37 @@ async def test_featured_lists_for_the_lists_tab(client, db):
     lists = r.json()["lists"]
     keys = [(x["key"], x["kind"]) for x in lists]
     assert keys == [("all", "all"), ("food", "top"), ("sights", "top"), ("ramen", "sub")]
-    assert lists[0]["title"] == "Top rated in Tokyo" and lists[0]["total"] == 3
+    assert lists[0]["title"] == "Overall ranking in Tokyo" and lists[0]["total"] == 3
     assert lists[1]["title"] == "Top Food in Tokyo" and lists[1]["ranked"] == 1
     assert lists[3]["title"] == "Top Ramen in Tokyo"
     assert lists[3]["items"][0]["name"] == "Feat Ramen 1" and lists[3]["items"][0]["rank"] == 1
     assert (await client.get("/api/lists/atlantis")).status_code == 404
+
+
+async def test_featured_lists_for_one_category(client, db):
+    maker = await make_user(db, "featc_maker")
+    await make_place(db, name="Cat Ramen", creator=maker)
+    await make_place(db, name="Cat Cafe", creator=maker, subcategory_slug="cafe")
+    await make_place(db, name="Cat Temple", creator=maker, subcategory_slug="temple")
+    r = await client.get("/api/lists/tokyo", params={"category": "food"})
+    assert r.status_code == 200, r.text
+    lists = r.json()["lists"]
+    assert [x["key"] for x in lists] == ["food", "cafe", "ramen"]
+    assert lists[0]["title"] == "Top Food in Tokyo"
+    assert (await client.get("/api/lists/tokyo", params={"category": "ramen"})).status_code == 404
+
+
+async def test_my_rankings_include_my_comment(client, db):
+    maker = await make_user(db, "note_maker")
+    p = await make_place(db, name="Commented", creator=maker)
+    await sign_in(client, "note_u")
+    await rank(client, p, "liked", 1, note="Great broth", visit_month=3, visit_year=2025)
+    item = (await client.get("/api/me/rankings")).json()["cities"][0]["categories"][0]["buckets"][
+        0
+    ]["items"][0]
+    assert (item["note"], item["visit_month"], item["visit_year"], item["rating"]) == (
+        "Great broth",
+        3,
+        2025,
+        5,
+    )

@@ -10,10 +10,10 @@ import { useMe } from "../hooks/auth";
 
 export type ListsTab = "all" | "mine" | "want_to_go";
 
-const TABS: { value: ListsTab; label: string; emoji: string }[] = [
-  { value: "all", label: "All", emoji: "🏆" },
-  { value: "mine", label: "My rankings", emoji: "✅" },
-  { value: "want_to_go", label: "Saved", emoji: "♡" },
+const TABS: { value: ListsTab; label: string }[] = [
+  { value: "all", label: "Rankings" },
+  { value: "mine", label: "My ratings" },
+  { value: "want_to_go", label: "Saved" },
 ];
 
 export function parseTab(v: string | null): ListsTab {
@@ -47,7 +47,7 @@ export default function Lists() {
       <h1 className="text-3xl font-extrabold">Lists</h1>
       <div role="group" aria-label="List" className="flex gap-2 overflow-x-auto pb-1">
         {TABS.map((t) => (
-          <Chip key={t.value} pressed={tab === t.value} emoji={t.emoji} onClick={() => select(t.value)}>
+          <Chip key={t.value} pressed={tab === t.value} onClick={() => select(t.value)}>
             {t.label}
           </Chip>
         ))}

@@ -137,6 +137,7 @@ _The map is now the home screen (R11). Picking an area moves the map there and n
 | R11.6 | Pins are coloured by top category | Each of the 4 top categories has its own pin colour. A legend is reachable from the map (a "Key" button or the chip row itself). Selected pins keep a distinct ring. Clusters stay neutral (brand colour) |
 | R11.7 | The map opens on the last-used city | On first visit the map opens on Tokyo. Afterwards it opens on the last city picked in that browser (localStorage, wrapped in try/catch, falling back to Tokyo). URL `lat/lng/z` params, when present, win |
 | R11.8 | "Add place" is a floating + button on the map | A round + button floats at the bottom right, above the zoom controls, and is always visible. Tapping it starts the pin-drop add (R2.1, goes live). Logged-out users go to sign in first and come back to the form |
+| R11.9 | The map credit stays out of the way | OpenStreetMap attribution is a small ⓘ in the very bottom-right corner of the map, below the floating buttons; tapping it shows the credits |
 
 ### R12: Type-ahead search suggestions `⬜ new`
 
@@ -165,7 +166,7 @@ _The map is now the home screen (R11). Picking an area moves the map there and n
 | R13.10 | Manual adds count toward the daily submission limit | A manual add uses up the same R2.9 quota as a pin-drop add. Test: a new account that has made 5 places in 24h (any mix) gets 429 on the 6th |
 | R13.11 | Typing a name on Add a place suggests businesses | From 2 letters, a dropdown shows places already in the app ("Already on the map", opening them instead of adding a duplicate) and businesses from OpenStreetMap, nearest first. Picking one fills in the name and address, drops the pin and guesses the subcategory where it can. If the lookup service is down, the form still works by hand |
 | R13.12 | Adding a place happens on the main map, search first | Tapping + opens an Add panel over the same map with the name field focused; the map doesn't move or zoom. Typing shows suggestions (places already in the app, then OpenStreetMap). Picking one moves the map there and pins it. The form is just Name and Category: no Japanese name, address or "Where is it?" fields (the address and area come from the pin). The pin is fixed unless the user taps "Edit pin" (or "Place the pin yourself" when it isn't listed); then dragging it or tapping the map moves it, until Done. After adding, the panel closes, "📍 Pin added!" shows, and the new place's summary opens |
-| R13.13 | Category is chosen with chips, and users can add one | The group (Food / Sights / Stays / Experiences) and its kinds are chips styled like the rest of the app, not a dropdown. "+ New" adds a kind under the chosen group (2–40 characters, signed-in users); a name that already exists (any case) selects the existing one |
+| R13.13 | Category is chosen with chips, and users can add one | The groups (Food / Sights / Stays / Experiences) are chips styled like the rest of the app. The kinds (Ramen, Temple…) stay hidden until a group is tapped (or a name suggestion guesses one). "+ New" adds a kind under the chosen group (2–40 characters, signed-in users); a name that already exists (any case) selects the existing one. The Add place button stays pinned to the bottom of the panel, visible without scrolling |
 | R13.14 | Zoom controls are always on the map | A zoom group (+, −, 🗾 whole city) sits on the right of the map at all times, including while adding a place; 🗾 flies back to the default view of the current city |
 
 ### R14: Lists tab (Beli-style) `🟡 changed`
@@ -180,7 +181,7 @@ _Replaces the separate My rankings and Want to go pages and the map toggle. The 
 | R14.4 | Want to go shows bookmarks | Grouped by city. Ranking a place removes it from here (R7.2) |
 | R14.5 | Every row links back to the map | Each place row has "Show on map", which opens `/` with the map flown to that place and its pin summary open (same as R12.4) |
 | R14.6 | Lists is the second main tab | A tab bar at the bottom of the map and the Lists page shows Map (1st) and Lists (2nd); one tap switches. The active tab is marked (`aria-current`) and the map ends above the bar |
-| R14.7 | The Lists tab shows ready-made rankings | For the chosen city (chips): "Top rated in <city>", then "Top <category> in <city>" for each category with places, then the busiest kinds (e.g. "Top Ramen in Tokyo"), each with its top 5 and "See all N". Empty lists are left out. Tapping a place opens its card on the map |
+| R14.7 | The Lists tab shows ready-made rankings | Segments: Rankings / My ratings / Saved. In Rankings, the city is a big dropdown at the top and categories are chips under it: **Overall Ranking** (default) shows "Overall ranking in <city>", the top of each category and the busiest kinds; a category (e.g. Food) shows "Top Food in <city>" and every kind in it with places. Each list shows its top 5 and "See all N"; empty lists are left out; tapping a place opens its card on the map |
 
 ### R15: Recommendations on the map `⬜ new`
 
@@ -193,7 +194,7 @@ _Goal: a first-time visitor finds a good recommendation from the map by instinct
 | R15.3 | Tapping a pick shows it on the map | The map flies to the place (zoom ≥ 16), highlights its pin, opens the pin summary (R6.2) and collapses the sheet to peek |
 | R15.4 | Friendly empty state | With no ranked places in view, the sheet says "Nothing ranked here yet. Be the first!" with a button that starts the pin-drop add |
 | R15.5 | Sheet, search and buttons don't fight | Opening the search dropdown collapses the sheet. The + button floats above the sheet. At 360×640 the peek sheet leaves ≥ 50% of the map visible |
-| R15.6 | Top picks is a side panel you can hide | Top picks sits on the left edge of the map, hidden by default as a small tab ("⭐ Top picks here ›"); one tap opens it, ‹ hides it, and the choice is remembered per browser. Hidden while adding a place |
+| R15.6 | Top picks opens from the bottom row | Top picks is a button in the map's bottom row beside Near me (same style); tapping it opens the list upwards above it, tapping again (or ✕) closes it. Remembered per browser; closed while a place card or the Add panel is open |
 
 ### R16: Friendly, playful look and feel (Duolingo-inspired) `⬜ new`
 
@@ -231,6 +232,14 @@ _Own discovery, saving and ranking; hand off only turn-by-turn directions._
 | R18.3 | Raw events expire | Raw events older than 90 days are deleted by the weekly cron. Daily totals per event type are kept |
 | R18.4 | Admins see the funnel | Admin-only **Stats** page: weekly first-visit → place opened → saved → ranked funnel, the share of first visits that open a place within 2 minutes, and searches with no result. Non-admins get 403 |
 | R18.5 | Events never leave the stack | No third-party analytics scripts or requests (checked in the e2e network log) |
+
+### R19: Settings `⬜ new`
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| R19.1 | Account info | Settings shows the username, public/private status (with the privacy switch), a link to the public profile, and Sign out |
+| R19.2 | All my reviews, editable | Every rating the user made is listed with its stars and comment; each can have its comment edited (a comment can't be removed from a rating below 3 stars), be re-rated, or be deleted |
+| R19.3 | Saved and added places | Settings lists the places the user saved (each removable) and every place they added (any way), with review status for manual adds and Edit within 24 hours of adding |
 
 ## Stretch
 

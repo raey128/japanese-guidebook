@@ -9,16 +9,29 @@ from app.deps import DB, AdminUser, CurrentUser
 from app.models import Place, Ranking
 from app.place_views import place_summaries
 from app.schemas.common import ANONYMOUS, Message, PlaceSummary
-from app.schemas.review import PendingCount, PendingPlace, PendingQueue, RejectIn, Submission, Submissions
+from app.schemas.review import (
+    PendingCount,
+    PendingPlace,
+    PendingQueue,
+    RejectIn,
+    Submission,
+    Submissions,
+)
 
 router = APIRouter(tags=["review"])
 
-ERRORS: dict[int | str, dict] = {403: {"model": Message}, 404: {"model": Message}, 409: {"model": Message}}
+ERRORS: dict[int | str, dict] = {
+    403: {"model": Message},
+    404: {"model": Message},
+    409: {"model": Message},
+}
 
 
 async def _pending(db, place_id: int) -> Place:  # type: ignore[no-untyped-def]
     place = (
-        await db.execute(select(Place).where(Place.id == place_id).execution_options(populate_existing=True))
+        await db.execute(
+            select(Place).where(Place.id == place_id).execution_options(populate_existing=True)
+        )
     ).scalar_one_or_none()
     if place is None:
         raise HTTPException(404, "Place not found.")
@@ -63,7 +76,9 @@ async def list_pending(db: DB, _: AdminUser) -> PendingQueue:
 
 @router.get("/admin/pending/count", response_model=PendingCount, operation_id="countPendingPlaces")
 async def count_pending(db: DB, _: AdminUser) -> PendingCount:
-    n = (await db.execute(text("SELECT count(*) FROM places WHERE status = 'pending'"))).scalar_one()
+    n = (
+        await db.execute(text("SELECT count(*) FROM places WHERE status = 'pending'"))
+    ).scalar_one()
     return PendingCount(count=n)
 
 
@@ -96,7 +111,9 @@ async def reject(place_id: int, body: RejectIn, db: DB, _: AdminUser) -> Message
     place = await _pending(db, place_id)
     place.status = "rejected"
     place.review_reason = (body.reason or "").strip() or None
-    rankings = (await db.execute(select(Ranking).where(Ranking.place_id == place.id))).scalars().all()
+    rankings = (
+        (await db.execute(select(Ranking).where(Ranking.place_id == place.id))).scalars().all()
+    )
     for r in rankings:
         await ranking_core.delete_ranking(db, r)  # keeps the owners' list positions compact
     await db.execute(text("DELETE FROM bookmarks WHERE place_id = :p"), {"p": place.id})
@@ -108,14 +125,16 @@ async def reject(place_id: int, body: RejectIn, db: DB, _: AdminUser) -> Message
 
 
 @router.get("/me/submissions", response_model=Submissions, operation_id="listMySubmissions")
-async def my_submissions(db: DB, user: CurrentUser) -> Submissions:
-    """Manual adds: still pending, rejected, or approved (reviewed_at set)."""
+async def my_submissions(db: DB, user: CurrentUser, all: bool = False) -> Submissions:
+    """Manual adds: still pending, rejected, or approved (reviewed_at set). `all=true`: every
+    place the user added (for Settings, R19.3), except ones merged into another place."""
+    which = "merged_into_id IS NULL" if all else "(status <> 'live' OR reviewed_at IS NOT NULL)"
     rows = (
         await db.execute(
             text(
-                """
+                f"""
                 SELECT id, name, status, review_reason, created_at, reviewed_at FROM places
-                WHERE creator_id = :u AND (status <> 'live' OR reviewed_at IS NOT NULL)
+                WHERE creator_id = :u AND {which}
                 ORDER BY created_at DESC, id DESC
                 """
             ),
@@ -135,4 +154,3 @@ async def my_submissions(db: DB, user: CurrentUser) -> Submissions:
             for r in rows
         ]
     )
-

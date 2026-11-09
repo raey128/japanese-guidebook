@@ -48,6 +48,9 @@ def _item(r: Ranking, p: Place) -> RankingItem:
         position=r.position,
         personal_score=r.personal_score,
         rating=r.rating,
+        note=r.note,
+        visit_month=r.visit_month,
+        visit_year=r.visit_year,
         badges=scores.badges(  # type: ignore[arg-type]
             is_unverified=False,
             is_closed=p.is_closed,

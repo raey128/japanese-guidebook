@@ -392,8 +392,9 @@ export interface paths {
         };
         /**
          * Get Featured Lists
-         * @description The Lists tab (R14.7): "Top rated in <city>", then the top of each category that has
-         *     places, then the busiest kinds (most ranked, then most places). Empty lists are left out.
+         * @description The Lists tab (R14.7). No `category` (Overall Ranking): "Overall ranking in <city>", the
+         *     top of each category that has places, then the busiest kinds. With a top `category` (e.g.
+         *     food): "Top Food in <city>" and every kind in it that has places. Empty lists are left out.
          */
         get: operations["getFeaturedLists"];
         put?: never;
@@ -825,7 +826,8 @@ export interface paths {
         };
         /**
          * My Submissions
-         * @description Manual adds: still pending, rejected, or approved (reviewed_at set).
+         * @description Manual adds: still pending, rejected, or approved (reviewed_at set). `all=true`: every
+         *     place the user added (for Settings, R19.3), except ones merged into another place.
          */
         get: operations["listMySubmissions"];
         put?: never;
@@ -1684,6 +1686,12 @@ export interface components {
             personal_score: number;
             /** Rating */
             rating?: number | null;
+            /** Note */
+            note?: string | null;
+            /** Visit Month */
+            visit_month?: number | null;
+            /** Visit Year */
+            visit_year?: number | null;
             /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
         };
@@ -2882,7 +2890,9 @@ export interface operations {
     };
     getFeaturedLists: {
         parameters: {
-            query?: never;
+            query?: {
+                category?: string | null;
+            };
             header?: never;
             path: {
                 city_slug: string;
@@ -4228,7 +4238,9 @@ export interface operations {
     };
     listMySubmissions: {
         parameters: {
-            query?: never;
+            query?: {
+                all?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4242,6 +4254,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Submissions"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

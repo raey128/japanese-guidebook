@@ -52,8 +52,9 @@ export function savePicksOpen(open: boolean): void {
 }
 
 /**
- * "Top picks here" (R15.2) as a side panel you can hide (R15.6): a small tab on the left edge
- * opens it; ‹ closes it. Falls back to Team picks (R17.8), then to places in view.
+ * "Top picks here" (R15.2) as a button in the map's bottom row that opens a list upwards, so it
+ * can be shown and hidden in one tap (R15.6). Falls back to Team picks (R17.8), then to places
+ * in view.
  */
 export default function TopPicksPanel({
   data,
@@ -76,45 +77,30 @@ export default function TopPicksPanel({
   const title = team ? COPY.teamPicks : nearby ? COPY.nearbyPicks : COPY.topPicks;
   const emoji = team ? "🧑‍🍳" : nearby ? "🧭" : "⭐";
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => onOpenChange(true)}
-        aria-expanded={false}
-        aria-controls="top-picks-panel"
-        className="pointer-events-auto flex items-center gap-1.5 rounded-r-(--radius-chunky) border-2 border-l-0 border-b-4 border-line bg-white py-2 pl-2 pr-3 font-extrabold shadow-lg"
-      >
-        <span aria-hidden="true">{emoji}</span>
-        <span>{title}</span>
-        {items.length ? <span className="badge bg-brand-soft text-brand-dark">{items.length}</span> : null}
-        <span aria-hidden="true" className="text-muted">›</span>
-      </button>
-    );
-  }
-
+  // A button in the bottom row (like Near me); the list opens upwards from it.
   return (
-    <section
-      id="top-picks-panel"
-      aria-label={title}
-      className="pointer-events-auto flex max-h-full w-80 max-w-[85vw] flex-col rounded-r-(--radius-card) border-2 border-l-0 border-b-4 border-line bg-white shadow-xl"
-    >
-      <div className="flex items-center gap-2 border-b-2 border-line px-3 py-2">
-        <h2 className="flex-1 text-base font-extrabold">
-          <span aria-hidden="true">{emoji} </span>
-          {title}
-        </h2>
-        <button
-          type="button"
-          onClick={() => onOpenChange(false)}
-          aria-expanded={true}
-          aria-controls="top-picks-panel"
-          aria-label={`Hide ${title}`}
-          className="btn btn-ghost btn-sm btn-icon size-9 text-lg"
+    <div className="pointer-events-auto relative">
+      {open ? (
+        <section
+          id="top-picks-panel"
+          aria-label={title}
+          className="card absolute bottom-full left-0 mb-2 flex w-80 max-w-[calc(100vw-1.5rem)] flex-col p-0 shadow-xl"
+          style={{ maxHeight: "min(50vh, 26rem)" }}
         >
-          <span aria-hidden="true">‹</span>
-        </button>
-      </div>
+          <div className="flex items-center gap-2 border-b-2 border-line px-3 py-2">
+            <h2 className="flex-1 text-base font-extrabold">
+              <span aria-hidden="true">{emoji} </span>
+              {title}
+            </h2>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              aria-label={`Hide ${title}`}
+              className="btn btn-ghost btn-sm btn-icon size-9 text-lg"
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
+          </div>
       <div className="overflow-y-auto overscroll-contain px-2 py-1">
         {data === undefined ? <p className="hint p-2">Finding the best spots…</p> : null}
         {data && items.length === 0 ? (
@@ -138,6 +124,19 @@ export default function TopPicksPanel({
           </ol>
         ) : null}
       </div>
-    </section>
+        </section>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => onOpenChange(!open)}
+        aria-expanded={open}
+        aria-controls="top-picks-panel"
+        className={`btn shadow-lg ${open ? "btn-primary" : "btn-secondary"}`}
+      >
+        <span aria-hidden="true">{emoji}</span>
+        <span className="max-w-[9rem] truncate sm:max-w-none">{title}</span>
+        {items.length ? <span className={`badge ${open ? "bg-white/25 text-white" : "bg-brand-soft text-brand-dark"}`}>{items.length}</span> : null}
+      </button>
+    </div>
   );
 }

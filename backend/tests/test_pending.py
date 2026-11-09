@@ -6,7 +6,9 @@ from tests.factories import ASAKUSA, location, make_user, sign_in, subcategory, 
 from tests.test_map import ASA, rank
 
 
-async def manual_add(client, db, name="Hidden Gem Ramen", source="manual", lat=ASAKUSA[0], lng=ASAKUSA[1]):
+async def manual_add(
+    client, db, name="Hidden Gem Ramen", source="manual", lat=ASAKUSA[0], lng=ASAKUSA[1]
+):
     loc = await location(db, "asakusa")
     sub = await subcategory(db, "ramen")
     r = await client.post(
@@ -73,7 +75,12 @@ async def test_submitter_can_rank_and_save_pending_but_it_does_not_count(client,
     snap = (await client.get("/api/rankings/snapshot", params={"place_id": pid})).json()
     r = await client.put(
         "/api/rankings",
-        json={"place_id": pid, "rating": 5, "position": 1, "list_version": snap["buckets"][0]["version"]},
+        json={
+            "place_id": pid,
+            "rating": 5,
+            "position": 1,
+            "list_version": snap["buckets"][0]["version"],
+        },
     )
     assert r.status_code == 200, r.text
     mine = (await client.get("/api/me/rankings")).json()["cities"]
@@ -82,8 +89,10 @@ async def test_submitter_can_rank_and_save_pending_but_it_does_not_count(client,
     detail = (await client.get(f"/api/places/{pid}")).json()
     assert detail["public_score"] is None  # hidden from public scores until approved
     prior = (
-        await db.execute(text("SELECT COALESCE(SUM(rank_count), 0) FROM category_stats WHERE city_id = :c"),
-                         {"c": detail["city"]["id"]})
+        await db.execute(
+            text("SELECT COALESCE(SUM(rank_count), 0) FROM category_stats WHERE city_id = :c"),
+            {"c": detail["city"]["id"]},
+        )
     ).scalar_one()
     assert prior == 0
     assert me["username"] == "ranker_p"
@@ -92,14 +101,28 @@ async def test_submitter_can_rank_and_save_pending_but_it_does_not_count(client,
 async def test_rate_limit_is_shared_between_manual_and_pin_adds(client, db):
     await sign_in(client, "quota_p")
     for i in range(5):
-        await manual_add(client, db, name=f"Quota {i}", source="manual" if i % 2 else "pin",
-                         lat=ASAKUSA[0] + i * 0.002, lng=ASAKUSA[1])
+        await manual_add(
+            client,
+            db,
+            name=f"Quota {i}",
+            source="manual" if i % 2 else "pin",
+            lat=ASAKUSA[0] + i * 0.002,
+            lng=ASAKUSA[1],
+        )
     loc = await location(db, "asakusa")
     sub = await subcategory(db, "ramen")
     r = await client.post(
         "/api/places",
-        json={"name": "Quota 6", "lat": ASAKUSA[0] + 0.02, "lng": ASAKUSA[1], "subcategory_id": sub.id,
-              "location_id": loc.id, "address": "x", "confirm_not_duplicate": True, "source": "manual"},
+        json={
+            "name": "Quota 6",
+            "lat": ASAKUSA[0] + 0.02,
+            "lng": ASAKUSA[1],
+            "subcategory_id": sub.id,
+            "location_id": loc.id,
+            "address": "x",
+            "confirm_not_duplicate": True,
+            "source": "manual",
+        },
     )
     assert r.status_code == 429
 
@@ -125,7 +148,11 @@ async def test_admin_approve_makes_it_live_and_counts_the_ranking(client_factory
     assert r.status_code == 200, r.text
     assert "unverified" in r.json()["badges"] and "pending" not in r.json()["badges"]
     detail = (await bob.get(f"/api/places/{pid}")).json()
-    assert detail["status"] == "live" and detail["ranker_count"] == 1 and detail["public_score"] is not None
+    assert (
+        detail["status"] == "live"
+        and detail["ranker_count"] == 1
+        and detail["public_score"] is not None
+    )
     assert (await admin.get("/api/admin/pending/count")).json() == {"count": 0}
     subs = (await alice.get("/api/me/submissions")).json()["items"]
     assert subs[0]["status"] == "live" and subs[0]["reviewed_at"]
@@ -144,7 +171,9 @@ async def test_admin_reject_removes_it_with_rankings_and_bookmarks(client_factor
 
     await rank(db, alice_user.id, await db.get(Place, pid))
 
-    assert (await admin.post(f"/api/admin/pending/{pid}/reject", json={"reason": "x" * 201})).status_code == 422
+    assert (
+        await admin.post(f"/api/admin/pending/{pid}/reject", json={"reason": "x" * 201})
+    ).status_code == 422
     r = await admin.post(f"/api/admin/pending/{pid}/reject", json={"reason": "Permanently closed"})
     assert r.status_code == 200
     assert (await alice.get(f"/api/places/{pid}")).status_code == 404
@@ -152,3 +181,21 @@ async def test_admin_reject_removes_it_with_rankings_and_bookmarks(client_factor
     assert (await alice.get("/api/me/rankings")).json()["cities"] == []
     subs = (await alice.get("/api/me/submissions")).json()["items"]
     assert subs[0]["status"] == "rejected" and subs[0]["review_reason"] == "Permanently closed"
+
+
+async def test_all_my_places_for_settings(client, db):
+    await sign_in(client, "set_adder")
+    sub = await subcategory(db, "ramen")
+    loc = await location(db, "asakusa")
+    body = {"lat": ASAKUSA[0], "lng": ASAKUSA[1], "subcategory_id": sub.id, "location_id": loc.id}
+    await client.post(
+        "/api/places", json={**body, "name": "Pinned One", "confirm_not_duplicate": True}
+    )
+    await client.post(
+        "/api/places",
+        json={**body, "name": "Manual One", "source": "manual", "confirm_not_duplicate": True},
+    )
+    only_manual = (await client.get("/api/me/submissions")).json()["items"]
+    assert [i["name"] for i in only_manual] == ["Manual One"]
+    everything = (await client.get("/api/me/submissions", params={"all": "true"})).json()["items"]
+    assert sorted(i["name"] for i in everything) == ["Manual One", "Pinned One"]

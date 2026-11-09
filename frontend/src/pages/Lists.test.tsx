@@ -39,7 +39,7 @@ function stubApi(user: unknown = null) {
             return json({
               city: c,
               lists: [
-                { key: "all", kind: "all", title: `Top rated in ${c.name}`, top_category: null, total: 1, ranked: 1, items: [place] },
+                { key: "all", kind: "all", title: `Overall ranking in ${c.name}`, top_category: null, total: 1, ranked: 1, items: [place] },
                 { key: "food", kind: "top", title: `Top Food in ${c.name}`, top_category: "food", total: 1, ranked: 1, items: [place] },
               ],
             });
@@ -76,12 +76,12 @@ test("defaults to the All segment with the last-used city's food list", async ()
   stubApi();
   setLastCity("kyoto");
   renderAt("/lists");
-  expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
-  expect(await screen.findByRole("heading", { level: 2, name: "Top rated in Kyoto" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Rankings" })).toHaveAttribute("aria-pressed", "true");
+  expect(await screen.findByRole("heading", { level: 2, name: "Overall ranking in Kyoto" })).toBeInTheDocument();
   expect(screen.getByRole("heading", { level: 2, name: "Top Food in Kyoto" })).toBeInTheDocument();
   // Each place opens on the map, in the same card as everything else.
   expect(screen.getAllByRole("link", { name: "Best in Kyoto" })[0]).toHaveAttribute("href", "/?place=7");
-  expect(screen.getByRole("link", { name: /See all 1.*Top rated in Kyoto/ })).toHaveAttribute("href", "/lists/kyoto/all");
+  expect(screen.getByRole("link", { name: /See all 1.*Overall ranking in Kyoto/ })).toHaveAttribute("href", "/lists/kyoto/all");
 });
 
 test("switching segments updates the URL without leaving the page", async () => {
@@ -90,7 +90,7 @@ test("switching segments updates the URL without leaving the page", async () => 
   fireEvent.click(screen.getByRole("button", { name: "Saved" }));
   expect(screen.getByTestId("url")).toHaveTextContent("/lists?tab=want_to_go");
   expect(screen.getByRole("button", { name: "Saved" })).toHaveAttribute("aria-pressed", "true");
-  fireEvent.click(screen.getByRole("button", { name: "All" }));
+  fireEvent.click(screen.getByRole("button", { name: "Rankings" }));
   expect(screen.getByTestId("url")).toHaveTextContent(/^\/lists$/);
 });
 
