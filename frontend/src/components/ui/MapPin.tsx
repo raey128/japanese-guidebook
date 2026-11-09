@@ -44,11 +44,13 @@ export default function MapPin({
   );
 }
 
-/** The app's pin as a small inline icon, in place of the 📍 emoji (R16.3). */
+/** The app's pin as a small inline icon, the same ★ pin used when adding a place (R16.3). */
 export function PinIcon({ size = 18, className = "" }: { size?: number; className?: string }) {
   return (
-    <span className={`inline-block align-[-0.2em] ${className}`}>
-      <MapPin color="var(--color-brand)" colorDark="var(--color-brand-dark)" size={size} />
+    <span className={`inline-flex shrink-0 items-center ${className}`}>
+      <MapPin color="var(--color-brand)" colorDark="var(--color-brand-dark)" size={size}>
+        <span className="font-extrabold text-brand">★</span>
+      </MapPin>
     </span>
   );
 }

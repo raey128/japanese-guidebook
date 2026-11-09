@@ -578,7 +578,7 @@ export default function MapPage() {
           />
           <span className="flex-1" />
           <button type="button" onClick={nearMe} className="pointer-events-auto btn btn-secondary shadow-lg">
-            <PinIcon size={20} /> {COPY.nearMe}
+            {COPY.nearMe}
           </button>
           <button
             type="button"

@@ -3,7 +3,9 @@ import { Link, useSearchParams } from "react-router";
 import AllLists from "../components/lists/AllLists";
 import MyRankingsList from "../components/lists/MyRankingsList";
 import WantToGoList from "../components/lists/WantToGoList";
+import { ButtonLink } from "../components/ui/Button";
 import Chip from "../components/ui/Chip";
+import { PlusIcon } from "../components/ui/icons";
 import Loading from "../components/ui/Loading";
 import { COPY } from "../copy";
 import { useMe } from "../hooks/auth";
@@ -44,13 +46,21 @@ export default function Lists() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-extrabold">Lists</h1>
-      <div role="group" aria-label="List" className="flex gap-2 overflow-x-auto pb-1">
-        {TABS.map((t) => (
-          <Chip key={t.value} pressed={tab === t.value} onClick={() => select(t.value)}>
-            {t.label}
-          </Chip>
-        ))}
+      {/* The tab bar already says "Lists": the heading is for screen readers only. */}
+      <h1 className="sr-only">Lists</h1>
+      {/* Segments on the left, Add a place on the right, on one line. */}
+      <div className="flex items-center gap-3">
+        <div role="group" aria-label="List" className="flex min-w-0 flex-1 gap-2 overflow-x-auto py-1">
+          {TABS.map((t) => (
+            <Chip key={t.value} pressed={tab === t.value} onClick={() => select(t.value)}>
+              {t.label}
+            </Chip>
+          ))}
+        </div>
+        {/* Adding happens on the map; this opens it with the Add panel ready (R14.8). */}
+        <ButtonLink to="/?add=1" size="sm" className="shrink-0">
+          <PlusIcon /> {COPY.addPlace}
+        </ButtonLink>
       </div>
 
       <section aria-label={label}>

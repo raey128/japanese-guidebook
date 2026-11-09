@@ -59,3 +59,11 @@ test("the Lists tab shows ready-made rankings for the city (R14.7)", async ({ pa
   await expect(page).toHaveURL(/\/lists\/tokyo\/all$/);
   await expect(page.getByRole("heading", { level: 1, name: "Overall ranking in Tokyo" })).toBeVisible();
 });
+
+test("Add a place on the Lists page opens the map with the Add panel (R14.8)", async ({ page }) => {
+  await signInApi(page);
+  await page.goto("/lists");
+  await page.getByRole("link", { name: "Add a place" }).click();
+  await expect(page.getByTestId("map-container")).toBeVisible();
+  await expect(page.getByTestId("add-panel")).toBeVisible();
+});

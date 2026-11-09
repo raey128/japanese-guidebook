@@ -182,6 +182,7 @@ _Replaces the separate My rankings and Want to go pages and the map toggle. The 
 | R14.5 | Every row links back to the map | Each place row has "Show on map", which opens `/` with the map flown to that place and its pin summary open (same as R12.4) |
 | R14.6 | Lists is the second main tab | A tab bar at the bottom of the map and the Lists page shows Map (1st) and Lists (2nd); one tap switches. The active tab is marked (`aria-current`) and the map ends above the bar |
 | R14.7 | The Lists tab shows ready-made rankings | Segments: Rankings / My ratings / Saved. In Rankings, the city is a big dropdown at the top and categories are chips under it: **Overall Ranking** (default) shows "Overall ranking in <city>", the top of each category and the busiest kinds; a category (e.g. Food) shows "Top Food in <city>" and every kind in it with places. Each list shows its top 5 and "See all N"; empty lists are left out; tapping a place opens its card on the map |
+| R14.8 | Add a place from the Lists page | The Lists page header has an "Add a place" button; it opens the map with the Add panel ready (signing in first if needed) |
 
 ### R15: Recommendations on the map `⬜ new`
 
