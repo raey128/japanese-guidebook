@@ -17,27 +17,45 @@ export interface NoteValue {
   year: number | null;
 }
 
-export default function NoteFields({ value, onChange }: { value: NoteValue; onChange: (v: NoteValue) => void }) {
+type Props = {
+  value: NoteValue;
+  onChange: (v: NoteValue) => void;
+  /** R3.6: low ratings need a comment. */
+  required?: boolean;
+  label?: string;
+  error?: string;
+};
+
+export default function NoteFields({ value, onChange, required = false, label, error }: Props) {
   const id = useId();
   const thisYear = new Date().getFullYear();
   const years: number[] = [];
   for (let y = thisYear; y >= thisYear - 30; y--) years.push(y);
   if (value.year && !years.includes(value.year)) years.push(value.year);
-  const left = NOTE_MAX - value.note.length;
   return (
     <div className="space-y-3">
       <div>
         <label htmlFor={`${id}-note`} className="label">
-          Note (optional)
+          {label ?? (required ? "Comment" : "Comment (optional)")}
+          {required ? <span aria-hidden="true"> *</span> : null}
         </label>
         <textarea
           id={`${id}-note`}
           rows={4}
           maxLength={NOTE_MAX}
           value={value.note}
+          required={required}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-note-err` : undefined}
+          placeholder={required ? "What went wrong? Others will thank you." : "What should people order, see or know?"}
           onChange={(e) => onChange({ ...value, note: e.target.value })}
           className="field"
         />
+        {error ? (
+          <p id={`${id}-note-err`} role="alert" className="mt-1 text-sm text-danger">
+            {error}
+          </p>
+        ) : null}
         <p className="hint" aria-live="polite">
           {value.note.length} / {NOTE_MAX} characters
         </p>

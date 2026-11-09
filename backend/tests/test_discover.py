@@ -111,6 +111,6 @@ async def test_rank_response_has_city_count(client, db):
     for i, p in enumerate(places, start=1):
         snap = (await client.get("/api/rankings/snapshot", params={"place_id": p.id})).json()
         r = (await client.put("/api/rankings", json={
-            "place_id": p.id, "bucket": "liked", "position": i, "list_version": snap["buckets"][0]["version"],
+            "place_id": p.id, "rating": 5, "position": i, "list_version": snap["buckets"][0]["version"],
         })).json()
         assert r["city_rank_count"] == i and r["city_name"] == "Tokyo" and r["is_new"] is True

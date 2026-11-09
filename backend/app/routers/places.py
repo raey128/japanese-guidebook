@@ -17,10 +17,11 @@ from sqlalchemy import select, text
 
 from app import geocoding, place_edits
 from app import places as svc
+from app import ranking as ranking_core
 from app.deps import DB, CurrentUser
 from app.models import Place
 from app.place_views import can_edit, load_reference, place_detail, place_summaries
-from app.schemas.common import Message, PlaceDetail
+from app.schemas.common import Message, MyRanking, PlaceDetail
 from app.schemas.places import (
     AddressResult,
     AddressSearchResponse,
@@ -29,6 +30,8 @@ from app.schemas.places import (
     PlaceCheckRequest,
     PlaceCreateRequest,
     PlaceCreateResponse,
+    PlaceLookupResponse,
+    PlaceLookupResult,
     PlaceUpdateRequest,
     ReverseGeocodeResponse,
 )
@@ -77,9 +80,7 @@ async def _candidates(db: DB, ids: list[int]):  # type: ignore[no-untyped-def]
     },
     operation_id="createPlace",
 )
-async def create_place(
-    body: PlaceCreateRequest, response: Response, db: DB, user: CurrentUser
-):  # type: ignore[no-untyped-def]
+async def create_place(body: PlaceCreateRequest, response: Response, db: DB, user: CurrentUser):  # type: ignore[no-untyped-def]
     try:
         await svc.check_subcategory(db, body.subcategory_id)
         location = await svc.check_pin_and_location(db, body.lat, body.lng, body.location_id)
@@ -102,9 +103,7 @@ async def create_place(
             response.status_code = status.HTTP_200_OK
             return PlaceCreateResponse(status="duplicates", candidates=await _candidates(db, ids))
 
-    address = (body.address or "").strip() or await geocoding.cached_address(
-        db, body.lat, body.lng
-    )
+    address = (body.address or "").strip() or await geocoding.cached_address(db, body.lat, body.lng)
     place = await svc.create_place(
         db,
         user,
@@ -117,8 +116,39 @@ async def create_place(
         address=address,
         pending=body.source == "manual",
     )
+    extra: dict = {}
+    if body.review is not None:
+        # R3.6: the adder has been here, so rank it from their stars in the same transaction.
+        review = body.review
+        ranked = await ranking_core.rank_by_rating(
+            db, user_id=user.id, place=place, rating=review.rating
+        )
+        await ranking_core.update_note(
+            db,
+            ranked,
+            note=review.note,
+            visit_month=review.visit_month,
+            visit_year=review.visit_year,
+        )
+        snaps = await ranking_core.get_snapshot(db, user.id, place.city_id, place.subcategory_id)
+        city_count = (
+            await db.execute(
+                text(
+                    "SELECT count(*) FROM rankings r JOIN places p ON p.id = r.place_id "
+                    "WHERE r.user_id = :u AND p.city_id = :c"
+                ),
+                {"u": user.id, "c": place.city_id},
+            )
+        ).scalar_one()
+        ref = await load_reference(db)
+        extra = {
+            "ranking": MyRanking.model_validate(ranked),
+            "compare_count": len(snaps[ranked.bucket].items) - 1,
+            "city_name": ref.cities[place.city_id].name,
+            "city_rank_count": city_count,
+        }
     await db.commit()
-    return PlaceCreateResponse(status="created", place=await place_detail(db, place, user))
+    return PlaceCreateResponse(status="created", place=await place_detail(db, place, user), **extra)
 
 
 @router.post(
@@ -180,7 +210,9 @@ async def update_place(  # type: ignore[no-untyped-def]
             else:
                 pin = (
                     await db.execute(
-                        text("SELECT ST_Y(geom) AS lat, ST_X(geom) AS lng FROM places WHERE id = :id"),
+                        text(
+                            "SELECT ST_Y(geom) AS lat, ST_X(geom) AS lng FROM places WHERE id = :id"
+                        ),
                         {"id": place.id},
                     )
                 ).one()
@@ -207,6 +239,38 @@ async def update_place(  # type: ignore[no-untyped-def]
         place.address = (body.address or "").strip() or None
     await db.commit()
     return await place_detail(db, place, user)
+
+
+@router.get(
+    "/places/lookup",
+    response_model=PlaceLookupResponse,
+    operation_id="lookupPlace",
+)
+async def lookup_place(
+    db: DB,
+    _: CurrentUser,
+    q: Annotated[str, Query(min_length=2, max_length=200)],
+    lat: Annotated[float | None, Query(ge=-90, le=90)] = None,
+    lng: Annotated[float | None, Query(ge=-180, le=180)] = None,
+) -> PlaceLookupResponse:
+    """Signed-in only. Businesses matching a name, near (lat, lng) when given, for the add-place
+    type-ahead (R13.6). Empty `results` when the lookup service is down or slow."""
+    ref = await load_reference(db)
+    slugs = {sub.slug: sub.id for sub in ref.subcategories.values()}
+    results = await geocoding.lookup_places(q, lat, lng)
+    return PlaceLookupResponse(
+        results=[
+            PlaceLookupResult(
+                name=r.name,
+                address=r.address,
+                lat=r.lat,
+                lng=r.lng,
+                kind=r.kind,
+                subcategory_id=slugs.get(r.slug) if r.slug else None,
+            )
+            for r in results
+        ]
+    )
 
 
 @router.get(

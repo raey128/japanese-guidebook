@@ -6,7 +6,13 @@ import createClient from "openapi-fetch";
 
 import type { components, paths } from "./schema";
 
-export const api = createClient<paths>({ baseUrl: "", credentials: "include" });
+// Absolute base (same origin) so requests also build outside a browser (tests); `fetch` is looked
+// up on every call, not captured once, so tests can stub it after import.
+export const api = createClient<paths>({
+  baseUrl: typeof window !== "undefined" ? window.location.origin : "",
+  credentials: "include",
+  fetch: (request: Request) => globalThis.fetch(request),
+});
 
 export type Schemas = components["schemas"];
 

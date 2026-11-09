@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-import { createPlaceApi, rankApi, runId, seedPlaceId, seedRankedList, signInApi, stubMapStyle } from "./helpers";
+import { createPlaceApi, pickStars, rankApi, runId, seedPlaceId, seedRankedList, signInApi, stubMapStyle } from "./helpers";
 
 // N3.1: no serious or critical WCAG 2.1 A/AA violations. The MapLibre canvas and attribution are
 // third-party and excluded.
@@ -38,7 +38,7 @@ test.describe("accessibility (axe)", () => {
     const id = await seedPlaceId(page, "Senso-ji");
     await page.goto(`/places/${id}`);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Senso-ji");
-    await expect(page.getByRole("heading", { name: "Notes" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Reviews" })).toBeVisible();
     await expectNoSeriousViolations(page, "place detail (signed out)");
   });
 
@@ -60,7 +60,7 @@ test.describe("accessibility (axe)", () => {
     await expect(page.getByRole("heading", { name: "How was it?" })).toBeVisible();
     await expectNoSeriousViolations(page, "ranking flow: bucket step");
 
-    await page.getByRole("button", { name: /^Liked/ }).click();
+    await pickStars(page, 5);
     await expect(page.getByRole("heading", { name: "Which was better?" })).toBeVisible();
     await expectNoSeriousViolations(page, "ranking flow: comparison step");
   });
@@ -69,19 +69,17 @@ test.describe("accessibility (axe)", () => {
     await signInApi(page);
     const target = await createPlaceApi(page, { name: `Axe Note ${runId()}` });
     await page.goto(`/places/${target.id}/rank`);
-    await page.getByRole("button", { name: /^Liked/ }).click();
-    await expect(page.getByRole("heading", { name: "Add a note (optional)" })).toBeVisible();
+    await pickStars(page, 5);
+    await expect(page.getByRole("heading", { name: "Add a comment (optional)" })).toBeVisible();
     await expectNoSeriousViolations(page, "ranking flow: note step");
   });
 
   test("add place", async ({ page }) => {
     await signInApi(page);
-    await page.goto("/places/new");
-    await expect(page.getByRole("heading", { name: "Add a place" })).toBeVisible();
-    await expect(page.getByTestId("pin-map")).toBeVisible();
-    await expectNoSeriousViolations(page, "/places/new (no pin yet)");
-
+    await stubMapStyle(page);
     await page.goto("/places/new?lat=35.7125&lng=139.795");
+    await expect(page.getByRole("heading", { name: "Add a place" })).toBeVisible();
+    await expect(page.getByTestId("add-pin")).toBeVisible();
     await expect(page.getByLabel(/^Location/)).toHaveValue(/^\d+$/);
     await expectNoSeriousViolations(page, "/places/new (pin set)");
   });

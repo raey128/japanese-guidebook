@@ -2,9 +2,10 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.schemas.common import CityOut, PlaceDetail, PlaceSummary
+from app.ranking import COMMENT_REQUIRED_BELOW, LOW_RATING_NEEDS_COMMENT, NOTE_MAX_LEN
+from app.schemas.common import CityOut, MyRanking, PlaceDetail, PlaceSummary
 
 
 def _strip_required(value: str) -> str:
@@ -34,6 +35,29 @@ class PlaceCheckRequest(BaseModel):
         return (v.strip() or None) if v is not None else None
 
 
+class ReviewIn(BaseModel):
+    """The adder's own rating when they've been there (R3.6). Rating is required; a comment is
+    optional unless the rating is below 3 stars."""
+
+    rating: int = Field(ge=1, le=5)
+    note: str | None = Field(default=None, max_length=NOTE_MAX_LEN)
+    visit_month: int | None = Field(default=None, ge=1, le=12)
+    visit_year: int | None = Field(default=None, ge=1900, le=2100)
+
+    @field_validator("note")
+    @classmethod
+    def _note(cls, v: str | None) -> str | None:
+        return (v.strip() or None) if v is not None else None
+
+    @model_validator(mode="after")
+    def _low_rating_needs_comment(self) -> "ReviewIn":
+        if self.rating < COMMENT_REQUIRED_BELOW and not self.note:
+            raise ValueError(LOW_RATING_NEEDS_COMMENT)
+        if (self.visit_month is None) != (self.visit_year is None):
+            raise ValueError("Give both a visit month and year, or neither.")
+        return self
+
+
 class PlaceCreateRequest(PlaceCheckRequest):
     location_id: int
     address: str | None = Field(default=None, max_length=500)
@@ -41,6 +65,18 @@ class PlaceCreateRequest(PlaceCheckRequest):
     confirm_not_duplicate: bool = False
     # "manual" = added via "Add manually" from search: saved pending admin review (R13).
     source: Literal["pin", "manual"] = "pin"
+    # "I've been here" (R3.6): then `review` (a star rating) is required and the place is
+    # ranked for the adder as it's created.
+    visited: bool = False
+    review: ReviewIn | None = None
+
+    @model_validator(mode="after")
+    def _visited_needs_rating(self) -> "PlaceCreateRequest":
+        if self.visited and self.review is None:
+            raise ValueError("You've been here, so please give it a star rating.")
+        if not self.visited and self.review is not None:
+            raise ValueError("Only rate places you've been to.")
+        return self
 
 
 class PlaceCreateResponse(BaseModel):
@@ -50,6 +86,12 @@ class PlaceCreateResponse(BaseModel):
     status: Literal["created", "duplicates"]
     place: PlaceDetail | None = None
     candidates: list[PlaceSummary] = []
+    # Set when a review came with the place: the adder's new ranking, and how many other
+    # places share its List (if any, the app offers quick comparisons to fine-tune it).
+    ranking: MyRanking | None = None
+    compare_count: int = 0
+    city_name: str = ""
+    city_rank_count: int = 0
 
 
 class DuplicateCheckResponse(BaseModel):
@@ -88,3 +130,18 @@ class AddressResult(BaseModel):
 
 class AddressSearchResponse(BaseModel):
     results: list[AddressResult]
+
+
+class PlaceLookupResult(BaseModel):
+    """A business found by name in OpenStreetMap (via Photon), for the add-place type-ahead."""
+
+    name: str
+    address: str | None
+    lat: float
+    lng: float
+    kind: str | None  # OSM tag, e.g. "amenity=restaurant", shown as a hint
+    subcategory_id: int | None  # our best guess from the OSM tags; the user can change it
+
+
+class PlaceLookupResponse(BaseModel):
+    results: list[PlaceLookupResult]

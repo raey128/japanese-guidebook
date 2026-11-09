@@ -107,7 +107,7 @@ export async function createPlaceApi(
 }
 
 export interface SnapshotJson {
-  my_ranking: { position: number; bucket: string } | null;
+  my_ranking: { position: number; bucket: string; rating: number | null; note: string | null } | null;
   buckets: { bucket: string; version: number; items: { place_id: number; name: string; position: number }[] }[];
 }
 
@@ -126,13 +126,16 @@ export async function rankApi(
   const bucket = opts.bucket ?? "liked";
   const snap = await snapshotApi(page, placeId);
   const version = snap.buckets.find((b) => b.bucket === bucket)?.version ?? 0;
+  // R3.6: the star rating decides the bucket; below 3 stars needs a comment.
+  const rating = { liked: 5, fine: 3, disliked: 2 }[bucket];
+  const note = opts.note ?? (rating < 3 ? "Not for me." : undefined);
   const r = await page.request.put("/api/rankings", {
     data: {
       place_id: placeId,
-      bucket,
+      rating,
       position: opts.position ?? 1,
       list_version: version,
-      ...(opts.note !== undefined ? { note: opts.note } : {}),
+      ...(note !== undefined ? { note } : {}),
     },
   });
   if (!r.ok()) throw new Error(`rank failed: ${r.status()} ${await r.text()}`);
@@ -158,6 +161,14 @@ export async function seedPlaceId(page: Page, name: string): Promise<number> {
   return hit.id;
 }
 
+/** RankFlow's first step: pick `stars` and press Next. */
+export async function pickStars(page: Page, stars: number): Promise<void> {
+  await page.getByRole("radio", { name: new RegExp(`^${stars} stars?:`) }).check();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+}
+
+export const STARS_FOR = { Liked: 5, Fine: 3, Disliked: 2 } as const;
+
 /**
  * Drive the RankFlow UI for the place at /places/:id/rank: choose the bucket, answer each
  * comparison from `answers` ("new" = this place is better, "existing" = the listed one is), then
@@ -169,7 +180,7 @@ export async function rankViaUi(
   opts: { bucket?: "Liked" | "Fine" | "Disliked"; answers?: ("new" | "existing")[]; note?: string } = {},
 ): Promise<number> {
   if (!new RegExp(`/places/${placeId}/rank$`).test(page.url())) await page.goto(`/places/${placeId}/rank`);
-  await page.getByRole("button", { name: new RegExp(`^${opts.bucket ?? "Liked"}`) }).click();
+  await pickStars(page, STARS_FOR[opts.bucket ?? "Liked"]);
   const save = page.getByRole("button", { name: "Save", exact: true });
   let asked = 0;
   for (;;) {
@@ -180,7 +191,8 @@ export async function rankViaUi(
     await page.getByTestId(answer === "new" ? "choose-new" : "choose-existing").click();
     await expect(save.or(page.getByText(`Comparison ${asked + 1} (at most`))).toBeVisible();
   }
-  if (opts.note) await page.getByLabel("Note (optional)").fill(opts.note);
+  const note = opts.note ?? (opts.bucket === "Disliked" ? "Not for me." : undefined);
+  if (note) await page.getByRole("textbox", { name: /^Comment/ }).fill(note);
   await save.click();
   await expect(page.getByText("Saved", { exact: true })).toBeVisible();
   return asked;

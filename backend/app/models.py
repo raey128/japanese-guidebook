@@ -163,6 +163,7 @@ class Ranking(Base):
         UniqueConstraint("user_id", "place_id", name="uq_rankings_user_place"),
         CheckConstraint("bucket IN ('liked','fine','disliked')", name="ck_rankings_bucket"),
         CheckConstraint("char_length(note) <= 1000", name="ck_rankings_note_len"),
+        CheckConstraint("rating BETWEEN 1 AND 5", name="ck_rankings_rating"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -176,6 +177,8 @@ class Ranking(Base):
     position: Mapped[int] = mapped_column(Integer, nullable=False)  # 1 = best
     personal_score: Mapped[float] = mapped_column(Float, nullable=False)
     note: Mapped[str | None] = mapped_column(Text)
+    # 1-5 stars (R3.6); decides the bucket. Null on rankings made before ratings existed.
+    rating: Mapped[int | None] = mapped_column(SmallInteger)
     visit_month: Mapped[int | None] = mapped_column(SmallInteger)
     visit_year: Mapped[int | None] = mapped_column(SmallInteger)
     created_at: Mapped[datetime] = mapped_column(

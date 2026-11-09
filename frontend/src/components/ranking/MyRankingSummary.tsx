@@ -3,7 +3,9 @@ import { useState } from "react";
 
 import { api, unwrap, type Schemas } from "../../api/client";
 import { invalidateAfterRankingChange } from "../../hooks/ranking";
+import { needsComment, reviewProblem } from "../../lib/rating";
 import NoteFields, { formatVisit, type NoteValue } from "./NoteFields";
+import { Stars } from "./StarRating";
 
 const BUCKET_LABEL = { liked: "Liked", fine: "Fine", disliked: "Disliked" } as const;
 
@@ -12,6 +14,8 @@ export default function MyRankingSummary({ ranking }: { ranking: Schemas["MyRank
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState<NoteValue>({ note: "", month: null, year: null });
+  const [noteError, setNoteError] = useState<string | undefined>(undefined);
+  const rating = ranking.rating ?? null;
   const startEdit = () => {
     setValue({ note: ranking.note ?? "", month: ranking.visit_month, year: ranking.visit_year });
     setEditing(true);
@@ -43,6 +47,11 @@ export default function MyRankingSummary({ ranking }: { ranking: Schemas["MyRank
         Your ranking
       </h2>
       <p>
+        {rating ? (
+          <>
+            <Stars rating={rating} /> ·{" "}
+          </>
+        ) : null}
         {BUCKET_LABEL[ranking.bucket]} · #{ranking.position} in your list · personal score {ranking.personal_score.toFixed(1)}
       </p>
       {!editing ? (
@@ -51,7 +60,7 @@ export default function MyRankingSummary({ ranking }: { ranking: Schemas["MyRank
           {visit ? <p className="hint">Visited {visit}</p> : null}
           <div className="mt-2 flex gap-2">
             <button type="button" onClick={startEdit} className="btn btn-secondary btn-sm">
-              Edit note
+              Edit comment
             </button>
             <button
               type="button"
@@ -70,13 +79,26 @@ export default function MyRankingSummary({ ranking }: { ranking: Schemas["MyRank
           className="mt-2 space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
+            const problem = rating ? reviewProblem(rating, value.note) : null;
+            if (problem?.note) {
+              setNoteError(problem.note);
+              return;
+            }
             save.mutate();
           }}
         >
-          <NoteFields value={value} onChange={setValue} />
+          <NoteFields
+            value={value}
+            onChange={(v) => {
+              setValue(v);
+              setNoteError(undefined);
+            }}
+            required={needsComment(rating)}
+            error={noteError}
+          />
           <div className="flex gap-2">
             <button type="submit" disabled={save.isPending} className="btn btn-primary btn-sm">
-              Save note
+              Save comment
             </button>
             <button type="button" onClick={() => setEditing(false)} className="btn btn-secondary btn-sm">
               Cancel

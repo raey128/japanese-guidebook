@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { createPlaceApi, rankApi, runId, signInApi, stubMapStyle, uniqueUsername } from "./helpers";
+import { createPlaceApi, pickStars, rankApi, runId, signInApi, stubMapStyle, uniqueUsername } from "./helpers";
 
 // Tickets 15–25: the map-first home, top picks, Near me, Save ♡ with inline sign-in, celebrations,
 // and the manual add → admin approval flow (N5.6).
@@ -93,7 +93,7 @@ test("ranking a place celebrates with the city count", async ({ page }) => {
   await signInApi(page);
   const p = await createPlaceApi(page, { name: `Party ${runId()}` });
   await page.goto(`/places/${p.id}/rank`);
-  await page.getByRole("button", { name: /Liked/ }).click();
+  await pickStars(page, 5);
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText(/(That's your \d+\w\w place in Tokyo|places? in Tokyo)/).first()).toBeVisible();
 });
@@ -107,6 +107,7 @@ test("N5.6: manual add is pending for the submitter, invisible to others, then a
   await page.getByRole("option", { name: /^Can't find it/ }).click();
   await expect(page.getByLabel(/^Location/)).toHaveValue(/^\d+$/);
   await page.getByLabel(/^Subcategory/).selectOption({ label: "Ramen" });
+  await page.getByRole("radio", { name: /Not yet/ }).click();
   await page.getByRole("button", { name: "Send for review" }).click();
   const different = page.getByRole("button", { name: "This is different, add it anyway" });
   const sent = page.getByText("Sent for review!", { exact: false });

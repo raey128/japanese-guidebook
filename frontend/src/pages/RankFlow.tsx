@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import { Link, Navigate, useLocation, useParams } from "react-router";
+import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-router";
 
 import { api, ApiError, unwrap, type Schemas } from "../api/client";
 import NoteFields, { type NoteValue } from "../components/ranking/NoteFields";
+import StarRating from "../components/ranking/StarRating";
 import PlaceNames from "../components/PlaceNames";
 import { useMe } from "../hooks/auth";
 import { invalidateAfterRankingChange, usePlace, useSnapshot } from "../hooks/ranking";
@@ -12,23 +13,23 @@ import Loading from "../components/ui/Loading";
 import { useCelebrate } from "../components/app/Celebration";
 import { rankingMessage } from "../lib/celebrate";
 import { track } from "../lib/track";
+import { bucketForRating, needsComment, RATING_LABELS, reviewProblem } from "../lib/rating";
 
 type Bucket = Schemas["MyRanking"]["bucket"];
-type Step = "bucket" | "compare" | "note" | "done";
+type Step = "rating" | "compare" | "note" | "done";
 
-const BUCKETS: { key: Bucket; label: string; hint: string }[] = [
-  { key: "liked", label: "Liked", hint: "I'd go back or recommend it" },
-  { key: "fine", label: "Fine", hint: "It was okay" },
-  { key: "disliked", label: "Disliked", hint: "I wouldn't go again" },
-];
+const BUCKET_LABEL: Record<Bucket, string> = { liked: "Liked", fine: "Fine", disliked: "Disliked" };
 
 function isTyping(t: EventTarget | null) {
+  if (t instanceof HTMLInputElement && t.type === "radio") return false; // the star buttons
   return t instanceof HTMLElement && (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.tagName === "SELECT");
 }
 
 export default function RankFlow() {
   const id = Number(useParams().id);
   const loc = useLocation();
+  // `?refine=1`: just added with a rating, so skip the stars and go straight to comparisons.
+  const refine = useSearchParams()[0].get("refine") === "1";
   const qc = useQueryClient();
   const celebrate = useCelebrate();
   const me = useMe();
@@ -36,12 +37,14 @@ export default function RankFlow() {
   const place = usePlace(id);
   const snapshot = useSnapshot(id, signedIn);
 
-  const [step, setStep] = useState<Step>("bucket");
-  const [bucket, setBucket] = useState<Bucket | null>(null);
+  const [step, setStep] = useState<Step>("rating");
+  const [rating, setRating] = useState<number | null>(null);
+  const bucket: Bucket | null = rating === null ? null : bucketForRating(rating);
   const [search, setSearch] = useState<SearchState>({ lo: 0, hi: 0 });
   const [history, setHistory] = useState<SearchState[]>([]);
   const [noteValue, setNoteValue] = useState<NoteValue>({ note: "", month: null, year: null });
   const [noteInit, setNoteInit] = useState(false);
+  const [noteError, setNoteError] = useState<string | undefined>(undefined);
   const [conflict, setConflict] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Schemas["RankResponse"] | null>(null);
@@ -54,11 +57,12 @@ export default function RankFlow() {
   );
   const items = itemsFor(snap, bucket);
 
-  // Prefill the note step from an existing ranking once.
+  // Prefill the stars and note from an existing ranking once.
   useEffect(() => {
     if (snap?.my_ranking && !noteInit) {
       const r = snap.my_ranking;
       setNoteValue({ note: r.note ?? "", month: r.visit_month, year: r.visit_year });
+      if (r.rating) setRating(r.rating);
       setNoteInit(true);
     }
   }, [snap, noteInit]);
@@ -70,14 +74,24 @@ export default function RankFlow() {
     setStep(next(st) === "done" ? "note" : "compare");
   }, []);
 
-  const chooseBucket = useCallback(
-    (b: Bucket) => {
-      setBucket(b);
+  const chooseRating = useCallback(
+    (stars: number) => {
+      setRating(stars);
       setConflict(false);
-      beginCompare(itemsFor(snap, b));
+      beginCompare(itemsFor(snap, bucketForRating(stars)));
     },
     [beginCompare, itemsFor, snap],
   );
+
+  // Refining a ranking just made from stars alone: start at the comparisons.
+  const [refineStarted, setRefineStarted] = useState(false);
+  useEffect(() => {
+    const stars = snap?.my_ranking?.rating;
+    if (refine && !refineStarted && stars) {
+      setRefineStarted(true);
+      chooseRating(stars);
+    }
+  }, [refine, refineStarted, snap, chooseRating]);
 
   const choose = useCallback(
     (newIsBetter: boolean) => {
@@ -95,17 +109,17 @@ export default function RankFlow() {
       setHistory(history.slice(0, -1));
       setStep("compare");
     } else {
-      setStep("bucket");
+      setStep("rating");
     }
   }, [history]);
 
   useEffect(() => {
-    if (step !== "bucket" && step !== "compare") return;
+    if (step !== "rating" && step !== "compare") return;
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (step === "bucket") {
-        const b = BUCKETS[Number(e.key) - 1];
-        if (b) chooseBucket(b.key);
+      if (step === "rating") {
+        const stars = Number(e.key);
+        if (stars >= 1 && stars <= 5) chooseRating(stars);
       } else if (e.key === "ArrowLeft" || e.key === "1") {
         choose(true);
       } else if (e.key === "ArrowRight" || e.key === "2") {
@@ -114,17 +128,17 @@ export default function RankFlow() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [step, chooseBucket, choose]);
+  }, [step, chooseRating, choose]);
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!snap || !bucket) throw new Error("Nothing to save");
+      if (!snap || !bucket || rating === null) throw new Error("Nothing to save");
       const version = snap.buckets.find((b) => b.bucket === bucket)?.version ?? 0;
       return unwrap(
         await api.PUT("/api/rankings", {
           body: {
             place_id: id,
-            bucket,
+            rating,
             position: position(search),
             list_version: version,
             note: noteValue.note.trim() || null,
@@ -205,26 +219,24 @@ export default function RankFlow() {
         </p>
       ) : null}
 
-      {step === "bucket" ? (
-        <section aria-labelledby="q-bucket">
-          <h2 id="q-bucket" className="text-xl font-semibold" aria-live="polite">
+      {step === "rating" ? (
+        <section aria-labelledby="q-rating" className="space-y-3">
+          <h2 id="q-rating" className="text-xl font-semibold" aria-live="polite">
             How was it?
           </h2>
-          <div className="mt-3 grid gap-3">
-            {BUCKETS.map((b, i) => (
-              <button
-                key={b.key}
-                type="button"
-                autoFocus={i === 0}
-                onClick={() => chooseBucket(b.key)}
-                className="card text-left text-lg font-extrabold transition-transform hover:bg-stone-50 active:translate-y-0.5 active:border-b-2"
-              >
-                {b.label}
-                <span className="block text-sm font-normal text-muted">{b.hint} (press {i + 1})</span>
-              </button>
-            ))}
+          <p className="hint">Pick the stars, then Next. Or just press 1–5.</p>
+          <StarRating value={rating} onChange={setRating} label="Your rating" autoFocus />
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={rating === null}
+              onClick={() => rating !== null && chooseRating(rating)}
+            >
+              Next
+            </button>
+            {cancel}
           </div>
-          <div className="mt-4">{cancel}</div>
         </section>
       ) : null}
 
@@ -272,23 +284,37 @@ export default function RankFlow() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
+            const problem = reviewProblem(rating, noteValue.note);
+            if (problem) {
+              setNoteError(problem.note ?? problem.rating);
+              return;
+            }
             save.mutate();
           }}
         >
           <h2 id="q-note" className="text-xl font-semibold" aria-live="polite">
-            Add a note (optional)
+            {needsComment(rating) ? "Tell others why" : "Add a comment (optional)"}
           </h2>
           <p>
-            Position: #{position(search)} of {total + 1} in your {BUCKETS.find((b) => b.key === bucket)?.label} list.
+            {rating ? `${rating} ★ ${RATING_LABELS[rating]} · ` : ""}#{position(search)} of {total + 1} in your{" "}
+            {bucket ? BUCKET_LABEL[bucket] : ""} list.
           </p>
-          <NoteFields value={noteValue} onChange={setNoteValue} />
+          <NoteFields
+            value={noteValue}
+            onChange={(v) => {
+              setNoteValue(v);
+              setNoteError(undefined);
+            }}
+            required={needsComment(rating)}
+            error={noteError}
+          />
           {error ? (
             <p role="alert" className="text-danger">
               {error}
             </p>
           ) : null}
           <div className="flex gap-2">
-            <button type="submit" autoFocus disabled={save.isPending} className="btn btn-primary">
+            <button type="submit" autoFocus={!needsComment(rating)} disabled={save.isPending} className="btn btn-primary">
               Save
             </button>
             <button type="button" onClick={back} className="btn btn-secondary">

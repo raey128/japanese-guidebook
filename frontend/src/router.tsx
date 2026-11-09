@@ -10,9 +10,10 @@ const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({
 });
 
 /** Redirect to `to`, keeping the current query string (R11.1: /map → /, R3.5: /search → /). */
-function KeepQuery({ to, rename }: { to: string; rename?: Record<string, string> }) {
+function KeepQuery({ to, rename, set }: { to: string; rename?: Record<string, string>; set?: Record<string, string> }) {
   const { search } = useLocation();
   const params = new URLSearchParams(search);
+  for (const [k, v] of Object.entries(set ?? {})) params.set(k, v);
   for (const [from, into] of Object.entries(rename ?? {})) {
     const v = params.get(from);
     params.delete(from);
@@ -30,11 +31,12 @@ export const router = createBrowserRouter([
       { path: "/", lazy: page(() => import("./pages/MapPage")) },
       { path: "/map", element: <KeepQuery to="/" /> },
       { path: "/search", element: <KeepQuery to="/" /> },
+      // Adding a place happens on the map itself (R13.7); old links open the add panel there.
+      { path: "/places/new", element: <KeepQuery to="/" set={{ add: "1", z: "17" }} /> },
       {
         Component: Layout,
         children: [
           { path: "/sign-in", lazy: page(() => import("./pages/SignIn")) },
-          { path: "/places/new", lazy: page(() => import("./pages/AddPlace")) },
           { path: "/places/:id", lazy: page(() => import("./pages/PlaceDetail")) },
           { path: "/places/:id/edit", lazy: page(() => import("./pages/EditPlace")) },
           { path: "/places/:id/rank", lazy: page(() => import("./pages/RankFlow")) },

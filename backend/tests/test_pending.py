@@ -73,7 +73,7 @@ async def test_submitter_can_rank_and_save_pending_but_it_does_not_count(client,
     snap = (await client.get("/api/rankings/snapshot", params={"place_id": pid})).json()
     r = await client.put(
         "/api/rankings",
-        json={"place_id": pid, "bucket": "liked", "position": 1, "list_version": snap["buckets"][0]["version"]},
+        json={"place_id": pid, "rating": 5, "position": 1, "list_version": snap["buckets"][0]["version"]},
     )
     assert r.status_code == 200, r.text
     mine = (await client.get("/api/me/rankings")).json()["cities"]

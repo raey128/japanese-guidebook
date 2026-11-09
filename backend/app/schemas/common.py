@@ -77,6 +77,7 @@ class MyRanking(Out):
     bucket: Bucket
     position: int
     personal_score: float
+    rating: int | None = None  # 1-5 stars; null for rankings made before ratings
     note: str | None
     visit_month: int | None
     visit_year: int | None

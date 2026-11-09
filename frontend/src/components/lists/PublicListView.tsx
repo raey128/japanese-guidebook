@@ -45,7 +45,7 @@ export default function PublicListView({
           action={
             <span className="flex flex-wrap justify-center gap-2">
               <ButtonLink to={`/search?${search.toString()}`}>Rank a place</ButtonLink>
-              <ButtonLink variant="secondary" to="/places/new">
+              <ButtonLink variant="secondary" to="/?add=1">
                 {COPY.addPlace}
               </ButtonLink>
             </span>

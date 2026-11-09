@@ -34,6 +34,22 @@ export function useAddressSearch(q: string) {
   });
 }
 
+/** Businesses by name for the add-place type-ahead (R13.6), biased towards `near`. */
+export function usePlaceLookup(q: string, near: { lat: number; lng: number } | null) {
+  const term = q.trim();
+  const lat = near ? Number(near.lat.toFixed(2)) : undefined;
+  const lng = near ? Number(near.lng.toFixed(2)) : undefined;
+  return useQuery({
+    queryKey: ["placeLookup", term.toLowerCase(), lat, lng],
+    enabled: term.length >= 2,
+    staleTime: 10 * 60_000,
+    retry: false,
+    placeholderData: keepPreviousData,
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET("/api/places/lookup", { signal, params: { query: { q: term, lat, lng } } })),
+  });
+}
+
 export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
   try {
     const res = unwrap(await api.GET("/api/geocode/reverse", { params: { query: { lat, lng } } }));
@@ -56,11 +72,18 @@ export type PlaceValues = {
 export function useCreatePlace() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (v: PlaceValues & { confirm_not_duplicate: boolean; source?: "pin" | "manual" }) =>
-      unwrap(await api.POST("/api/places", { body: v })),
+    mutationFn: async (
+      v: PlaceValues & {
+        confirm_not_duplicate: boolean;
+        source?: "pin" | "manual";
+        visited?: boolean;
+        review?: Schemas["ReviewIn"] | null;
+      },
+    ) => unwrap(await api.POST("/api/places", { body: { source: "pin", visited: false, ...v } })),
     onSuccess: (res) => {
       if (res.status === "created") {
-        for (const key of ["map", "search", "suggest", "topPicks", "pendingCount"]) void qc.invalidateQueries({ queryKey: [key] });
+        for (const key of ["map", "search", "suggest", "topPicks", "pendingCount", "myRankings", "snapshot"])
+          void qc.invalidateQueries({ queryKey: [key] });
       }
     },
   });

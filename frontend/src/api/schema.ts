@@ -11,6 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Health */
         get: operations["getHealth"];
         put?: never;
         post?: never;
@@ -29,6 +30,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Sign In */
         post: operations["signIn"];
         delete?: never;
         options?: never;
@@ -45,6 +47,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Sign Out */
         post: operations["signOut"];
         delete?: never;
         options?: never;
@@ -59,12 +62,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Me */
         get: operations["getMe"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
+        /** Update Me */
         patch: operations["updateMe"];
         trace?: never;
     };
@@ -75,6 +80,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Admin Ping */
         get: operations["adminPing"];
         put?: never;
         post?: never;
@@ -91,6 +97,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List Subcategories */
         get: operations["listSubcategories"];
         put?: never;
         post?: never;
@@ -107,6 +114,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List Cities */
         get: operations["listCities"];
         put?: never;
         post?: never;
@@ -123,6 +131,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List City Locations */
         get: operations["listCityLocations"];
         put?: never;
         post?: never;
@@ -139,6 +148,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Suggest Location */
         get: operations["suggestLocation"];
         put?: never;
         post?: never;
@@ -157,6 +167,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Create Place */
         post: operations["createPlace"];
         delete?: never;
         options?: never;
@@ -173,6 +184,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Check Duplicates */
         post: operations["checkPlaceDuplicates"];
         delete?: never;
         options?: never;
@@ -187,13 +199,36 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get Place */
         get: operations["getPlace"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
+        /** Update Place */
         patch: operations["updatePlace"];
+        trace?: never;
+    };
+    "/api/places/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lookup Place
+         * @description Signed-in only. Businesses matching a name, near (lat, lng) when given, for the add-place
+         *     type-ahead (R13.6). Empty `results` when the lookup service is down or slow.
+         */
+        get: operations["lookupPlace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/geocode/reverse": {
@@ -203,6 +238,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * Reverse Geocode
+         * @description Signed-in only (so anonymous traffic can't use up the shared 1 call/s budget).
+         *     `address` is null on any failure or throttling; the form then just stays blank.
+         */
         get: operations["reverseGeocode"];
         put?: never;
         post?: never;
@@ -219,6 +259,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * Search Address
+         * @description Signed-in only. Empty `results` on failure or throttling.
+         */
         get: operations["searchAddress"];
         put?: never;
         post?: never;
@@ -235,6 +279,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get Snapshot */
         get: operations["getRankingSnapshot"];
         put?: never;
         post?: never;
@@ -252,6 +297,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /** Put Ranking */
         put: operations["putRanking"];
         post?: never;
         delete?: never;
@@ -270,9 +316,11 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /** Delete Ranking */
         delete: operations["deleteRanking"];
         options?: never;
         head?: never;
+        /** Patch Ranking */
         patch: operations["updateRankingNote"];
         trace?: never;
     };
@@ -283,6 +331,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** My Rankings */
         get: operations["getMyRankings"];
         put?: never;
         post?: never;
@@ -299,6 +348,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Place Notes */
         get: operations["getPlaceNotes"];
         put?: never;
         post?: never;
@@ -315,6 +365,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get Public List */
         get: operations["getPublicList"];
         put?: never;
         post?: never;
@@ -331,6 +382,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Search Places */
         get: operations["searchPlaces"];
         put?: never;
         post?: never;
@@ -347,6 +399,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get Map */
         get: operations["getMap"];
         put?: never;
         post?: never;
@@ -364,8 +417,13 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /** Add Bookmark */
         put: operations["addBookmark"];
         post?: never;
+        /**
+         * Remove Bookmark
+         * @description Idempotent: removing a bookmark that isn't there is not an error.
+         */
         delete: operations["removeBookmark"];
         options?: never;
         head?: never;
@@ -379,6 +437,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List My Bookmarks */
         get: operations["listMyBookmarks"];
         put?: never;
         post?: never;
@@ -395,6 +454,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get Profile */
         get: operations["getProfile"];
         put?: never;
         post?: never;
@@ -413,6 +473,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Flag Place */
         post: operations["flagPlace"];
         delete?: never;
         options?: never;
@@ -429,6 +490,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Flag Note */
         post: operations["flagNote"];
         delete?: never;
         options?: never;
@@ -443,6 +505,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List Flags */
         get: operations["listAdminFlags"];
         put?: never;
         post?: never;
@@ -461,6 +524,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Apply Flag */
         post: operations["applyFlag"];
         delete?: never;
         options?: never;
@@ -477,6 +541,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Dismiss Flag */
         post: operations["dismissFlag"];
         delete?: never;
         options?: never;
@@ -493,6 +558,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Hide Place */
         post: operations["hidePlace"];
         delete?: never;
         options?: never;
@@ -509,6 +575,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Unhide Place */
         post: operations["unhidePlace"];
         delete?: never;
         options?: never;
@@ -525,6 +592,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Close Place */
         post: operations["closePlace"];
         delete?: never;
         options?: never;
@@ -541,6 +609,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Reopen Place */
         post: operations["reopenPlace"];
         delete?: never;
         options?: never;
@@ -557,6 +626,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Merge Place */
         post: operations["mergePlace"];
         delete?: never;
         options?: never;
@@ -573,6 +643,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Remove Note */
         post: operations["removeNote"];
         delete?: never;
         options?: never;
@@ -587,6 +658,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List Seeds */
         get: operations["listSeeds"];
         put?: never;
         post?: never;
@@ -604,6 +676,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /** Set Seed Reviewed */
         put: operations["setSeedReviewed"];
         post?: never;
         delete?: never;
@@ -619,6 +692,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Top Picks */
         get: operations["getTopPicks"];
         put?: never;
         post?: never;
@@ -635,6 +709,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Suggest */
         get: operations["getSuggestions"];
         put?: never;
         post?: never;
@@ -651,6 +726,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List Pending */
         get: operations["listPendingPlaces"];
         put?: never;
         post?: never;
@@ -667,6 +743,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Count Pending */
         get: operations["countPendingPlaces"];
         put?: never;
         post?: never;
@@ -685,6 +762,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Approve */
         post: operations["approvePendingPlace"];
         delete?: never;
         options?: never;
@@ -701,6 +779,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Reject */
         post: operations["rejectPendingPlace"];
         delete?: never;
         options?: never;
@@ -715,6 +794,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * My Submissions
+         * @description Manual adds: still pending, rejected, or approved (reviewed_at set).
+         */
         get: operations["listMySubmissions"];
         put?: never;
         post?: never;
@@ -733,6 +816,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Post Events
+         * @description Fire-and-forget: always 204, even when events are dropped (unknown type, over the cap).
+         */
         post: operations["postEvents"];
         delete?: never;
         options?: never;
@@ -747,6 +834,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get Stats */
         get: operations["getStats"];
         put?: never;
         post?: never;
@@ -762,21 +850,28 @@ export interface components {
     schemas: {
         /** AddressResult */
         AddressResult: {
+            /** Label */
             label: string;
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
         };
         /** AddressSearchResponse */
         AddressSearchResponse: {
+            /** Results */
             results: components["schemas"]["AddressResult"][];
         };
         /** BookmarkList */
         BookmarkList: {
+            /** Items */
             items: components["schemas"]["PlaceSummary"][];
         };
         /** BookmarkState */
         BookmarkState: {
+            /** Place Id */
             place_id: number;
+            /** Is Bookmarked */
             is_bookmarked: boolean;
         };
         /**
@@ -784,87 +879,162 @@ export interface components {
          * @description One List (user, city, subcategory, bucket) with the version to send back on writes.
          */
         BucketList: {
+            /**
+             * Bucket
+             * @enum {string}
+             */
             bucket: "liked" | "fine" | "disliked";
+            /** Version */
             version: number;
+            /** Items */
             items: components["schemas"]["RankingItem"][];
         };
         /** CategoryLists */
         CategoryLists: {
             subcategory: components["schemas"]["SubcategoryOut"];
+            /** Buckets */
             buckets: components["schemas"]["BucketList"][];
         };
         /** CityLists */
         CityLists: {
             city: components["schemas"]["CityOut"];
+            /** Categories */
             categories: components["schemas"]["CategoryLists"][];
         };
         /** CityOut */
         CityOut: {
+            /** Id */
             id: number;
+            /** Slug */
             slug: string;
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja: string | null;
+            /** Country Code */
             country_code: string;
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
         };
         /** CityWithLocations */
         CityWithLocations: {
+            /** Id */
             id: number;
+            /** Slug */
             slug: string;
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja: string | null;
+            /** Country Code */
             country_code: string;
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
+            /** Locations */
             locations: components["schemas"]["LocationOut"][];
         };
         /** ClosedFlagIn */
         ClosedFlagIn: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
             flag_type: "closed";
+            /** Payload */
             payload?: {
                 [key: string]: unknown;
             } | null;
         };
         /** DuplicateCheckResponse */
         DuplicateCheckResponse: {
+            /** Candidates */
             candidates: components["schemas"]["PlaceSummary"][];
         };
         /** DuplicateFlagIn */
         DuplicateFlagIn: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
             flag_type: "duplicate";
             payload: components["schemas"]["DuplicatePayload"];
         };
         /** DuplicatePayload */
         DuplicatePayload: {
+            /** Other Place Id */
             other_place_id: number;
+        };
+        /** EventBatch */
+        EventBatch: {
+            /**
+             * Browser Id
+             * Format: uuid
+             */
+            browser_id: string;
+            /** Events */
+            events: components["schemas"]["EventItem"][];
+        };
+        /** EventItem */
+        EventItem: {
+            /** Type */
+            type: string;
+            /** Source */
+            source?: string | null;
         };
         /** FlagCreated */
         FlagCreated: {
+            /** Id */
             id: number;
+            /** Flag Type */
             flag_type: string;
+            /**
+             * Status
+             * @enum {string}
+             */
             status: "open" | "dismissed" | "resolved";
-            auto_action: "hidden" | "closed" | null;
+            /** Auto Action */
+            auto_action: ("hidden" | "closed") | null;
         };
         /** FlagGroup */
         FlagGroup: {
+            /** Key */
             key: string;
+            /**
+             * Target Type
+             * @enum {string}
+             */
             target_type: "place" | "note";
+            /** Latest At */
             latest_at: string;
+            /** Counts */
             counts: {
                 [key: string]: number;
             };
             place: components["schemas"]["PlaceSummary"] | null;
             note: components["schemas"]["NoteTarget"] | null;
+            /** Flags */
             flags: components["schemas"]["FlagOut"][];
         };
         /** FlagOut */
         FlagOut: {
+            /** Id */
             id: number;
+            /** Flag Type */
             flag_type: string;
+            /**
+             * Status
+             * @enum {string}
+             */
             status: "open" | "dismissed" | "resolved";
+            /** Flagger */
             flagger: string;
+            /** Created At */
             created_at: string;
+            /** Payload */
             payload: {
                 [key: string]: unknown;
             } | null;
@@ -874,153 +1044,150 @@ export interface components {
         };
         /** FlagQueue */
         FlagQueue: {
+            /** Groups */
             groups: components["schemas"]["FlagGroup"][];
         };
         /** FlagStatusOut */
         FlagStatusOut: {
+            /** Id */
             id: number;
+            /**
+             * Status
+             * @enum {string}
+             */
             status: "open" | "dismissed" | "resolved";
-        };
-        /** TopNote */
-        TopNote: {
-            author: string;
-            note: string;
-        };
-        /** TopPicks */
-        TopPicks: {
-            /** @enum {string} */
-            kind: "ranked" | "team" | "empty";
-            items: components["schemas"]["PlaceSummary"][];
-        };
-        /** Suggestions */
-        Suggestions: {
-            areas: components["schemas"]["LocationOut"][];
-            subcategories: components["schemas"]["SubcategoryOut"][];
-            on_map: components["schemas"]["PlaceSummary"][];
-            elsewhere: components["schemas"]["PlaceSummary"][];
-        };
-        /** PendingPlace */
-        PendingPlace: {
-            place: components["schemas"]["PlaceSummary"];
-            submitter: string;
-            created_at: string;
-            nearby: components["schemas"]["PlaceSummary"][];
-        };
-        /** PendingQueue */
-        PendingQueue: {
-            items: components["schemas"]["PendingPlace"][];
-        };
-        /** PendingCount */
-        PendingCount: {
-            count: number;
-        };
-        /** RejectIn */
-        RejectIn: {
-            reason?: string | null;
-        };
-        /** Submission */
-        Submission: {
-            place_id: number;
-            name: string;
-            /** @enum {string} */
-            status: "pending" | "live" | "rejected";
-            review_reason: string | null;
-            created_at: string;
-            reviewed_at: string | null;
-        };
-        /** Submissions */
-        Submissions: {
-            items: components["schemas"]["Submission"][];
-        };
-        /** EventItem */
-        EventItem: {
-            type: string;
-            source?: string | null;
-        };
-        /** EventBatch */
-        EventBatch: {
-            /** Format: uuid */
-            browser_id: string;
-            events: components["schemas"]["EventItem"][];
         };
         /** FunnelWeek */
         FunnelWeek: {
+            /** Week */
             week: string;
+            /** First Visits */
             first_visits: number;
+            /** Opened Place */
             opened_place: number;
+            /** Opened Within 2Min */
             opened_within_2min: number;
+            /** Saved */
             saved: number;
+            /** Ranked */
             ranked: number;
+            /** Searches No Result */
             searches_no_result: number;
-        };
-        /** Stats */
-        Stats: {
-            weeks: components["schemas"]["FunnelWeek"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
+            /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
         /** Health */
         Health: {
+            /** Status */
             status: string;
+            /** Database */
             database: string;
         };
         /** ListItem */
         ListItem: {
+            /** Id */
             id: number;
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja: string | null;
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
+            /** Address */
             address: string | null;
             subcategory: components["schemas"]["SubcategoryOut"];
             location: components["schemas"]["LocationOut"];
             city: components["schemas"]["CityOut"];
+            /** Public Score */
             public_score: number | null;
+            /** Ranker Count */
             ranker_count: number;
+            /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
+            /** Rank */
             rank: number | null;
         };
         /** LocationOut */
         LocationOut: {
+            /** Id */
             id: number;
+            /** Slug */
             slug: string;
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja: string | null;
+            /** City Id */
             city_id: number;
+            /** Is Catch All */
             is_catch_all: boolean;
+            /** Lat */
             lat: number | null;
+            /** Lng */
             lng: number | null;
         };
         /** MapCluster */
         MapCluster: {
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
+            /** Count */
             count: number;
         };
         /** MapPoint */
         MapPoint: {
+            /** Id */
             id: number;
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja: string | null;
+            /** Subcategory Slug */
             subcategory_slug: string;
+            /**
+             * Top Category
+             * @enum {string}
+             */
             top_category: "food" | "sights" | "stays" | "experiences";
+            /** Public Score */
             public_score: number | null;
+            /** Ranker Count */
             ranker_count: number;
+            /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
-            /** @default false */
+            /**
+             * Saved
+             * @default false
+             */
             saved: boolean;
-            /** @default false */
+            /**
+             * Ranked
+             * @default false
+             */
             ranked: boolean;
         };
         /** MapResponse */
         MapResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
             kind: "clusters" | "points";
+            /** Clusters */
             clusters: components["schemas"]["MapCluster"][];
+            /** Points */
             points: components["schemas"]["MapPoint"][];
+            /** Truncated */
             truncated: boolean;
         };
         /** MeResponse */
@@ -1029,29 +1196,49 @@ export interface components {
         };
         /** MergeIn */
         MergeIn: {
+            /** Into Place Id */
             into_place_id: number;
         };
         /** Message */
         Message: {
+            /** Detail */
             detail: string;
         };
         /** MyRanking */
         MyRanking: {
+            /** Id */
             id: number;
+            /**
+             * Bucket
+             * @enum {string}
+             */
             bucket: "liked" | "fine" | "disliked";
+            /** Position */
             position: number;
+            /** Personal Score */
             personal_score: number;
+            /** Rating */
+            rating?: number | null;
+            /** Note */
             note: string | null;
+            /** Visit Month */
             visit_month: number | null;
+            /** Visit Year */
             visit_year: number | null;
         };
         /** MyRankings */
         MyRankings: {
+            /** Cities */
             cities: components["schemas"]["CityLists"][];
         };
         /** NoteFlagIn */
         NoteFlagIn: {
+            /**
+             * Flag Type
+             * @constant
+             */
             flag_type: "spam";
+            /** Payload */
             payload?: {
                 [key: string]: unknown;
             } | null;
@@ -1061,93 +1248,221 @@ export interface components {
          * @description Fields present in the body overwrite; omitted fields keep their saved value.
          */
         NotePatch: {
+            /** Note */
             note?: string | null;
+            /** Visit Month */
             visit_month?: number | null;
+            /** Visit Year */
             visit_year?: number | null;
         };
         /** NoteTarget */
         NoteTarget: {
+            /** Ranking Id */
             ranking_id: number;
+            /** Note */
             note: string | null;
+            /** Author */
             author: string;
+            /** Author Is Private */
             author_is_private: boolean;
+            /** Visit Month */
             visit_month: number | null;
+            /** Visit Year */
             visit_year: number | null;
+        };
+        /** PendingCount */
+        PendingCount: {
+            /** Count */
+            count: number;
+        };
+        /** PendingPlace */
+        PendingPlace: {
+            place: components["schemas"]["PlaceSummary"];
+            /** Submitter */
+            submitter: string;
+            /** Created At */
+            created_at: string;
+            /** Nearby */
+            nearby: components["schemas"]["PlaceSummary"][];
+        };
+        /** PendingQueue */
+        PendingQueue: {
+            /** Items */
+            items: components["schemas"]["PendingPlace"][];
         };
         /**
          * PlaceCheckRequest
          * @description The fields the duplicate check needs (POST /places/duplicates).
          */
         PlaceCheckRequest: {
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja?: string | null;
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
+            /** Subcategory Id */
             subcategory_id: number;
         };
         /** PlaceCreateRequest */
         PlaceCreateRequest: {
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja?: string | null;
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
+            /** Subcategory Id */
             subcategory_id: number;
+            /** Location Id */
             location_id: number;
+            /** Address */
             address?: string | null;
-            /** @default false */
-            confirm_not_duplicate?: boolean;
             /**
+             * Confirm Not Duplicate
+             * @default false
+             */
+            confirm_not_duplicate: boolean;
+            /**
+             * Source
              * @default pin
              * @enum {string}
              */
-            source?: "pin" | "manual";
+            source: "pin" | "manual";
+            /**
+             * Visited
+             * @default false
+             */
+            visited: boolean;
+            review?: components["schemas"]["ReviewIn"] | null;
         };
         /**
          * PlaceCreateResponse
          * @description `created` (HTTP 201): `place` is set. `duplicates` (HTTP 200): nothing was created and
-         * `candidates` lists nearby similar places for the user to pick or dismiss.
+         *     `candidates` lists nearby similar places for the user to pick or dismiss.
          */
         PlaceCreateResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
             status: "created" | "duplicates";
-            place: components["schemas"]["PlaceDetail"] | null;
+            place?: components["schemas"]["PlaceDetail"] | null;
+            /**
+             * Candidates
+             * @default []
+             */
             candidates: components["schemas"]["PlaceSummary"][];
+            ranking?: components["schemas"]["MyRanking"] | null;
+            /**
+             * Compare Count
+             * @default 0
+             */
+            compare_count: number;
+            /**
+             * City Name
+             * @default
+             */
+            city_name: string;
+            /**
+             * City Rank Count
+             * @default 0
+             */
+            city_rank_count: number;
         };
         /** PlaceDetail */
         PlaceDetail: {
+            /** Id */
             id: number;
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja: string | null;
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
+            /** Address */
             address: string | null;
             subcategory: components["schemas"]["SubcategoryOut"];
             location: components["schemas"]["LocationOut"];
             city: components["schemas"]["CityOut"];
+            /** Public Score */
             public_score: number | null;
+            /** Ranker Count */
             ranker_count: number;
+            /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
+            /** Creator */
             creator: string;
+            /** Created At */
             created_at: string;
+            /** Is Seed */
             is_seed: boolean;
+            /** Edit Deadline */
             edit_deadline: string | null;
-            /** @enum {string} */
+            /**
+             * Status
+             * @enum {string}
+             */
             status: "live" | "pending" | "rejected";
             top_note: components["schemas"]["TopNote"] | null;
             viewer: components["schemas"]["ViewerState"];
         };
+        /** PlaceLookupResponse */
+        PlaceLookupResponse: {
+            /** Results */
+            results: components["schemas"]["PlaceLookupResult"][];
+        };
+        /**
+         * PlaceLookupResult
+         * @description A business found by name in OpenStreetMap (via Photon), for the add-place type-ahead.
+         */
+        PlaceLookupResult: {
+            /** Name */
+            name: string;
+            /** Address */
+            address: string | null;
+            /** Lat */
+            lat: number;
+            /** Lng */
+            lng: number;
+            /** Kind */
+            kind: string | null;
+            /** Subcategory Id */
+            subcategory_id: number | null;
+        };
         /** PlaceNote */
         PlaceNote: {
+            /** Ranking Id */
             ranking_id: number;
+            /** Author */
             author: string;
+            /** Note */
             note: string;
+            /** Visit Month */
             visit_month: number | null;
+            /** Visit Year */
             visit_year: number | null;
+            /**
+             * Bucket
+             * @enum {string}
+             */
             bucket: "liked" | "fine" | "disliked";
+            /** Rating */
+            rating?: number | null;
+            /** Created At */
             created_at: string;
+            /** Is Own */
             is_own: boolean;
         };
         /** PlaceNotes */
         PlaceNotes: {
+            /** Notes */
             notes: components["schemas"]["PlaceNote"][];
         };
         /**
@@ -1155,75 +1470,126 @@ export interface components {
          * @description A place as it appears in lists, search results, pins and profiles.
          */
         PlaceSummary: {
+            /** Id */
             id: number;
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja: string | null;
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
+            /** Address */
             address: string | null;
             subcategory: components["schemas"]["SubcategoryOut"];
             location: components["schemas"]["LocationOut"];
             city: components["schemas"]["CityOut"];
+            /** Public Score */
             public_score: number | null;
+            /** Ranker Count */
             ranker_count: number;
+            /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
         };
         /**
          * PlaceUpdateRequest
          * @description PATCH body; only the fields present are changed. lat and lng must come together.
-         * `name_ja` / `address` may be set to null or "" to clear them.
+         *     `name_ja` / `address` may be set to null or "" to clear them.
          */
         PlaceUpdateRequest: {
+            /** Name */
             name?: string | null;
+            /** Name Ja */
             name_ja?: string | null;
+            /** Lat */
             lat?: number | null;
+            /** Lng */
             lng?: number | null;
+            /** Subcategory Id */
             subcategory_id?: number | null;
+            /** Location Id */
             location_id?: number | null;
+            /** Address */
             address?: string | null;
         };
         /** ProfileItem */
         ProfileItem: {
             place: components["schemas"]["PlaceSummary"];
+            /**
+             * Bucket
+             * @enum {string}
+             */
             bucket: "liked" | "fine" | "disliked";
+            /** Position */
             position: number;
+            /** Personal Score */
             personal_score: number;
         };
         /** ProfileList */
         ProfileList: {
             city: components["schemas"]["CityOut"];
             subcategory: components["schemas"]["SubcategoryOut"];
+            /**
+             * Top Category
+             * @enum {string}
+             */
             top_category: "food" | "sights" | "stays" | "experiences";
+            /** Items */
             items: components["schemas"]["ProfileItem"][];
         };
         /** ProfileOut */
         ProfileOut: {
+            /** Username */
             username: string;
+            /** Created At */
             created_at: string;
+            /** Is Self */
             is_self: boolean;
+            /** Lists */
             lists: components["schemas"]["ProfileList"][];
         };
         /** PublicList */
         PublicList: {
+            /** Title */
             title: string;
             city: components["schemas"]["CityOut"];
             subcategory: components["schemas"]["SubcategoryOut"] | null;
+            /**
+             * Top Category
+             * @enum {string}
+             */
             top_category: "food" | "sights" | "stays" | "experiences";
             location: components["schemas"]["LocationOut"] | null;
+            /** Total */
             total: number;
+            /** Limit */
             limit: number;
+            /** Offset */
             offset: number;
+            /** Items */
             items: components["schemas"]["ListItem"][];
         };
         /** RankRequest */
         RankRequest: {
+            /** Place Id */
             place_id: number;
-            bucket: "liked" | "fine" | "disliked";
-            /** @description 1-based among the target List's other items */
+            /** Rating */
+            rating: number;
+            /** Bucket */
+            bucket?: ("liked" | "fine" | "disliked") | null;
+            /**
+             * Position
+             * @description 1-based among the target List's other items
+             */
             position: number;
+            /** List Version */
             list_version: number;
+            /** Note */
             note?: string | null;
+            /** Visit Month */
             visit_month?: number | null;
+            /** Visit Year */
             visit_year?: number | null;
         };
         /** RankResponse */
@@ -1231,146 +1597,314 @@ export interface components {
             rank_list: components["schemas"]["BucketList"];
             previous_list: components["schemas"]["BucketList"] | null;
             ranking: components["schemas"]["MyRanking"];
-            /** @default true */
+            /**
+             * Is New
+             * @default true
+             */
             is_new: boolean;
-            /** @default  */
+            /**
+             * City Name
+             * @default
+             */
             city_name: string;
-            /** @default 0 */
+            /**
+             * City Rank Count
+             * @default 0
+             */
             city_rank_count: number;
         };
         /** RankingItem */
         RankingItem: {
+            /** Ranking Id */
             ranking_id: number;
+            /** Place Id */
             place_id: number;
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja: string | null;
+            /** Position */
             position: number;
+            /** Personal Score */
             personal_score: number;
+            /** Rating */
+            rating?: number | null;
+            /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
+        };
+        /** RejectIn */
+        RejectIn: {
+            /** Reason */
+            reason?: string | null;
         };
         /** ReverseGeocodeResponse */
         ReverseGeocodeResponse: {
+            /** Address */
             address: string | null;
+        };
+        /**
+         * ReviewIn
+         * @description The adder's own rating when they've been there (R3.6). Rating is required; a comment is
+         *     optional unless the rating is below 3 stars.
+         */
+        ReviewIn: {
+            /** Rating */
+            rating: number;
+            /** Note */
+            note?: string | null;
+            /** Visit Month */
+            visit_month?: number | null;
+            /** Visit Year */
+            visit_year?: number | null;
         };
         /** SearchItem */
         SearchItem: {
+            /** Id */
             id: number;
+            /** Name */
             name: string;
+            /** Name Ja */
             name_ja: string | null;
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
+            /** Address */
             address: string | null;
             subcategory: components["schemas"]["SubcategoryOut"];
             location: components["schemas"]["LocationOut"];
             city: components["schemas"]["CityOut"];
+            /** Public Score */
             public_score: number | null;
+            /** Ranker Count */
             ranker_count: number;
+            /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
+            /**
+             * Is Bookmarked
+             * @default false
+             */
             is_bookmarked: boolean;
-            my_ranking_id: number | null;
+            /** My Ranking Id */
+            my_ranking_id?: number | null;
         };
         /** SearchResults */
         SearchResults: {
-            items: components["schemas"]["SearchItem"][];
+            /** Items */
+            items?: components["schemas"]["SearchItem"][];
         };
         /** SeedCityCount */
         SeedCityCount: {
             city: components["schemas"]["CityOut"];
+            /** Total */
             total: number;
+            /** Unreviewed */
             unreviewed: number;
         };
         /** SeedItem */
         SeedItem: {
             place: components["schemas"]["PlaceSummary"];
+            /** Reviewed */
             reviewed: boolean;
         };
         /** SeedReview */
         SeedReview: {
+            /** Counts */
             counts: components["schemas"]["SeedCityCount"][];
+            /** Items */
             items: components["schemas"]["SeedItem"][];
         };
         /** SeedReviewIn */
         SeedReviewIn: {
+            /** Reviewed */
             reviewed: boolean;
         };
         /** SignInRequest */
         SignInRequest: {
+            /** Username */
             username: string;
-            /** @default false */
-            create?: boolean;
+            /**
+             * Create
+             * @default false
+             */
+            create: boolean;
         };
         /** SignInResponse */
         SignInResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
             status: "signed_in" | "needs_confirmation";
+            /** Username */
             username: string;
-            user: components["schemas"]["UserOut"] | null;
+            user?: components["schemas"]["UserOut"] | null;
         };
         /** Snapshot */
         Snapshot: {
+            /** Place Id */
             place_id: number;
             city: components["schemas"]["CityOut"];
             subcategory: components["schemas"]["SubcategoryOut"];
+            /** Can Rank */
             can_rank: boolean;
             my_ranking: components["schemas"]["MyRanking"] | null;
+            /** Buckets */
             buckets: components["schemas"]["BucketList"][];
         };
         /** SpamFlagIn */
         SpamFlagIn: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
             flag_type: "spam";
+            /** Payload */
             payload?: {
                 [key: string]: unknown;
             } | null;
         };
         /** StaleListOut */
         StaleListOut: {
+            /** Detail */
             detail: string;
+            /** Current Version */
             current_version: number;
+        };
+        /** Stats */
+        Stats: {
+            /** Weeks */
+            weeks: components["schemas"]["FunnelWeek"][];
         };
         /** SubcategoryOut */
         SubcategoryOut: {
+            /** Id */
             id: number;
+            /** Slug */
             slug: string;
+            /** Name */
             name: string;
+            /**
+             * Top Category
+             * @enum {string}
+             */
             top_category: "food" | "sights" | "stays" | "experiences";
+        };
+        /** Submission */
+        Submission: {
+            /** Place Id */
+            place_id: number;
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "live" | "rejected";
+            /** Review Reason */
+            review_reason: string | null;
+            /** Created At */
+            created_at: string;
+            /** Reviewed At */
+            reviewed_at: string | null;
+        };
+        /** Submissions */
+        Submissions: {
+            /** Items */
+            items: components["schemas"]["Submission"][];
         };
         /** Suggestion */
         Suggestion: {
             location: components["schemas"]["LocationOut"] | null;
             city: components["schemas"]["CityOut"] | null;
+            /** Outside Coverage */
             outside_coverage: boolean;
+            /** Covered Cities */
             covered_cities: components["schemas"]["CityOut"][];
+        };
+        /** Suggestions */
+        Suggestions: {
+            /** Areas */
+            areas: components["schemas"]["LocationOut"][];
+            /** Subcategories */
+            subcategories: components["schemas"]["SubcategoryOut"][];
+            /** On Map */
+            on_map: components["schemas"]["PlaceSummary"][];
+            /** Elsewhere */
+            elsewhere: components["schemas"]["PlaceSummary"][];
+        };
+        /**
+         * TopNote
+         * @description The most recent note from a "Liked" ranking, quoted in the place popup (R17.7).
+         */
+        TopNote: {
+            /** Author */
+            author: string;
+            /** Note */
+            note: string;
+        };
+        /** TopPicks */
+        TopPicks: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "ranked" | "team" | "empty";
+            /** Items */
+            items: components["schemas"]["PlaceSummary"][];
         };
         /** UpdateMeRequest */
         UpdateMeRequest: {
+            /** Is Private */
             is_private: boolean;
         };
         /** UserOut */
         UserOut: {
+            /** Id */
             id: number;
+            /** Username */
             username: string;
+            /** Is Admin */
             is_admin: boolean;
+            /** Is Private */
             is_private: boolean;
         };
         /** ValidationError */
         ValidationError: {
+            /** Location */
             loc: (string | number)[];
+            /** Message */
             msg: string;
+            /** Error Type */
             type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
         /**
          * ViewerState
          * @description What the signed-in viewer can do with / has done to a place.
          */
         ViewerState: {
+            /** Signed In */
             signed_in: boolean;
+            /** Can Edit */
             can_edit: boolean;
+            /** Can Flag */
             can_flag: boolean;
+            /** Can Rank */
             can_rank: boolean;
+            /** Is Bookmarked */
             is_bookmarked: boolean;
             my_ranking: components["schemas"]["MyRanking"] | null;
         };
         /** WrongInfoFlagIn */
         WrongInfoFlagIn: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
             flag_type: "wrong_info";
             payload: components["schemas"]["WrongInfoPayload"];
         };
@@ -1379,19 +1913,29 @@ export interface components {
          * @description Suggested corrections; at least one field. An empty name_ja suggests clearing it.
          */
         WrongInfoPayload: {
+            /** Name */
             name?: string | null;
+            /** Name Ja */
             name_ja?: string | null;
+            /** Subcategory Id */
             subcategory_id?: number | null;
+            /** Location Id */
             location_id?: number | null;
         };
         /** WrongLocationFlagIn */
         WrongLocationFlagIn: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
             flag_type: "wrong_location";
             payload: components["schemas"]["WrongLocationPayload"];
         };
         /** WrongLocationPayload */
         WrongLocationPayload: {
+            /** Lat */
             lat: number;
+            /** Lng */
             lng: number;
         };
     };
@@ -1499,6 +2043,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1799,6 +2376,39 @@ export interface operations {
             };
         };
     };
+    lookupPlace: {
+        parameters: {
+            query: {
+                q: string;
+                lat?: number | null;
+                lng?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceLookupResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reverseGeocode: {
         parameters: {
             query: {
@@ -1944,7 +2554,7 @@ export interface operations {
             };
         };
     };
-    updateRankingNote: {
+    deleteRanking: {
         parameters: {
             query?: never;
             header?: never;
@@ -1953,20 +2563,14 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NotePatch"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["MyRanking"];
-                };
+                content?: never;
             };
             /** @description Forbidden */
             403: {
@@ -1997,7 +2601,7 @@ export interface operations {
             };
         };
     };
-    deleteRanking: {
+    updateRankingNote: {
         parameters: {
             query?: never;
             header?: never;
@@ -2006,14 +2610,20 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotePatch"];
+            };
+        };
         responses: {
             /** @description Successful Response */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MyRanking"];
+                };
             };
             /** @description Forbidden */
             403: {
@@ -2332,39 +2942,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProfileOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    updateMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateMeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserOut"];
                 };
             };
             /** @description Validation Error */
@@ -3551,7 +4128,7 @@ export interface operations {
     };
     getStats: {
         parameters: {
-            query: {
+            query?: {
                 weeks?: number;
             };
             header?: never;

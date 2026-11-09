@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { createPlaceApi, rankViaUi, runId, seedRankedList, signInApi, snapshotApi } from "./helpers";
+import { createPlaceApi, pickStars, rankViaUi, runId, seedRankedList, signInApi, snapshotApi } from "./helpers";
 
 test.describe("ranking flow", () => {
   test("binary search asks at most ceil(log2(n+1)) questions and orders by the answers", async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe("ranking flow", () => {
     const target = await createPlaceApi(page, { name: `Order New ${run}` });
 
     await page.goto(`/places/${target.id}/rank`);
-    await page.getByRole("button", { name: /^Liked/ }).click();
+    await pickStars(page, 5);
 
     // n = 3 -> at most ceil(log2(4)) = 2 comparisons. First against #2.
     await expect(page.getByText("Comparison 1 (at most 2)")).toBeVisible();
@@ -24,8 +24,8 @@ test.describe("ranking flow", () => {
     await page.getByTestId("choose-existing").click();
 
     // Done after exactly two comparisons: straight to the note step.
-    await expect(page.getByRole("heading", { name: "Add a note (optional)" })).toBeVisible();
-    await expect(page.getByText("Position: #2 of 4 in your Liked list.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Add a comment (optional)" })).toBeVisible();
+    await expect(page.getByText(/#2 of 4 in your Liked list\./)).toBeVisible();
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
@@ -51,9 +51,15 @@ test.describe("ranking flow", () => {
     await seedRankedList(page, 2, `Bucket ${run}`);
     const target = await createPlaceApi(page, { name: `Bucket New ${run}` });
     await page.goto(`/places/${target.id}/rank`);
-    await page.getByRole("button", { name: /^Disliked/ }).click();
-    await expect(page.getByRole("heading", { name: "Add a note (optional)" })).toBeVisible();
-    await expect(page.getByText("Position: #1 of 1 in your Disliked list.")).toBeVisible();
+    await pickStars(page, 2);
+    // Below 3 stars the comment is required.
+    await expect(page.getByRole("heading", { name: "Tell others why" })).toBeVisible();
+    await expect(page.getByText(/#1 of 1 in your Disliked list\./)).toBeVisible();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "need a comment" })).toBeVisible();
+    await page.getByRole("textbox", { name: /^Comment/ }).fill("Too salty for me.");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
   });
 
   test("cancelling midway saves nothing", async ({ page }) => {
@@ -63,7 +69,7 @@ test.describe("ranking flow", () => {
     const target = await createPlaceApi(page, { name: `Cancel New ${run}` });
 
     await page.goto(`/places/${target.id}/rank`);
-    await page.getByRole("button", { name: /^Liked/ }).click();
+    await pickStars(page, 5);
     await expect(page.getByText("Comparison 1 (at most")).toBeVisible();
     await page.getByTestId("choose-new").click();
     await page.getByRole("link", { name: "Cancel" }).click();
@@ -92,11 +98,11 @@ test.describe("ranking flow", () => {
     await expect(other.getByRole("heading", { name: "How was it?" })).toBeVisible();
 
     // Tab 2 gets as far as the note step with the list version it loaded...
-    await other.getByRole("button", { name: /^Liked/ }).click();
+    await pickStars(other, 5);
     await other.getByTestId("choose-new").click();
     await expect(other.getByText("Comparison 2 (at most")).toBeVisible();
     await other.getByTestId("choose-new").click();
-    await expect(other.getByRole("heading", { name: "Add a note (optional)" })).toBeVisible();
+    await expect(other.getByRole("heading", { name: "Add a comment (optional)" })).toBeVisible();
 
     // ...then tab 1 saves first (this bumps the Liked list version).
     await rankViaUi(page, target.id, { answers: ["existing", "existing"] });

@@ -55,6 +55,7 @@ _The search UI moves onto the map (R12). R3.1 is now the backend that powers the
 | R3.3 | One ranking per user per place | Ranking an already-ranked place opens re-rank instead of creating a second entry |
 | R3.4 | Empty search result state | A search with no match shows "Not found" plus an "Add manually" option that starts R13 (pending approval). _Changed: it used to link to the live pin-drop flow_ |
 | R3.5 | The standalone search page is retired | `/search` (with any query string) redirects to `/` and keeps `q`, `city` and `category`, so the map's search bar opens with them filled in |
+| R3.6 | Every ranking has a 1–5 star rating; a comment is required below 3 stars | Ranking without a rating is refused (422). 4–5 ★ go in Liked, 3 ★ in Fine, 1–2 ★ in Disliked, then the usual comparisons. A 1–2 ★ rating without a comment is refused in the app and by the API, and its comment can't later be cleared. Comments are optional at 3 ★ and up. Adding a place asks "Have you been here?" (required); "Yes" requires a star rating and ranks the place for the adder as it's created, then offers comparisons if the list has other places |
 
 ### R4: Pairwise ranking
 
@@ -157,6 +158,8 @@ _The map is now the home screen (R11). Picking an area moves the map there and n
 | R13.3 | The submitter sees and can use their pending place | The submitter sees it on their map and in their suggestions with a "Pending review" badge, and can rank, note and bookmark it. Their ranking stays in their personal list but does not count toward public scores or the category prior until approval |
 | R13.4 | Admins review pending places in a queue | The admin page lists pending places oldest first with name, pin on a mini map, subcategory, location, submitter, and nearby places within 200m. Non-admins get 403 |
 | R13.5 | Approve makes the place live | Approval puts it on the map, in search and in lists immediately, with the normal "Unverified" badge (R2.7). The submitter's ranking starts counting in public scores. Admin can fix name, pin, subcategory or location before approving |
+| R13.6 | Typing a name on Add a place suggests businesses | From 2 letters, a dropdown shows places already in the app ("Already on the map", opening them instead of adding a duplicate) and businesses from OpenStreetMap, nearest first. Picking one fills in the name and address, drops the pin and guesses the subcategory where it can. If the lookup service is down, the form still works by hand |
+| R13.7 | Adding a place happens on the main map | Tapping + (or long-pressing the map) opens an Add panel over the same full-screen map, with one draggable pin. No separate page or mini-map. Dragging the pin, tapping the map, picking a name suggestion, searching an address or "Use my location" all move that same pin, and the map follows it if it would be hidden. After adding, the panel closes and the new place's summary opens. Old `/places/new` links open the panel |
 | R13.6 | Reject removes the place | A rejected place disappears from the submitter's map too, and its rankings and bookmarks are deleted. Admin can add an optional reason (≤ 200 chars). The status is kept for the submitter (R13.7) |
 | R13.7 | The submitter can track their submissions | "My submissions" (in the menu) lists the user's manual adds with status Pending / Approved / Rejected (with the reason, if given) |
 | R13.8 | Pin-drop adds are unaffected | Places added with the + button, long-press or right-click (R2, R6.4) still go live immediately. Test: a pin-drop place appears to other users at once and a manual add does not |
@@ -174,6 +177,7 @@ _Replaces the separate My rankings and Want to go pages and the map toggle. The 
 | R14.3 | My rankings shows the user's ranked places | Grouped by city, then subcategory, in rank order with the personal score (R4.3). Pending places show their "Pending review" badge |
 | R14.4 | Want to go shows bookmarks | Grouped by city. Ranking a place removes it from here (R7.2) |
 | R14.5 | Every row links back to the map | Each place row has "Show on map", which opens `/` with the map flown to that place and its pin summary open (same as R12.4) |
+| R14.6 | Lists are one tap from the first screen | The full-screen map shows a "📋 Lists" button at all times; one tap opens `/lists` |
 | R14.6 | Logged-out view | Logged out, the All segment works; My rankings and Want to go show a "Sign in to see your lists" prompt |
 
 ### R15: Recommendations on the map `⬜ new`

@@ -12,6 +12,9 @@ The throttle row and cache insert are written on the caller's session; the calle
 """
 
 import logging
+import time
+from collections import OrderedDict
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -66,7 +69,9 @@ async def _take_throttle(db: AsyncSession) -> bool:
         return True
     if not row.ok:
         return False
-    await db.execute(text("UPDATE geocode_throttle SET last_called_at = clock_timestamp() WHERE id = 1"))
+    await db.execute(
+        text("UPDATE geocode_throttle SET last_called_at = clock_timestamp() WHERE id = 1")
+    )
     return True
 
 
@@ -142,3 +147,184 @@ async def search_address(db: AsyncSession, q: str) -> list[dict[str, Any]]:
     except Exception:
         log.exception("address search failed")
         return []
+
+
+# --- Business lookup for the add-place type-ahead (R13.6) ------------------------------------
+
+# Roughly Japan, so a search for "Ichiran" doesn't return branches abroad.
+JAPAN_BBOX = "122.9,24.0,154.0,45.6"
+# Skip roads, admin areas and land use: we want businesses and sights.
+EXCLUDED_OSM_KEYS = ("highway", "place", "boundary", "landuse", "railway", "natural")
+LOOKUP_LIMIT = 8
+_CACHE_MAX = 500
+_CACHE_TTL_S = 24 * 3600
+
+# Name words that pin down the subcategory where the OSM tag alone can't
+# (a "restaurant" could be anything). Checked in order; first match wins.
+NAME_HINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("ramen", ("ramen", "ラーメン", "らーめん", "拉麺", "中華そば", "つけ麺")),
+    ("sushi", ("sushi", "寿司", "鮨", "すし")),
+    ("yakitori", ("yakitori", "焼鳥", "焼き鳥", "やきとり")),
+    ("izakaya", ("izakaya", "居酒屋")),
+    ("tempura", ("tempura", "天ぷら", "天麩羅")),
+    ("tonkatsu", ("tonkatsu", "とんかつ", "豚カツ", "katsu")),
+    ("okonomiyaki", ("okonomiyaki", "お好み焼", "monja", "もんじゃ")),
+    ("udon_soba", ("udon", "soba", "うどん", "そば", "蕎麦")),
+    ("kaiseki", ("kaiseki", "懐石", "会席", "料亭")),
+    ("shrine", ("shrine", "jinja", "神社", "神宮", "大社", "宮")),
+    ("temple", ("temple", "寺", "-ji", "院")),
+    ("onsen", ("onsen", "sento", "温泉", "銭湯", "湯")),
+)
+
+# (osm_key, osm_value) -> slug; ("key", "*") matches any value.
+TAG_SLUGS: dict[tuple[str, str], str] = {
+    ("amenity", "cafe"): "cafe",
+    ("amenity", "bar"): "bar",
+    ("amenity", "pub"): "bar",
+    ("amenity", "biergarten"): "bar",
+    ("amenity", "nightclub"): "bar",
+    ("amenity", "ice_cream"): "sweets",
+    ("amenity", "marketplace"): "market",
+    ("amenity", "public_bath"): "onsen",
+    ("shop", "bakery"): "sweets",
+    ("shop", "confectionery"): "sweets",
+    ("shop", "pastry"): "sweets",
+    ("shop", "*"): "shopping",
+    ("tourism", "hotel"): "hotel",
+    ("tourism", "motel"): "hotel",
+    ("tourism", "hostel"): "hostel",
+    ("tourism", "museum"): "museum",
+    ("tourism", "gallery"): "museum",
+    ("tourism", "viewpoint"): "viewpoint",
+    ("tourism", "attraction"): "landmark",
+    ("tourism", "theme_park"): "activity",
+    ("tourism", "zoo"): "activity",
+    ("tourism", "aquarium"): "activity",
+    ("historic", "castle"): "castle",
+    ("historic", "*"): "landmark",
+    ("leisure", "park"): "garden_park",
+    ("leisure", "garden"): "garden_park",
+    ("leisure", "*"): "activity",
+}
+# Tags where the name decides (a "restaurant" could serve anything).
+NAME_DECIDES = {
+    ("amenity", "restaurant"),
+    ("amenity", "fast_food"),
+    ("amenity", "food_court"),
+    ("amenity", "place_of_worship"),
+}
+
+
+@dataclass(frozen=True)
+class LookupResult:
+    name: str
+    address: str | None
+    lat: float
+    lng: float
+    kind: str | None
+    slug: str | None
+
+
+def guess_slug(osm_key: str | None, osm_value: str | None, name: str) -> str | None:
+    """Best-guess subcategory slug for an OSM feature, or None to let the user choose."""
+    key, value = osm_key or "", osm_value or ""
+    lowered = name.lower()
+    by_name = next((slug for slug, words in NAME_HINTS if any(w in lowered for w in words)), None)
+    if (key, value) == ("tourism", "guest_house"):
+        return "ryokan" if "ryokan" in lowered or "旅館" in name else "hostel"
+    if (key, value) in NAME_DECIDES:
+        if key == "amenity" and value == "place_of_worship":
+            return by_name if by_name in ("shrine", "temple") else None
+        return by_name if by_name not in ("shrine", "temple", "onsen") else None
+    return TAG_SLUGS.get((key, value)) or TAG_SLUGS.get((key, "*")) or by_name
+
+
+def _address(props: dict[str, Any]) -> str | None:
+    street = " ".join(str(props[k]) for k in ("housenumber", "street") if props.get(k))
+    parts = [street, props.get("locality"), props.get("district"), props.get("city")]
+    parts += [props.get("postcode")]
+    seen: list[str] = []
+    for part in parts:
+        if part and str(part) not in seen:
+            seen.append(str(part))
+    return ", ".join(seen) or None
+
+
+def parse_photon(data: Any) -> list[LookupResult]:
+    """Named features in Japan from a Photon GeoJSON response; anything malformed is skipped."""
+    if not isinstance(data, dict) or not isinstance(data.get("features"), list):
+        return []
+    out: list[LookupResult] = []
+    for feature in data["features"]:
+        try:
+            props = feature["properties"]
+            name = str(props.get("name") or "").strip()
+            if not name or (props.get("countrycode") or "JP").upper() != "JP":
+                continue
+            if props.get("osm_key") in EXCLUDED_OSM_KEYS:
+                continue
+            lng, lat = (float(c) for c in feature["geometry"]["coordinates"][:2])
+            key, value = props.get("osm_key"), props.get("osm_value")
+            out.append(
+                LookupResult(
+                    name=name[:200],
+                    address=_address(props),
+                    lat=lat,
+                    lng=lng,
+                    kind=f"{key}={value}" if key and value else None,
+                    slug=guess_slug(key, value, name),
+                )
+            )
+        except (KeyError, TypeError, ValueError):
+            continue
+    return out
+
+
+_lookup_cache: OrderedDict[tuple[str, float | None, float | None], tuple[float, list]] = (
+    OrderedDict()
+)
+
+
+async def lookup_places(q: str, lat: float | None, lng: float | None) -> list[LookupResult]:
+    """Search businesses by name. Cached in-process for a day (keyed on the query and the bias
+    point rounded to ~1 km). Never raises: failures give []."""
+    q = q.strip()
+    if len(q) < 2:
+        return []
+    bias = (round(lat, 2), round(lng, 2)) if lat is not None and lng is not None else (None, None)
+    key = (q.lower(), *bias)
+    now = time.monotonic()
+    hit = _lookup_cache.get(key)
+    if hit and now - hit[0] < _CACHE_TTL_S:
+        _lookup_cache.move_to_end(key)
+        return hit[1]
+    s = get_settings()
+    params: list[tuple[str, str | int | float]] = [
+        ("q", q),
+        ("limit", LOOKUP_LIMIT),
+        ("lang", "en"),
+        ("bbox", JAPAN_BBOX),
+    ]
+    params += [("osm_tag", f"!{k}") for k in EXCLUDED_OSM_KEYS]
+    if bias[0] is not None:
+        # Low scale = nearness matters more than fame, so the branch nearby comes first.
+        params += [("lat", bias[0]), ("lon", bias[1]), ("zoom", 14), ("location_bias_scale", 0.1)]
+    try:
+        async with httpx.AsyncClient(
+            timeout=s.place_lookup_timeout_s, headers={"User-Agent": s.geocoder_user_agent}
+        ) as http:
+            r = await http.get(s.place_lookup_url, params=params)
+        if r.status_code != 200:
+            log.warning("place lookup returned %s", r.status_code)
+            return []
+        results = parse_photon(r.json())
+        if bias[0] is not None:
+            # Nearest first: with a name like "Ichiran" you want the branch you're near.
+            results.sort(key=lambda x: (x.lat - bias[0]) ** 2 + (x.lng - bias[1]) ** 2)
+    except Exception as e:  # timeouts, connection errors, bad JSON ...
+        log.warning("place lookup failed: %s", type(e).__name__)
+        return []
+    _lookup_cache[key] = (now, results)
+    while len(_lookup_cache) > _CACHE_MAX:
+        _lookup_cache.popitem(last=False)
+    return results

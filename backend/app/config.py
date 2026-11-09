@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     geocoder_user_agent: str = "JapaneseGuidebook/0.1 (https://github.com/japanese-guidebook)"
     geocoder_min_interval_s: float = 1.0
     geocoder_timeout_s: float = 1.5
+    # Business-name type-ahead for adding places (Photon: OSM search built for autocomplete;
+    # Nominatim's policy forbids autocomplete use).
+    place_lookup_url: str = "https://photon.komoot.io/api/"
+    place_lookup_timeout_s: float = 2.5
 
     # Places
     edit_window_hours: int = 24

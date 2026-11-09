@@ -14,7 +14,7 @@ export type EventType =
 
 const KEY = "jg.browserId";
 let memoryId: string | null = null;
-let queue: { type: EventType; source?: string }[] = [];
+const queue: { type: EventType; source?: string }[] = [];
 let timer: ReturnType<typeof setTimeout> | null = null;
 
 function newId(): string {

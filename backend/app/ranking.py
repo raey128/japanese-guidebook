@@ -28,6 +28,22 @@ BANDS: dict[str, tuple[float, float]] = {
     "disliked": (0.0, 3.4),
 }
 NOTE_MAX_LEN = 1000
+# R3.6: a rating below this needs a comment, so low ratings always say why.
+COMMENT_REQUIRED_BELOW = 3
+LOW_RATING_NEEDS_COMMENT = "Please add a comment: ratings below 3 stars need a reason."
+
+
+def bucket_for_rating(rating: int) -> str:
+    """4-5 stars = liked, 3 = fine, 1-2 = disliked."""
+    if not 1 <= rating <= 5:
+        raise ValueError("Rating must be 1-5 stars.")
+    return "liked" if rating >= 4 else "fine" if rating == 3 else "disliked"
+
+
+def check_review(rating: int | None, note: str | None) -> None:
+    """Raise ValueError when a low rating has no comment."""
+    if rating is not None and rating < COMMENT_REQUIRED_BELOW and not (note or "").strip():
+        raise ValueError(LOW_RATING_NEEDS_COMMENT)
 
 
 def personal_score(bucket: str, i: int, n: int) -> float:
@@ -214,9 +230,7 @@ async def place_ranking(
     await db.flush()
     # Every ranking in the touched Lists got a new personal score, so refresh all their places.
     affected_places.add(place.id)
-    await scores.refresh_aggregates(
-        db, affected_places, [(place.city_id, place.subcategory_id)]
-    )
+    await scores.refresh_aggregates(db, affected_places, [(place.city_id, place.subcategory_id)])
     return ranking
 
 
@@ -253,11 +267,34 @@ async def update_note(
         raise ValueError("Give both a visit month and year, or neither.")
     if visit_month is not None and not 1 <= visit_month <= 12:
         raise ValueError("Visit month must be 1–12.")
+    check_review(ranking.rating, note)
     ranking.note = note
     ranking.visit_month = visit_month
     ranking.visit_year = visit_year
     ranking.updated_at = datetime.now(UTC)
     await db.flush()
+    return ranking
+
+
+async def rank_by_rating(db: AsyncSession, *, user_id: int, place: Place, rating: int) -> Ranking:
+    """Rank a place from its star rating alone (adding a place you've been to, R3.6): it goes
+    in the rating's bucket below every item rated the same or higher, so it lands among its
+    peers without any comparisons. Unrated items count as the middle of their bucket."""
+    bucket = bucket_for_rating(rating)
+    key = ListKey(user_id, place.city_id, place.subcategory_id, bucket)
+    lst = await _lock_list(db, key)
+    default = {"liked": 4, "fine": 3, "disliked": 2}[bucket]
+    others = [r for r in await _items(db, key) if r.place_id != place.id]
+    position = 1 + sum(1 for r in others if (r.rating or default) >= rating)
+    ranking = await place_ranking(
+        db,
+        user_id=user_id,
+        place=place,
+        bucket=bucket,
+        position=position,
+        expected_version=lst.version,
+    )
+    ranking.rating = rating
     return ranking
 
 
@@ -268,9 +305,7 @@ def nearest_score_position(bucket: str, score: float, others_count: int) -> int:
     return min(range(1, n + 1), key=lambda i: (abs(personal_score(bucket, i, n) - score), i))
 
 
-async def reinsert(
-    db: AsyncSession, ranking: Ranking, city_id: int, subcategory_id: int
-) -> None:
+async def reinsert(db: AsyncSession, ranking: Ranking, city_id: int, subcategory_id: int) -> None:
     """R4.9: move a ranking into the user's List for a new (city, subcategory), keeping its
     bucket, at the position whose score is closest to its old personal score. Both Lists are
     recomputed and their aggregates refreshed."""

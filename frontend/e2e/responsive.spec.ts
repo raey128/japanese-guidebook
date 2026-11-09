@@ -59,7 +59,10 @@ test.describe("360px layout", () => {
     await signInApi(page);
     await page.goto("/places/new?lat=35.7125&lng=139.795");
     await expect(page.getByRole("heading", { name: "Add a place" })).toBeVisible();
-    await expect(page.getByTestId("pin-map")).toBeVisible();
+    await expect(page.getByTestId("add-pin")).toBeVisible();
+    // The panel leaves the top of the map (and the pin) visible.
+    const panel = await page.getByTestId("add-panel").boundingBox();
+    expect(panel!.height).toBeLessThanOrEqual(page.viewportSize()!.height * 0.55 + 1);
     await expectNoHorizontalScroll(page);
   });
 

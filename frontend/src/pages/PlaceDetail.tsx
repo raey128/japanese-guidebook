@@ -1,3 +1,4 @@
+import { Stars } from "../components/ranking/StarRating";
 import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
@@ -84,10 +85,10 @@ export default function PlaceDetail() {
 
       <section aria-labelledby="notes-h">
         <h2 id="notes-h" className="text-lg font-semibold">
-          Notes
+          Reviews
         </h2>
-        {notes.isPending ? <p role="status">Loading notes…</p> : null}
-        {notes.data && notes.data.notes.length === 0 ? <p className="text-muted">No notes yet.</p> : null}
+        {notes.isPending ? <p role="status">Loading reviews…</p> : null}
+        {notes.data && notes.data.notes.length === 0 ? <p className="text-muted">No reviews yet.</p> : null}
         <ul className="divide-y divide-line">
           {notes.data?.notes.map((n) => {
             const visit = formatVisit(n.visit_month, n.visit_year);
@@ -95,6 +96,12 @@ export default function PlaceDetail() {
               <li key={n.ranking_id} className="py-3">
                 <p className="hint">
                   <strong>{n.author}</strong>
+                  {n.rating ? (
+                    <>
+                      {" · "}
+                      <Stars rating={n.rating} />
+                    </>
+                  ) : null}
                   {visit ? ` · visited ${visit}` : ""}
                 </p>
                 <p className="whitespace-pre-wrap">{n.note}</p>

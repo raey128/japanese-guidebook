@@ -10,37 +10,40 @@ test("sign in, add a place by pin, rank three places, see them in both lists", a
   await stubMapStyle(page);
   const username = await signIn(page);
 
-  // 1. Add a place through the UI. The pin comes from the ?lat&lng prefill (the same route the
-  //    map's "Add place" uses), so no map gesture is needed.
+  // 1. Add a place through the UI, on the map itself (R13.7). /places/new?lat&lng opens the add
+  //    panel with the pin there, so no map gesture is needed.
   const nameA = `Corefl Noodle ${run}`;
   const pin = randomTokyoPoint();
   await page.goto(`/places/new?lat=${pin.lat}&lng=${pin.lng}`);
   await expect(page.getByRole("heading", { name: "Add a place" })).toBeVisible();
-  await expect(page.getByTestId("pin-readout")).toContainText("Pin at");
+  await expect(page).toHaveURL(/^[^?]*\/\?.*add=1/);
+  await expect(page.getByTestId("add-pin")).toBeVisible();
   // The location is pre-selected from the pin once the suggestion arrives.
   await expect(page.getByLabel(/^Location/)).toHaveValue(/^\d+$/);
   await page.getByLabel("English name").fill(nameA);
   await page.getByLabel(/^Japanese name/).fill("麺");
   await page.getByLabel(/^Subcategory/).selectOption({ label: "Ramen" });
+  await page.getByRole("radio", { name: /Not yet/ }).click();
   await page.getByRole("button", { name: "Add place", exact: true }).click();
 
   // The duplicate step only appears if a seeded/earlier place is nearby; dismiss it if so.
   const different = page.getByRole("button", { name: "This is different, add it anyway" });
-  const heading = page.getByRole("heading", { level: 1, name: new RegExp(escapeRegExp(nameA)) });
-  await expect(heading.or(different)).toBeVisible();
+  // Added: the panel closes and the new place's summary opens on the same map.
+  const summary = page.getByRole("region", { name: "Place summary" });
+  await expect(summary.filter({ hasText: nameA }).or(different)).toBeVisible();
   if (await different.isVisible()) await different.click();
-  await expect(heading).toBeVisible();
-  await expect(page).toHaveURL(/\/places\/\d+$/);
-  const idA = Number(/\/places\/(\d+)$/.exec(page.url())?.[1]);
-  await expect(page.getByText("Unverified", { exact: true })).toBeVisible();
+  await expect(summary).toContainText(nameA);
+  await expect(page.getByTestId("add-panel")).toHaveCount(0);
+  await expect(summary.getByText("Unverified", { exact: true })).toBeVisible();
 
   // 2. Two more places in the same city + subcategory, created through the API.
   const b = await createPlaceApi(page, { name: `Corefl Broth ${run}` });
   const c = await createPlaceApi(page, { name: `Corefl Tonkotsu ${run}` });
 
   // 3. Rank all three through the RankFlow UI: A first, then B (A is better), then C (B is better).
-  await page.getByRole("button", { name: "Rank", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/places/${idA}/rank$`));
+  await summary.getByRole("button", { name: "Rank", exact: true }).click();
+  await expect(page).toHaveURL(/\/places\/\d+\/rank$/);
+  const idA = Number(/\/places\/(\d+)\/rank$/.exec(page.url())?.[1]);
   expect(await rankViaUi(page, idA)).toBe(0);
   expect(await rankViaUi(page, b.id, { answers: ["existing"] })).toBe(1);
   expect(await rankViaUi(page, c.id, { answers: ["existing"], note: `Great bowl ${run}` })).toBe(1);

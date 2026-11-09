@@ -17,20 +17,26 @@ def bucket_of(snap, bucket):
     return next(b for b in snap["buckets"] if b["bucket"] == bucket)
 
 
-async def rank(client, place, bucket, position, *, version=None, **extra):
-    """Fetch the current list version (like the browser does) and submit a ranking."""
+RATING_FOR = {"liked": 5, "fine": 3, "disliked": 2}
+
+
+async def rank(client, place, bucket, position, *, version=None, send_bucket=None, **extra):
+    """Fetch the current list version (like the browser does) and submit a ranking. The star
+    rating defaults to one that belongs in `bucket`; a low rating gets a default comment."""
     if version is None:
         version = bucket_of(await snapshot(client, place.id), bucket)["version"]
-    return await client.put(
-        "/api/rankings",
-        json={
-            "place_id": place.id,
-            "bucket": bucket,
-            "position": position,
-            "list_version": version,
-            **extra,
-        },
-    )
+    body = {
+        "place_id": place.id,
+        "rating": RATING_FOR[bucket],
+        "position": position,
+        "list_version": version,
+        **extra,
+    }
+    if send_bucket is not None:
+        body["bucket"] = send_bucket
+    if body["rating"] < 3 and "note" not in body:
+        body["note"] = "Not for me."
+    return await client.put("/api/rankings", json=body)
 
 
 async def my_lists(client):
@@ -211,8 +217,12 @@ async def test_note_length_limit(client, db):
     # The failed write saved nothing.
     assert names(bucket_of(await snapshot(client, b.id), "liked")) == ["A"]
     rid = ok.json()["ranking"]["id"]
-    assert (await client.patch(f"/api/rankings/{rid}", json={"note": "y" * 1001})).status_code == 422
-    assert (await client.patch(f"/api/rankings/{rid}", json={"note": "y" * 1000})).status_code == 200
+    assert (
+        await client.patch(f"/api/rankings/{rid}", json={"note": "y" * 1001})
+    ).status_code == 422
+    assert (
+        await client.patch(f"/api/rankings/{rid}", json={"note": "y" * 1000})
+    ).status_code == 200
 
 
 async def test_patch_note_does_not_change_position_or_scores(client, db):
@@ -285,8 +295,10 @@ async def test_cannot_touch_other_users_rankings(client_factory, db):
 async def test_signed_out_is_401(client, db):
     maker = await make_user(db, "maker")
     (a,) = await ramen(db, maker, "A")
-    assert (await client.get("/api/rankings/snapshot", params={"place_id": a.id})).status_code == 401
-    body = {"place_id": a.id, "bucket": "liked", "position": 1, "list_version": 0}
+    assert (
+        await client.get("/api/rankings/snapshot", params={"place_id": a.id})
+    ).status_code == 401
+    body = {"place_id": a.id, "rating": 5, "position": 1, "list_version": 0}
     assert (await client.put("/api/rankings", json=body)).status_code == 401
     assert (await client.patch("/api/rankings/1", json={"note": "x"})).status_code == 401
     assert (await client.delete("/api/rankings/1")).status_code == 401
@@ -301,7 +313,11 @@ async def test_ranking_removes_the_bookmark(client, db):
     db.add(Bookmark(user_id=alice["id"], place_id=b.id))
     await db.flush()
     assert (await rank(client, a, "liked", 1)).status_code == 200
-    rows = (await db.execute(text("SELECT place_id FROM bookmarks WHERE user_id = :u"), {"u": alice["id"]})).all()
+    rows = (
+        await db.execute(
+            text("SELECT place_id FROM bookmarks WHERE user_id = :u"), {"u": alice["id"]}
+        )
+    ).all()
     assert [r.place_id for r in rows] == [b.id]
 
 
@@ -334,8 +350,10 @@ async def test_unknown_hidden_and_merged_places_are_404(client, db):
     await db.flush()
     await sign_in(client, "alice")
     for pid in (999999, hidden.id, merged.id):
-        assert (await client.get("/api/rankings/snapshot", params={"place_id": pid})).status_code == 404
-        body = {"place_id": pid, "bucket": "liked", "position": 1, "list_version": 0}
+        assert (
+            await client.get("/api/rankings/snapshot", params={"place_id": pid})
+        ).status_code == 404
+        body = {"place_id": pid, "rating": 5, "position": 1, "list_version": 0}
         assert (await client.put("/api/rankings", json=body)).status_code == 404
 
 
@@ -345,7 +363,9 @@ async def test_bad_position_and_bucket_are_422(client, db):
     await sign_in(client, "alice")
     assert (await rank(client, a, "liked", 0)).status_code == 422
     assert (await rank(client, a, "liked", 2)).status_code == 422  # only position 1 exists
-    assert (await rank(client, a, "great", 1, version=0)).status_code == 422
+    assert (await rank(client, a, "liked", 1, rating=6)).status_code == 422
+    assert (await rank(client, a, "liked", 1, rating=0)).status_code == 422
+    assert (await rank(client, a, "liked", 1, send_bucket="great")).status_code == 422
     assert (await snapshot(client, a.id))["my_ranking"] is None
 
 
@@ -368,7 +388,15 @@ async def test_my_rankings_groups_by_city_and_category(client, db):
     assert [b["bucket"] for b in ramen_lists] == ["liked", "fine", "disliked"]
     assert names(ramen_lists[0]) == ["Ramen One"] and names(ramen_lists[2]) == ["Ramen Two"]
     item = ramen_lists[0]["items"][0]
-    assert set(item) >= {"ranking_id", "place_id", "name", "name_ja", "position", "personal_score", "badges"}
+    assert set(item) >= {
+        "ranking_id",
+        "place_id",
+        "name",
+        "name_ja",
+        "position",
+        "personal_score",
+        "badges",
+    }
     assert ramen_lists[0]["version"] == 1
 
 
@@ -386,3 +414,81 @@ async def test_owner_still_sees_hidden_place_at_same_position(client, db):
     assert [i["position"] for i in liked["items"]] == [1, 2, 3]
     assert liked["items"][1]["badges"] == ["hidden"]
     assert liked["items"][0]["badges"] == []
+
+
+# --- Star ratings (R3.6) ----------------------------------------------------------------------
+
+
+async def test_rating_is_required(client, db):
+    maker = await make_user(db, "maker")
+    (a,) = await ramen(db, maker, "A")
+    await sign_in(client, "alice")
+    body = {"place_id": a.id, "position": 1, "list_version": 0}
+    assert (await client.put("/api/rankings", json=body)).status_code == 422
+    assert (await snapshot(client, a.id))["my_ranking"] is None
+
+
+async def test_rating_decides_the_bucket(client, db):
+    maker = await make_user(db, "maker")
+    places = await ramen(db, maker, "One", "Two", "Three", "Four", "Five")
+    await sign_in(client, "alice")
+    expected = {1: "disliked", 2: "disliked", 3: "fine", 4: "liked", 5: "liked"}
+    for stars, p in zip(range(1, 6), places, strict=True):
+        bucket = expected[stars]
+        version = bucket_of(await snapshot(client, p.id), bucket)["version"]
+        body = {"place_id": p.id, "rating": stars, "position": 1, "list_version": version}
+        if stars < 3:
+            body["note"] = "Too salty."
+        r = await client.put("/api/rankings", json=body)
+        assert r.status_code == 200, r.text
+        assert r.json()["ranking"]["bucket"] == bucket
+        assert r.json()["ranking"]["rating"] == stars
+        assert r.json()["rank_list"]["items"][0]["rating"] == stars
+
+
+async def test_bucket_that_disagrees_with_rating_is_422(client, db):
+    maker = await make_user(db, "maker")
+    (a,) = await ramen(db, maker, "A")
+    await sign_in(client, "alice")
+    r = await rank(client, a, "liked", 1, rating=5, send_bucket="fine")
+    assert r.status_code == 422
+    assert (await rank(client, a, "liked", 1, rating=4, send_bucket="liked")).status_code == 200
+
+
+async def test_low_rating_needs_a_comment_but_high_does_not(client, db):
+    maker = await make_user(db, "maker")
+    a, b, c = await ramen(db, maker, "A", "B", "C")
+    await sign_in(client, "alice")
+    for note in (None, "", "   "):
+        r = await rank(client, a, "disliked", 1, note=note)
+        assert r.status_code == 422, note
+        assert "comment" in r.json()["detail"]
+    assert (await rank(client, a, "disliked", 1, note="Rude staff")).status_code == 200
+    # 3 stars and up: comment optional.
+    assert (await rank(client, b, "fine", 1)).status_code == 200
+    assert (await rank(client, c, "liked", 1)).status_code == 200
+
+
+async def test_low_rated_comment_cannot_be_cleared(client, db):
+    maker = await make_user(db, "maker")
+    a, b = await ramen(db, maker, "A", "B")
+    await sign_in(client, "alice")
+    rid = (await rank(client, a, "disliked", 1, note="Cold food")).json()["ranking"]["id"]
+    for note in (None, ""):
+        assert (await client.patch(f"/api/rankings/{rid}", json={"note": note})).status_code == 422
+    assert (
+        await client.patch(f"/api/rankings/{rid}", json={"note": "Cold, slow"})
+    ).status_code == 200
+
+    async def rerank(place, stars, bucket):
+        version = bucket_of(await snapshot(client, place.id), bucket)["version"]
+        body = {"place_id": place.id, "rating": stars, "position": 1, "list_version": version}
+        return await client.put("/api/rankings", json=body)
+
+    # Re-rank without sending a note: the saved comment counts...
+    r = await rerank(a, 1, "disliked")
+    assert r.status_code == 200, r.text
+    assert r.json()["ranking"]["note"] == "Cold, slow"
+    # ...but a place with no comment can't drop below 3 stars without one.
+    assert (await rank(client, b, "fine", 1)).status_code == 200
+    assert (await rerank(b, 2, "disliked")).status_code == 422

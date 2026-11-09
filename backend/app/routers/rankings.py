@@ -39,6 +39,7 @@ def _item(r: Ranking, p: Place) -> RankingItem:
         name_ja=p.name_ja,
         position=r.position,
         personal_score=r.personal_score,
+        rating=r.rating,
         badges=scores.badges(  # type: ignore[arg-type]
             is_unverified=False,
             is_closed=p.is_closed,
@@ -100,7 +101,20 @@ async def get_snapshot(place_id: int, db: DB, user: CurrentUser) -> Snapshot:
 )
 async def put_ranking(body: RankRequest, db: DB, user: CurrentUser):  # type: ignore[no-untyped-def]
     place = await _visible_place(db, body.place_id, user.id)
+    bucket = ranking_core.bucket_for_rating(body.rating)
+    if body.bucket is not None and body.bucket != bucket:
+        raise HTTPException(
+            422, f"A {body.rating}-star rating belongs in {bucket}, not {body.bucket}."
+        )
     existing = await ranking_core.get_user_ranking(db, user.id, place.id)
+    if "note" in body.model_fields_set:
+        note_after = body.note
+    else:
+        note_after = existing.note if existing else None
+    try:
+        ranking_core.check_review(body.rating, note_after)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
     previous_bucket = existing.bucket if existing is not None else None
     previous_key = (existing.city_id, existing.subcategory_id) if existing is not None else None
     try:
@@ -108,10 +122,11 @@ async def put_ranking(body: RankRequest, db: DB, user: CurrentUser):  # type: ig
             db,
             user_id=user.id,
             place=place,
-            bucket=body.bucket,
+            bucket=bucket,
             position=body.position,
             expected_version=body.list_version,
         )
+        ranked.rating = body.rating
     except ranking_core.StaleListError as e:
         return JSONResponse(
             status_code=409, content={"detail": str(e), "current_version": e.current_version}
@@ -139,7 +154,7 @@ async def put_ranking(body: RankRequest, db: DB, user: CurrentUser):  # type: ig
     previous_list = None
     if (
         previous_bucket is not None
-        and previous_bucket != body.bucket
+        and previous_bucket != bucket
         and previous_key == (place.city_id, place.subcategory_id)
     ):
         previous_list = await _bucket_list(db, snaps[previous_bucket])
@@ -155,7 +170,7 @@ async def put_ranking(body: RankRequest, db: DB, user: CurrentUser):  # type: ig
     ).scalar_one()
     ref = await load_reference(db)
     return RankResponse(
-        rank_list=await _bucket_list(db, snaps[body.bucket]),
+        rank_list=await _bucket_list(db, snaps[bucket]),
         previous_list=previous_list,
         ranking=MyRanking.model_validate(ranked),
         is_new=existing is None,
@@ -283,8 +298,8 @@ async def place_notes(
     rows = await db.execute(
         text(
             """
-            SELECT r.id, r.user_id, r.note, r.visit_month, r.visit_year, r.bucket, r.created_at,
-                   u.username, u.is_private
+            SELECT r.id, r.user_id, r.note, r.visit_month, r.visit_year, r.bucket, r.rating,
+                   r.created_at, u.username, u.is_private
             FROM rankings r JOIN users u ON u.id = r.user_id
             WHERE r.place_id = :pid AND r.note IS NOT NULL AND btrim(r.note) <> ''
             ORDER BY r.created_at DESC, r.id DESC
@@ -302,6 +317,7 @@ async def place_notes(
                 visit_month=r.visit_month,
                 visit_year=r.visit_year,
                 bucket=r.bucket,
+                rating=r.rating,
                 created_at=r.created_at.isoformat(),
                 is_own=viewer is not None and viewer.id == r.user_id,
             )

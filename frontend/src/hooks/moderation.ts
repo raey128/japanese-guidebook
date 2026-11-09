@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
-import { api, unwrap, type Schemas } from "../api/client";
+import { api, unwrap } from "../api/client";
 
 export type FlagStatusFilter = "open" | "dismissed" | "resolved" | "all";
 

@@ -1,3 +1,6 @@
+from sqlalchemy import text
+
+from app.config import get_settings
 from tests.factories import ASAKUSA, location, make_place, make_user, sign_in, subcategory
 
 NAHA = (26.2124, 127.6809)
@@ -132,3 +135,142 @@ async def test_duplicate_check_endpoint_matches_create(client, db):
     r = await client.post("/api/places/duplicates", json=body)
     assert r.status_code == 200
     assert [c["name"] for c in r.json()["candidates"]] == ["Existing"]
+
+
+# --- Adding a place you've been to (R3.6) -----------------------------------------------------
+
+
+async def test_visited_place_needs_a_rating(client, db):
+    await sign_in(client, "adder")
+    r = await client.post("/api/places", json=await place_body(db, visited=True))
+    assert r.status_code == 422
+    assert "star rating" in r.text
+
+
+async def test_review_without_visit_is_rejected(client, db):
+    await sign_in(client, "adder")
+    body = await place_body(db, review={"rating": 5})
+    assert (await client.post("/api/places", json=body)).status_code == 422
+
+
+async def test_low_rating_on_add_needs_a_comment(client, db):
+    await sign_in(client, "adder")
+    for review in ({"rating": 2}, {"rating": 1, "note": "  "}):
+        r = await client.post("/api/places", json=await place_body(db, visited=True, review=review))
+        assert r.status_code == 422, review
+        assert "comment" in r.text
+    count = await db.execute(text("SELECT count(*) FROM places WHERE name = 'Test Ramen'"))
+    assert count.scalar_one() == 0
+
+
+async def test_add_with_rating_ranks_it_for_the_adder(client, db):
+    await sign_in(client, "adder")
+    review = {"rating": 4, "note": "Rich broth", "visit_month": 5, "visit_year": 2025}
+    r = await client.post("/api/places", json=await place_body(db, visited=True, review=review))
+    assert r.status_code == 201, r.text
+    data = r.json()
+    assert data["ranking"]["bucket"] == "liked"
+    assert data["ranking"]["rating"] == 4
+    assert data["ranking"]["note"] == "Rich broth"
+    assert (data["ranking"]["visit_month"], data["ranking"]["visit_year"]) == (5, 2025)
+    assert data["compare_count"] == 0
+    assert data["city_name"] == "Tokyo" and data["city_rank_count"] == 1
+    assert data["place"]["viewer"]["my_ranking"]["rating"] == 4
+
+
+async def test_add_with_rating_lands_below_equal_or_better_ratings(client, db):
+    await sign_in(client, "adder")
+    made = {}
+    for name, stars, lat in (("Five", 5, 0.0), ("Four", 4, 0.001), ("Also Five", 5, 0.002)):
+        body = await place_body(
+            db,
+            name=name,
+            lat=ASAKUSA[0] + lat,
+            visited=True,
+            review={"rating": stars},
+            confirm_not_duplicate=True,
+        )
+        r = await client.post("/api/places", json=body)
+        assert r.status_code == 201, r.text
+        made[name] = r.json()
+    assert made["Also Five"]["compare_count"] == 2
+    mine = (await client.get("/api/me/rankings")).json()
+    liked = mine["cities"][0]["categories"][0]["buckets"][0]["items"]
+    assert [i["name"] for i in liked] == ["Five", "Also Five", "Four"]
+
+
+async def test_plain_add_has_no_ranking(client, db):
+    await sign_in(client, "adder")
+    r = await client.post("/api/places", json=await place_body(db))
+    assert r.status_code == 201, r.text
+    assert r.json()["ranking"] is None
+
+
+# --- Business lookup by name (R13.6) ----------------------------------------------------------
+
+PHOTON_BODY = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "geometry": {"type": "Point", "coordinates": [139.7966, 35.7101]},
+            "properties": {
+                "name": "Asakusa Ramen Yoroiya",
+                "osm_key": "amenity",
+                "osm_value": "restaurant",
+                "housenumber": "1-36-7",
+                "street": "Asakusa",
+                "city": "Taito",
+                "postcode": "111-0032",
+                "countrycode": "JP",
+            },
+        },
+        {
+            "geometry": {"type": "Point", "coordinates": [139.7, 35.7]},
+            "properties": {"name": "Some Road", "osm_key": "highway", "countrycode": "JP"},
+        },
+        {
+            "geometry": {"type": "Point", "coordinates": [-0.1, 51.5]},
+            "properties": {"name": "London Ramen", "osm_key": "amenity", "countrycode": "GB"},
+        },
+    ],
+}
+
+
+async def test_lookup_requires_sign_in(client, geocoder_stub):
+    assert (await client.get("/api/places/lookup", params={"q": "ramen"})).status_code == 401
+    assert geocoder_stub.calls == []
+
+
+async def test_lookup_returns_named_japanese_businesses_with_a_guess(client, db, geocoder_stub):
+    geocoder_stub.body = PHOTON_BODY
+    await sign_in(client, "adder")
+    r = await client.get("/api/places/lookup", params={"q": "yoroiya", "lat": 35.71, "lng": 139.79})
+    assert r.status_code == 200, r.text
+    results = r.json()["results"]
+    assert len(results) == 1
+    hit = results[0]
+    assert hit["name"] == "Asakusa Ramen Yoroiya"
+    assert hit["address"] == "1-36-7 Asakusa, Taito, 111-0032"
+    assert (hit["lat"], hit["lng"]) == (35.7101, 139.7966)
+    assert hit["kind"] == "amenity=restaurant"
+    assert hit["subcategory_id"] == (await subcategory(db, "ramen")).id
+    call = geocoder_stub.calls[0]
+    assert call.path == "/lookup"
+    assert call.params["q"] == "yoroiya" and call.params["lang"] == "en"
+    assert float(call.params["lat"]) == 35.71 and float(call.params["lon"]) == 139.79
+    assert call.headers["user-agent"] == get_settings().geocoder_user_agent
+
+
+async def test_lookup_is_cached(client, geocoder_stub):
+    geocoder_stub.body = PHOTON_BODY
+    await sign_in(client, "adder")
+    for _ in range(2):
+        await client.get("/api/places/lookup", params={"q": "Yoroiya"})
+    assert len(geocoder_stub.calls) == 1
+
+
+async def test_lookup_failure_gives_empty_results(client, geocoder_stub):
+    geocoder_stub.status = 500
+    await sign_in(client, "adder")
+    r = await client.get("/api/places/lookup", params={"q": "anything"})
+    assert r.status_code == 200 and r.json() == {"results": []}

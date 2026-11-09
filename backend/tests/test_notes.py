@@ -21,9 +21,7 @@ async def test_notes_newest_first_with_author_and_ownership(client_factory, db):
     r1 = await rank(alice, place, "liked", 1, note="First!", visit_month=4, visit_year=2024)
     r2 = await rank(bob, place, "fine", 1, note="Okay I guess")
     await db.execute(  # make the ordering deterministic regardless of clock resolution
-        text(
-            "UPDATE rankings SET created_at = now() - interval '1 day' WHERE id = :id"
-        ),
+        text("UPDATE rankings SET created_at = now() - interval '1 day' WHERE id = :id"),
         {"id": r1.json()["ranking"]["id"]},
     )
 
@@ -36,6 +34,7 @@ async def test_notes_newest_first_with_author_and_ownership(client_factory, db):
         "visit_month": 4,
         "visit_year": 2024,
         "bucket": "liked",
+        "rating": 5,
         "created_at": out[1]["created_at"],
         "is_own": False,
     }

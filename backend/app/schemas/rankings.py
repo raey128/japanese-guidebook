@@ -21,6 +21,7 @@ class RankingItem(Out):
     name_ja: str | None
     position: int  # 1 = best
     personal_score: float
+    rating: int | None = None
     badges: list[Badge]  # "closed" / "reported_closed" / "hidden" (hidden only ever shown to owner)
 
 
@@ -43,7 +44,10 @@ class Snapshot(Out):
 
 class RankRequest(BaseModel):
     place_id: int
-    bucket: Bucket
+    # Required (R3.6). 4-5 stars = liked, 3 = fine, 1-2 = disliked; below 3 needs a note.
+    rating: int = Field(ge=1, le=5)
+    # Optional: derived from `rating`. If sent it must match the rating's bucket.
+    bucket: Bucket | None = None
     position: int = Field(ge=1, description="1-based among the target List's other items")
     list_version: int = Field(ge=0)
     # Optional. Fields that are present (even null) overwrite the saved values; fields that
@@ -96,6 +100,7 @@ class PlaceNote(Out):
     visit_month: int | None
     visit_year: int | None
     bucket: Bucket
+    rating: int | None = None
     created_at: str
     is_own: bool
 

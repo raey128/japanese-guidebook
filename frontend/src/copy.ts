@@ -22,6 +22,7 @@ export const COPY = {
   emptyRanked: "Nothing ranked here yet. Be the first!",
   emptySaved: "No saved spots yet. Tap ♡ on any place to save it.",
   emptyMine: "You haven't ranked anything yet. Find a place you've been and rank it!",
+  myLists: "Lists",
   signInToSee: "to see your lists.",
   pickUsername: "Pick a username to save places",
 

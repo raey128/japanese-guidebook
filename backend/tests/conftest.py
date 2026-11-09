@@ -25,11 +25,13 @@ os.environ.setdefault("GUIDEBOOK_LOG_LEVEL", "WARNING")
 # Never reach the public geocoder, even if a test forgets the stub.
 os.environ["GUIDEBOOK_GEOCODER_URL"] = "http://127.0.0.1:9/unreachable"
 os.environ["GUIDEBOOK_GEOCODER_SEARCH_URL"] = "http://127.0.0.1:9/unreachable"
+os.environ["GUIDEBOOK_PLACE_LOOKUP_URL"] = "http://127.0.0.1:9/unreachable"
 
 import httpx  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine  # noqa: E402
 
+from app import geocoding  # noqa: E402
 from app.config import get_settings  # noqa: E402
 from app.db import get_session  # noqa: E402
 from app.main import app  # noqa: E402
@@ -117,11 +119,18 @@ def client(client_factory: Callable[[], httpx.AsyncClient]) -> httpx.AsyncClient
 @pytest.fixture
 def geocoder_stub() -> Iterator[GeocoderStub]:
     settings = get_settings()
-    previous = settings.geocoder_url, settings.geocoder_search_url
+    previous = settings.geocoder_url, settings.geocoder_search_url, settings.place_lookup_url
+    geocoding._lookup_cache.clear()
     with GeocoderStub() as stub:
         settings.geocoder_url = stub.url
         settings.geocoder_search_url = stub.url.replace("/reverse", "/search")
+        settings.place_lookup_url = stub.url.replace("/reverse", "/lookup")
         try:
             yield stub
         finally:
-            settings.geocoder_url, settings.geocoder_search_url = previous
+            (
+                settings.geocoder_url,
+                settings.geocoder_search_url,
+                settings.place_lookup_url,
+            ) = previous
+            geocoding._lookup_cache.clear()
