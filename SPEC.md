@@ -168,7 +168,7 @@ For the MVP the full stack runs locally through Docker Compose. Users sign in wi
 
 ### Architecture & stack
 
-- **Monorepo.** It holds a Python backend (FastAPI, managed with uv), a TypeScript frontend (React + Vite, managed with pnpm), infrastructure config, and a root Makefile with targets for seeding locations, seeding places, granting admin, dumping, testing and linting.
+- **Monorepo.** It holds a Python backend (FastAPI, managed with uv), a TypeScript frontend (React + Vite, managed with pnpm), infrastructure config, and a root Makefile with targets for seeding locations, seeding places, granting admin, dumping, testing and linting.[^make-ps1]
 - **Backend data layer.** SQLAlchemy 2.0 in async mode (asyncpg), GeoAlchemy2 for PostGIS types, Alembic for migrations, and Pydantic v2 request/response schemas kept separate from the ORM models. The hot queries (map bbox and clustering, duplicate check, ranked lists) may be hand-written SQL.
 - **Frontend.**
   - Routing: React Router v7 in SPA mode.
@@ -272,3 +272,5 @@ These are the key shapes; field names are illustrative.
 - The seed data (225 places, 8 cities, 62 named locations plus 8 catch-alls) was drafted from general knowledge. Coordinates are approximate to about 100 m and location centroids are rough area centres. Launch is blocked until every seed place has been reviewed in-app by a team member.
 - The MVP deadline is 2027-02-08 with a team of 2–4. "Done" means the full stack runs via Docker Compose with CI green.
 - Attribution: map tiles and addresses © OpenStreetMap contributors (ODbL). It appears in the app footer and the dump LICENSE.
+
+[^make-ps1]: `make.ps1` is the Windows alternative to the Makefile (Windows has no `make`). Any change to the Makefile (adding, removing or changing a target) must also be made in `make.ps1`, so the two stay in sync.

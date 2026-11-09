@@ -28,6 +28,8 @@ make seed-places DOCKER=1        # 225 seed places owned by the `guidebook` syst
 open http://localhost:5173
 ```
 
+On Windows, run `.\make.ps1 seed-locations seed-places -Docker` instead (see [Make targets](#make-targets)).
+
 The API runs `alembic upgrade head` on start. The database is created UTF-8 with the
 `en_US.UTF-8` locale so `pg_trgm` works on Japanese names; a `guidebook_test` database is
 created alongside it for the test suite.
@@ -47,6 +49,17 @@ cd frontend && pnpm install && pnpm dev               # SPA on :5173 (proxies /a
 ## Make targets
 
 Backend targets run through `uv` locally; add `DOCKER=1` to run them in the `api` container.
+
+**Windows:** Windows has no `make`, so use `make.ps1` with the same target names. Pass
+`-Docker` instead of `DOCKER=1` and `-Username` instead of `USERNAME=`. If script execution
+is blocked, run it with `powershell -ExecutionPolicy Bypass -File .\make.ps1 …`.
+
+```powershell
+.\make.ps1 seed-locations seed-places -Docker
+.\make.ps1 make-admin -Username alice -Docker
+```
+
+> Any change to the `Makefile` must also be made in `make.ps1`.
 
 | Target | Does |
 |--------|------|
