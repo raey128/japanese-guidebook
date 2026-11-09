@@ -41,8 +41,11 @@ test("script and img payloads in a place name and a note render as literal text"
   await expect(page.getByRole("link", { name: new RegExp(`${run}`) })).toBeVisible();
   await noXss();
 
-  await page.goto(`/search?q=${encodeURIComponent(run)}`);
-  await expect(page.getByRole("list", { name: "Search results" })).toContainText(name);
+  // The place card on the map: the name, and the note in Reviews.
+  await page.goto(`/?place=${place.id}`);
+  const card = page.getByRole("region", { name: "Place summary" });
+  await expect(card.getByRole("heading", { level: 2 })).toContainText(name);
+  await expect(card.getByText(note, { exact: true }).first()).toBeVisible();
   await noXss();
 
   await page.goto(`/places/${place.id}/rank`);

@@ -60,7 +60,8 @@ test("zoomed out, the map shows clusters that zoom in when activated", async ({ 
   expect(await clusters.count()).toBeGreaterThan(0);
   await expect(page.getByRole("button", { name: /^Senso-ji, / })).toHaveCount(0);
 
-  await clusters.first().click();
+  // Clusters can overlap; dispatch the click to this one rather than whatever is on top.
+  await clusters.first().dispatchEvent("click");
   await expect
     .poll(() => Number(new URL(page.url()).searchParams.get("z")))
     .toBeGreaterThan(8);

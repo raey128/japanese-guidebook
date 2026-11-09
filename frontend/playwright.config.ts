@@ -10,7 +10,9 @@ export default defineConfig({
   use: { baseURL, trace: "retain-on-failure" },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    // Headless Firefox on GitHub's runners has no reliable WebGL, which the map needs (it
+    // crashed or never drew the map there). Run it locally; CI covers Chromium and WebKit.
+    ...(process.env.CI ? [] : [{ name: "firefox", use: { ...devices["Desktop Firefox"] } }]),
     { name: "webkit-iphone", use: { ...devices["iPhone 14"] } },
   ],
   // Reuse a running `docker compose up` stack; otherwise start the Vite dev server

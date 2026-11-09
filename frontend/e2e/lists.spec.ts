@@ -43,7 +43,7 @@ test("old list URLs redirect to the matching segment", async ({ page }) => {
 test("logged out: All works, personal segments ask to sign in", async ({ page }) => {
   await page.goto("/lists");
   await expect(page.getByRole("button", { name: "Rankings" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("heading", { level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: /^Overall ranking in / })).toBeVisible();
 
   await page.getByRole("button", { name: "Saved" }).click();
   const signIn = page.getByRole("link", { name: "Sign in" }).last();

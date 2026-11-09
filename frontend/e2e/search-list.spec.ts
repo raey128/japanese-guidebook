@@ -29,6 +29,8 @@ test("type a seeded name, pick it, and follow it to its list", async ({ page }) 
 test("typing an area name flies the map there (R11.4)", async ({ page }) => {
   await page.goto("/");
   await searchBox(page).fill("Roppo");
+  // Wait for the suggestion itself; Enter before it loads would pick "Add manually".
+  await expect(page.getByRole("option", { name: /Roppongi & Azabu/ })).toBeVisible();
   await searchBox(page).press("ArrowDown");
   await searchBox(page).press("Enter");
   // Roppongi & Azabu centroid: 35.6620, 139.7380.

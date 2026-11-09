@@ -5,7 +5,7 @@ import { uniqueUsername } from "./helpers";
 test("sign in with a new username, then sign out", async ({ page }) => {
   const name = uniqueUsername("e2e");
   await page.goto("/sign-in");
-  await expect(page.getByText("CC BY-SA 4.0")).toBeVisible();
+  await expect(page.getByText("CC BY-SA 4.0").first()).toBeVisible();
   await page.getByLabel("Username").fill(name);
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByText(`Create account ${name}?`)).toBeVisible();

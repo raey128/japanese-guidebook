@@ -2,7 +2,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Map, { AttributionControl, Marker, type MapRef } from "react-map-gl/maplibre";
-import { useSearchParams } from "react-router";
+import { useNavigation, useSearchParams } from "react-router";
 
 import type { Schemas } from "../api/client";
 import { prefersReducedMotion } from "../components/app/Celebration";
@@ -16,6 +16,7 @@ import PlacePin from "../components/home/PlacePin";
 import SearchBar from "../components/home/SearchBar";
 import TopPicksPanel, { loadPicksOpen, savePicksOpen } from "../components/home/TopPicksPanel";
 import { createLongPress, roundBbox, type Bbox, type LatLng } from "../components/map/geo";
+import MarkerContent from "../components/map/MarkerContent";
 import PinSummary from "../components/map/PinSummary";
 import { CLUSTER_MAX_ZOOM, DEFAULT_VIEW, TILE_STYLE_URL } from "../config";
 import { COPY } from "../copy";
@@ -89,19 +90,25 @@ export default function MapPage() {
   // Where the map was when the panel opened: name suggestions prefer places near here.
   const [addNear, setAddNear] = useState<LatLng | null>(null);
 
+  // URL updates build on the latest params (two updates in one tick must not undo each other),
+  // and are skipped while another page is loading: replacing "/" then would cancel that
+  // navigation (tapping Lists while the map finished moving bounced back to the map).
+  const navigation = useNavigation();
+  const latestParams = useRef(params);
+  latestParams.current = params;
+  const navigating = useRef(false);
+  navigating.current = navigation.state !== "idle" && navigation.location?.pathname !== "/";
   const setParam = useCallback(
     (patch: Record<string, string>) => {
-      setParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          for (const [k, v] of Object.entries(patch)) {
-            if (v) next.set(k, v);
-            else next.delete(k);
-          }
-          return next;
-        },
-        { replace: true },
-      );
+      if (navigating.current) return;
+      const next = new URLSearchParams(latestParams.current);
+      for (const [k, v] of Object.entries(patch)) {
+        if (v) next.set(k, v);
+        else next.delete(k);
+      }
+      if (next.toString() === latestParams.current.toString()) return;
+      latestParams.current = next;
+      setParams(next, { replace: true });
     },
     [setParams],
   );
@@ -376,7 +383,7 @@ export default function MapPage() {
               draggable={pinEditing}
               onDragEnd={(e) => pinByHand({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
               style={{ zIndex: 10 }}
-            >
+            ><MarkerContent>
               <span
                 role="img"
                 aria-label={pinEditing ? "New place pin. Drag it, or tap the map, to move it." : "New place pin"}
@@ -387,18 +394,18 @@ export default function MapPage() {
                   <span className="text-brand">★</span>
                 </MapPin>
               </span>
-            </Marker>
+            </MarkerContent></Marker>
           ) : null}
 
           {userLoc ? (
-            <Marker latitude={userLoc.lat} longitude={userLoc.lng} anchor="center">
+            <Marker latitude={userLoc.lat} longitude={userLoc.lng} anchor="center"><MarkerContent>
               <span role="img" aria-label="You are here" className="block size-5 rounded-full border-[3px] border-white bg-stays shadow-[0_0_0_6px_rgba(25,113,194,0.25)]" />
-            </Marker>
+            </MarkerContent></Marker>
           ) : null}
 
           {result?.kind === "clusters" &&
             result.clusters.map((c) => (
-              <Marker key={`${c.lat},${c.lng}`} latitude={c.lat} longitude={c.lng} anchor="center">
+              <Marker key={`${c.lat},${c.lng}`} latitude={c.lat} longitude={c.lng} anchor="center"><MarkerContent>
                 <button
                   type="button"
                   aria-label={`${c.count} ${c.count === 1 ? "place" : "places"}, zoom in`}
@@ -412,7 +419,7 @@ export default function MapPage() {
                 >
                   {c.count}
                 </button>
-              </Marker>
+              </MarkerContent></Marker>
             ))}
 
           {result?.kind === "points" &&
@@ -428,7 +435,7 @@ export default function MapPage() {
                   opacity: showAdd && pinEditing ? 0.45 : undefined,
                   pointerEvents: showAdd ? "none" : undefined,
                 }}
-              >
+              ><MarkerContent>
                 <PlacePin
                   point={p}
                   categoryName={subName.get(p.subcategory_slug) ?? p.subcategory_slug}
@@ -439,7 +446,7 @@ export default function MapPage() {
                     track("place_open", "pin");
                   }}
                 />
-              </Marker>
+              </MarkerContent></Marker>
             ))}
         </Map>
       )}

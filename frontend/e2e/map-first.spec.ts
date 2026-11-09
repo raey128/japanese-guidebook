@@ -110,9 +110,9 @@ test("N5.6: manual add is pending for the submitter, invisible to others, then a
   await page.getByRole("button", { name: "Send for review" }).click();
   const different = page.getByRole("button", { name: "This is different, add it anyway" });
   const sent = page.getByText("Sent for review!", { exact: false });
-  await expect(sent.or(different)).toBeVisible();
+  await expect(sent.or(different).first()).toBeVisible();
   if (await different.isVisible()) await different.click();
-  await expect(sent).toBeVisible();
+  await expect(sent.first()).toBeVisible();
   await expect(page.getByRole("button", { name: new RegExp(`^${name}, .*pending review`) })).toBeVisible();
 
   // Someone else can't find it.

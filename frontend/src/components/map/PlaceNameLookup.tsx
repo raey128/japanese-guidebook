@@ -127,6 +127,8 @@ export default function PlaceNameLookup({
             e.preventDefault();
             choose(options[active]!);
           } else if (e.key === "Escape") {
+            // Close just the suggestions, not the Add panel around them.
+            e.stopPropagation();
             setOpen(false);
           }
         }}

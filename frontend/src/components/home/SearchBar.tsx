@@ -304,7 +304,7 @@ function OptionBody({ option: o }: { option: Option }) {
   return (
     <>
       <span aria-hidden="true">➕</span>
-      <span className="font-bold text-stays">
+      <span className="font-bold text-stays-dark">
         Can't find it? Add “{o.text}” manually
       </span>
     </>
