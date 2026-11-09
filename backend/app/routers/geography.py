@@ -1,10 +1,15 @@
 """Curated reference data and location suggestion."""
 
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+import re
+from typing import Literal
+
+from fastapi import APIRouter, HTTPException, Query, Response, status
+from pydantic import BaseModel, Field, field_validator
+from sqlalchemy import func, select
 
 from app import geography
-from app.deps import DB
+from app.deps import DB, CurrentUser
+from app.models import Subcategory
 from app.place_views import load_reference
 from app.schemas.common import CityOut, CityWithLocations, LocationOut, SubcategoryOut
 
@@ -23,6 +28,57 @@ class Suggestion(BaseModel):
 async def list_subcategories(db: DB) -> list[SubcategoryOut]:
     ref = await load_reference(db)
     return sorted(ref.subcategories.values(), key=lambda s: s.id)
+
+
+class SubcategoryCreate(BaseModel):
+    """A new subcategory from the add-place form (R13.13), e.g. "Curry" under food."""
+
+    name: str = Field(min_length=2, max_length=40)
+    top_category: Literal["food", "sights", "stays", "experiences"]
+
+    @field_validator("name")
+    @classmethod
+    def _name(cls, v: str) -> str:
+        v = " ".join(v.split())
+        if len(v) < 2:
+            raise ValueError("Give the category a name.")
+        return v[:1].upper() + v[1:]
+
+
+def _slugify(name: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+    return slug[:32]
+
+
+@router.post(
+    "/subcategories",
+    response_model=SubcategoryOut,
+    status_code=status.HTTP_201_CREATED,
+    responses={200: {"model": SubcategoryOut, "description": "Already exists: returned as is"}},
+    operation_id="createSubcategory",
+)
+async def create_subcategory(
+    body: SubcategoryCreate, response: Response, db: DB, _: CurrentUser
+) -> SubcategoryOut:
+    """Signed-in only. A name that already exists (any case) returns that subcategory."""
+    existing = (
+        await db.execute(
+            select(Subcategory).where(func.lower(Subcategory.name) == body.name.lower())
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        response.status_code = status.HTTP_200_OK
+        return SubcategoryOut.model_validate(existing)
+    base = _slugify(body.name) or "category"
+    slug, n = base, 1
+    taken = set((await db.execute(select(Subcategory.slug))).scalars())
+    while slug in taken:
+        n += 1
+        slug = f"{base}_{n}"
+    sub = Subcategory(slug=slug, name=body.name, top_category=body.top_category)
+    db.add(sub)
+    await db.commit()
+    return SubcategoryOut.model_validate(sub)
 
 
 @router.get("/cities", response_model=list[CityWithLocations], operation_id="listCities")

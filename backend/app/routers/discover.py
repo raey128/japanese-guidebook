@@ -87,23 +87,19 @@ async def top_picks(
         if ranked:
             return TopPicks(kind="ranked", items=ranked[:limit])
 
-    team = (
-        await db.execute(
-            text(
-                f"""
-                SELECT p.id FROM places p
-                WHERE {where} AND p.is_seed AND p.seed_reviewed
-                ORDER BY p.geom <-> ST_SetSRID(ST_MakePoint(:clng, :clat), 4326), p.id
-                LIMIT :limit
-                """
-            ),
-            {**params, "clat": (min_lat + max_lat) / 2, "clng": (min_lng + max_lng) / 2, "limit": limit},
-        )
-    ).all()
-    if team:
-        ids = [r.id for r in team]
-        by_id = await _summaries(db, ids, ref)
-        return TopPicks(kind="team", items=[by_id[i] for i in ids if i in by_id])
+    centre = {"clat": (min_lat + max_lat) / 2, "clng": (min_lng + max_lng) / 2, "limit": limit}
+    nearest = "ORDER BY p.geom <-> ST_SetSRID(ST_MakePoint(:clng, :clat), 4326), p.id LIMIT :limit"
+    for kind, extra in (("team", "AND p.is_seed AND p.seed_reviewed"), ("nearby", "")):
+        rows = (
+            await db.execute(
+                text(f"SELECT p.id FROM places p WHERE {where} {extra} {nearest}"),
+                {**params, **centre},
+            )
+        ).all()
+        if rows:
+            ids = [r.id for r in rows]
+            by_id = await _summaries(db, ids, ref)
+            return TopPicks(kind=kind, items=[by_id[i] for i in ids if i in by_id])
     return TopPicks(kind="empty", items=[])
 
 

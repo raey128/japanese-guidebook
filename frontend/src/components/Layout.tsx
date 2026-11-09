@@ -17,7 +17,7 @@ export default function Layout() {
             Japanese Guidebook
           </Link>
           <NavLink to="/" end className={nav}><span aria-hidden="true">🗺️ </span>Map</NavLink>
-          <NavLink to="/lists" className={nav}><span aria-hidden="true">🏆 </span>Lists</NavLink>
+          <NavLink to="/lists" className={nav}><span aria-hidden="true">📋 </span>Lists</NavLink>
           {me?.user ? (
             <>
               <NavLink to="/settings" className={nav}>Settings</NavLink>

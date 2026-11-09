@@ -65,3 +65,36 @@ async def test_subcategories_listed_with_top_category(client):
     subs = (await client.get("/api/subcategories")).json()
     assert len(subs) == 27
     assert {s["top_category"] for s in subs} == {"food", "sights", "stays", "experiences"}
+
+
+# --- New subcategories from the add form (R13.13) -----------------------------------------------
+
+
+async def test_signed_in_user_can_add_a_subcategory(client, db):
+    from tests.factories import sign_in
+
+    assert (
+        await client.post("/api/subcategories", json={"name": "Curry", "top_category": "food"})
+    ).status_code == 401
+    await sign_in(client, "subber")
+    r = await client.post(
+        "/api/subcategories", json={"name": "  japanese   curry ", "top_category": "food"}
+    )
+    assert r.status_code == 201, r.text
+    assert r.json()["name"] == "Japanese curry"
+    assert r.json()["slug"] == "japanese_curry"
+    assert r.json()["top_category"] == "food"
+    listed = (await client.get("/api/subcategories")).json()
+    assert any(s["slug"] == "japanese_curry" for s in listed)
+
+    # Same name in another case: the existing one comes back.
+    again = await client.post(
+        "/api/subcategories", json={"name": "Japanese Curry", "top_category": "food"}
+    )
+    assert again.status_code == 200 and again.json()["id"] == r.json()["id"]
+    assert (
+        await client.post("/api/subcategories", json={"name": "Ramen", "top_category": "food"})
+    ).status_code == 200
+
+    bad = await client.post("/api/subcategories", json={"name": "Zoo", "top_category": "animals"})
+    assert bad.status_code == 422

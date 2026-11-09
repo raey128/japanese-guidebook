@@ -75,14 +75,15 @@ export default function TopPicksSheet({
 }) {
   const items = data?.items ?? [];
   const team = data?.kind === "team";
-  const title = team ? COPY.teamPicks : COPY.topPicks;
+  const nearby = data?.kind === "nearby";
+  const title = team ? COPY.teamPicks : nearby ? COPY.nearbyPicks : COPY.topPicks;
   return (
     <Sheet
       label={title}
       title={
         <>
           <span>
-            <span aria-hidden="true">{team ? "🧑‍🍳 " : "⭐ "}</span>
+            <span aria-hidden="true">{team ? "🧑‍🍳 " : nearby ? "🧭 " : "⭐ "}</span>
             {title}
           </span>
           <span className="badge bg-brand-soft text-brand-dark">{items.length}</span>
@@ -120,6 +121,7 @@ export default function TopPicksSheet({
       ) : (
         <>
           {team ? <p className="hint pb-1">Nothing ranked here yet, so here are our team's favourites. Rank one to get things started!</p> : null}
+          {nearby ? <p className="hint pb-1">Nothing ranked here yet, so here's what's around. Rank a place you've been to and Top picks will start to fill in!</p> : null}
           <ol aria-label={title}>
             {items.map((p, i) => (
               <PickRow key={p.id} place={p} rank={i + 1} userLoc={userLoc} onPick={() => onPick(p)} />

@@ -100,7 +100,11 @@ export interface paths {
         /** List Subcategories */
         get: operations["listSubcategories"];
         put?: never;
-        post?: never;
+        /**
+         * Create Subcategory
+         * @description Signed-in only. A name that already exists (any case) returns that subcategory.
+         */
+        post: operations["createSubcategory"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1776,6 +1780,19 @@ export interface components {
             /** Weeks */
             weeks: components["schemas"]["FunnelWeek"][];
         };
+        /**
+         * SubcategoryCreate
+         * @description A new subcategory from the add-place form (R13.8), e.g. "Curry" under food.
+         */
+        SubcategoryCreate: {
+            /** Name */
+            name: string;
+            /**
+             * Top Category
+             * @enum {string}
+             */
+            top_category: "food" | "sights" | "stays" | "experiences";
+        };
         /** SubcategoryOut */
         SubcategoryOut: {
             /** Id */
@@ -1849,7 +1866,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "ranked" | "team" | "empty";
+            kind: "ranked" | "team" | "nearby" | "empty";
             /** Items */
             items: components["schemas"]["PlaceSummary"][];
         };
@@ -2116,6 +2133,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubcategoryOut"][];
+                };
+            };
+        };
+    };
+    createSubcategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubcategoryCreate"];
+            };
+        };
+        responses: {
+            /** @description Already exists: returned as is */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubcategoryOut"];
+                };
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubcategoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

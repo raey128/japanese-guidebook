@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { createPlaceApi, pickStars, rankApi, runId, signInApi, stubMapStyle, uniqueUsername } from "./helpers";
+import { createPlaceApi, pickFoodCategory, pickStars, rankApi, runId, signInApi, stubMapStyle, uniqueUsername } from "./helpers";
 
 // Tickets 15–25: the map-first home, top picks, Near me, Save ♡ with inline sign-in, celebrations,
 // and the manual add → admin approval flow (N5.6).
@@ -105,9 +105,12 @@ test("N5.6: manual add is pending for the submitter, invisible to others, then a
   await page.goto("/?lat=35.6620&lng=139.7380&z=15");
   await searchBox(page).fill(name);
   await page.getByRole("option", { name: /^Can't find it/ }).click();
-  await expect(page.getByLabel(/^Location/)).toHaveValue(/^\d+$/);
-  await page.getByLabel(/^Subcategory/).selectOption({ label: "Ramen" });
-  await page.getByRole("radio", { name: /Not yet/ }).click();
+  // Search-first: no pin until you place it yourself (R13.12).
+  await expect(page.getByTestId("add-pin")).toHaveCount(0);
+  await page.getByRole("button", { name: "Place the pin yourself" }).click();
+  await expect(page.getByTestId("add-pin")).toBeVisible();
+  await page.getByRole("button", { name: "Done", exact: true }).click();
+  await pickFoodCategory(page, "Ramen");
   await page.getByRole("button", { name: "Send for review" }).click();
   const different = page.getByRole("button", { name: "This is different, add it anyway" });
   const sent = page.getByText("Sent for review!", { exact: false });

@@ -18,5 +18,9 @@ test("the first screen is the full-screen map with no site header (R11.1)", asyn
   const box = await map.boundingBox();
   const vp = page.viewportSize()!;
   expect(box?.width).toBe(vp.width);
-  expect(box?.height).toBe(vp.height);
+  // The map fills the screen down to the tab bar (Map | Lists, 4.5rem = 72px).
+  expect(box?.height).toBe(vp.height - 72);
+  const tabs = page.getByRole("navigation", { name: "Tabs" });
+  await expect(tabs.getByRole("link", { name: "Map" })).toHaveAttribute("aria-current", "page");
+  await expect(tabs.getByRole("link", { name: "Lists" })).toBeVisible();
 });

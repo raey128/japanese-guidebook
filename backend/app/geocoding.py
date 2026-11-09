@@ -149,7 +149,7 @@ async def search_address(db: AsyncSession, q: str) -> list[dict[str, Any]]:
         return []
 
 
-# --- Business lookup for the add-place type-ahead (R13.6) ------------------------------------
+# --- Business lookup for the add-place type-ahead (R13.11) ------------------------------------
 
 # Roughly Japan, so a search for "Ichiran" doesn't return branches abroad.
 JAPAN_BBOX = "122.9,24.0,154.0,45.6"

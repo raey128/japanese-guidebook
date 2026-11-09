@@ -19,18 +19,36 @@ type Props = {
   city: string;
   invalid?: boolean;
   describedBy?: string;
+  /** Picked a place already in the app (default: open it on the map). */
+  onPickExisting?: (place: Schemas["PlaceSummary"]) => void;
+  /** Adds a last row, "Can't find it? Place the pin yourself". */
+  onNoMatch?: () => void;
+  autoFocus?: boolean;
 };
 
 type Option =
   | { kind: "existing"; key: string; place: Schemas["PlaceSummary"] }
-  | { kind: "osm"; key: string; result: LookupPick };
+  | { kind: "osm"; key: string; result: LookupPick }
+  | { kind: "manual"; key: string };
 
 /**
- * The name field on Add a place (R13.6): as you type it suggests places already in the app
+ * The name field on Add a place (R13.11): as you type it suggests places already in the app
  * (open those instead of adding a duplicate) and businesses found on OpenStreetMap (pick one
  * and the address and pin fill in). Typing a name that isn't listed is always fine.
  */
-export default function PlaceNameLookup({ inputId, value, onChange, onPick, near, city, invalid, describedBy }: Props) {
+export default function PlaceNameLookup({
+  inputId,
+  value,
+  onChange,
+  onPick,
+  near,
+  city,
+  invalid,
+  describedBy,
+  onPickExisting,
+  onNoMatch,
+  autoFocus,
+}: Props) {
   const listId = useId();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -52,22 +70,25 @@ export default function PlaceNameLookup({ inputId, value, onChange, onPick, near
     ...existingPlaces.map((place) => ({ kind: "existing" as const, key: `p${place.id}`, place })),
     ...osm.map((result, i) => ({ kind: "osm" as const, key: `o${i}-${result.lat},${result.lng}`, result })),
   ];
+  const found = options.length;
+  if (onNoMatch) options.push({ kind: "manual", key: "manual" });
   const show = open && term.length >= 2;
-  const searching = show && (lookup.isFetching || existing.isFetching) && options.length === 0;
+  const searching = show && (lookup.isFetching || existing.isFetching) && found === 0;
 
   useEffect(() => setActive(-1), [debounced]);
 
   const choose = (o: Option) => {
-    if (o.kind === "osm") {
-      onPick(o.result);
-      setOpen(false);
-    }
+    setOpen(false);
+    if (o.kind === "osm") onPick(o.result);
+    else if (o.kind === "manual") onNoMatch?.();
+    else if (onPickExisting) onPickExisting(o.place);
+    else void navigate(`/?place=${o.place.id}`);
   };
 
   let status = "";
   if (show) {
     if (searching) status = "Looking it up…";
-    else if (options.length) status = `${options.length} suggestions. Use the arrow keys to choose.`;
+    else if (found) status = `${found} suggestions. Use the arrow keys to choose.`;
     else if (lookup.isFetched) status = "No matches. Keep typing, or carry on and place the pin yourself.";
   }
 
@@ -84,6 +105,7 @@ export default function PlaceNameLookup({ inputId, value, onChange, onPick, near
         aria-describedby={describedBy}
         autoComplete="off"
         maxLength={200}
+        autoFocus={autoFocus}
         placeholder="Start typing, e.g. Ichiran Shibuya"
         value={value}
         onChange={(e) => {
@@ -102,9 +124,7 @@ export default function PlaceNameLookup({ inputId, value, onChange, onPick, near
             setActive((a) => (a <= 0 ? options.length - 1 : a - 1));
           } else if (e.key === "Enter" && active >= 0) {
             e.preventDefault();
-            const o = options[active]!;
-            if (o.kind === "existing") void navigate(`/?place=${o.place.id}`);
-            else choose(o);
+            choose(options[active]!);
           } else if (e.key === "Escape") {
             setOpen(false);
           }
@@ -134,10 +154,39 @@ export default function PlaceNameLookup({ inputId, value, onChange, onPick, near
               <li key={o.key} role="presentation">
                 {firstOfGroup ? (
                   <p role="presentation" className="px-3 pb-1 pt-2 text-xs font-extrabold uppercase tracking-wide text-muted">
-                    {o.kind === "existing" ? "Already on the map" : "Found on the map"}
+                    {o.kind === "existing" ? "Already on the map" : o.kind === "osm" ? "Found on the map" : "Not listed?"}
                   </p>
                 ) : null}
-                {o.kind === "existing" ? (
+                {o.kind === "manual" ? (
+                  <button
+                    id={`${listId}-${o.key}`}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    tabIndex={-1}
+                    className={base}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => choose(o)}
+                  >
+                    <span className="font-extrabold text-brand-dark">
+                      <span aria-hidden="true">✋ </span>Can't find it? Place the pin yourself
+                    </span>
+                  </button>
+                ) : o.kind === "existing" && onPickExisting ? (
+                  <button
+                    id={`${listId}-${o.key}`}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    tabIndex={-1}
+                    className={base}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => choose(o)}
+                  >
+                    <span className="font-extrabold">{o.place.name}</span>
+                    <span className="text-sm text-muted">{o.place.subcategory.name} · It's already here, open it to rank or save</span>
+                  </button>
+                ) : o.kind === "existing" ? (
                   <Link
                     id={`${listId}-${o.key}`}
                     role="option"

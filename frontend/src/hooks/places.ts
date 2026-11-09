@@ -34,7 +34,7 @@ export function useAddressSearch(q: string) {
   });
 }
 
-/** Businesses by name for the add-place type-ahead (R13.6), biased towards `near`. */
+/** Businesses by name for the add-place type-ahead (R13.11), biased towards `near`. */
 export function usePlaceLookup(q: string, near: { lat: number; lng: number } | null) {
   const term = q.trim();
   const lat = near ? Number(near.lat.toFixed(2)) : undefined;

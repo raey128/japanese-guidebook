@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { createPlaceApi, escapeRegExp, randomTokyoPoint, rankViaUi, revealInList, runId, signIn, stubMapStyle } from "./helpers";
+import { addNameBox, createPlaceApi, escapeRegExp, pickFoodCategory, randomTokyoPoint, rankViaUi, revealInList, runId, signIn, stubMapStyle } from "./helpers";
 
 // N5.4: sign in with a username -> add a place by pin -> rank 3 places -> see them in the
 // personal and the public lists.
@@ -10,7 +10,7 @@ test("sign in, add a place by pin, rank three places, see them in both lists", a
   await stubMapStyle(page);
   const username = await signIn(page);
 
-  // 1. Add a place through the UI, on the map itself (R13.7). /places/new?lat&lng opens the add
+  // 1. Add a place through the UI, on the map itself (R13.12). /places/new?lat&lng opens the add
   //    panel with the pin there, so no map gesture is needed.
   const nameA = `Corefl Noodle ${run}`;
   const pin = randomTokyoPoint();
@@ -19,16 +19,15 @@ test("sign in, add a place by pin, rank three places, see them in both lists", a
   await expect(page).toHaveURL(/^[^?]*\/\?.*add=1/);
   await expect(page.getByTestId("add-pin")).toBeVisible();
   // The location is pre-selected from the pin once the suggestion arrives.
-  await expect(page.getByLabel(/^Location/)).toHaveValue(/^\d+$/);
-  await page.getByLabel("English name").fill(nameA);
-  await page.getByLabel(/^Japanese name/).fill("麺");
-  await page.getByLabel(/^Subcategory/).selectOption({ label: "Ramen" });
-  await page.getByRole("radio", { name: /Not yet/ }).click();
+  await addNameBox(page).fill(nameA);
+  await addNameBox(page).press("Escape");
+  await pickFoodCategory(page, "Ramen");
   await page.getByRole("button", { name: "Add place", exact: true }).click();
 
   // The duplicate step only appears if a seeded/earlier place is nearby; dismiss it if so.
   const different = page.getByRole("button", { name: "This is different, add it anyway" });
-  // Added: the panel closes and the new place's summary opens on the same map.
+  // Added: the panel closes, "Pin added" shows, and the new place's summary opens on the same map.
+  await expect(page.getByText(/Pin added!/)).toBeVisible();
   const summary = page.getByRole("region", { name: "Place summary" });
   await expect(summary.filter({ hasText: nameA }).or(different)).toBeVisible();
   if (await different.isVisible()) await different.click();

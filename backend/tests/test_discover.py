@@ -12,11 +12,13 @@ async def test_top_picks_orders_by_score_and_skips_unranked(client, db):
     good = await make_place(db, name="Good", creator=owner, lat=35.712, lng=139.796)
     meh = await make_place(db, name="Meh", creator=owner, lat=35.713, lng=139.796)
     await make_place(db, name="Unranked", creator=owner, lat=35.714, lng=139.796)
-    hidden = await make_place(db, name="Hidden", creator=owner, lat=35.715, lng=139.796, is_hidden=True)
+    hidden = await make_place(db, name="Hidden", creator=owner, lat=35.715, lng=139.796)
     for u in raters:
         await rank(db, u.id, good, "liked")
         await rank(db, u.id, meh, "disliked")
-    await rank(db, raters[0].id, hidden, "liked")
+    await rank(db, raters[0].id, hidden, "liked")  # ranked, then hidden by a moderator
+    hidden.is_hidden = True
+    await db.flush()
 
     r = (await client.get("/api/top-picks", params=ASA)).json()
     assert r["kind"] == "ranked"
@@ -37,6 +39,16 @@ async def test_team_picks_fallback_uses_reviewed_seeds_nearest_first(client, db)
     r = (await client.get("/api/top-picks", params=ASA)).json()
     assert r["kind"] == "team"
     assert [p["name"] for p in r["items"]] == ["Seed Near", "Seed Far"]
+
+
+async def test_nearby_fallback_when_nothing_ranked_or_reviewed(client, db):
+    owner = await make_user(db, "nb_owner")
+    await make_place(db, name="Far One", creator=owner, lat=35.7190, lng=139.8090)
+    await make_place(db, name="Near One", creator=owner, lat=35.7101, lng=139.7951, is_seed=True)
+    await make_place(db, name="Hidden One", creator=owner, lat=35.7100, lng=139.7950, is_hidden=True)
+    r = (await client.get("/api/top-picks", params=ASA)).json()
+    assert r["kind"] == "nearby"
+    assert [p["name"] for p in r["items"]] == ["Near One", "Far One"]
 
 
 async def test_top_picks_empty_when_nothing_in_view(client):

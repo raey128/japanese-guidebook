@@ -7,7 +7,6 @@ import AddressSearch from "./AddressSearch";
 import BasePinMap from "./BasePinMap";
 import { type FormErrors, type LatLng } from "./geo";
 import LocationPicker from "./LocationPicker";
-import PlaceNameLookup, { type LookupPick } from "./PlaceNameLookup";
 import SubcategoryPicker from "./SubcategoryPicker";
 
 export type PlaceFormInitial = {
@@ -30,19 +29,6 @@ type Props = {
   children?: ReactNode;
   /** Called when the user changes anything, so the parent can drop stale duplicate candidates. */
   onEdited?: () => void;
-  /** Add mode (R13.6): the name field suggests businesses and fills in address and pin. */
-  lookup?: { city: string; near: LatLng | null };
-  /** Extra fields after the details (the "have you been?" review). */
-  extraFields?: ReactNode;
-  /** Validates the extra fields on submit; return false to stop. */
-  validateExtra?: () => boolean;
-  /**
-   * Pin owned by the parent (Add a place on the main map): the form shows no map of its own,
-   * and every way of moving the pin (suggestion, address, my location, drag/tap on the big
-   * map) goes through `onPinChange`.
-   */
-  pin?: LatLng | null;
-  onPinChange?: (p: LatLng) => void;
 };
 
 function FieldError({ id, text }: { id: string; text?: string }) {
@@ -54,20 +40,7 @@ function FieldError({ id, text }: { id: string; text?: string }) {
   );
 }
 
-export default function PlaceForm({
-  initial,
-  submitLabel,
-  pending,
-  serverErrors,
-  onSubmit,
-  children,
-  onEdited,
-  lookup,
-  extraFields,
-  validateExtra,
-  pin: outerPin,
-  onPinChange,
-}: Props) {
+export default function PlaceForm({ initial, submitLabel, pending, serverErrors, onSubmit, children, onEdited }: Props) {
   const uid = useId();
   const hasInitialPin = initial?.lat != null && initial?.lng != null;
   const [name, setName] = useState(initial?.name ?? "");
@@ -75,15 +48,12 @@ export default function PlaceForm({
   const [subcategoryId, setSubcategoryId] = useState<number | null>(initial?.subcategoryId ?? null);
   const [locationId, setLocationId] = useState<number | null>(initial?.locationId ?? null);
   const [locationTouched, setLocationTouched] = useState(initial?.locationId != null);
-  const controlled = outerPin !== undefined;
-  const [innerPin, setInnerPin] = useState<LatLng | null>(hasInitialPin ? { lat: initial!.lat!, lng: initial!.lng! } : null);
-  const pin = controlled ? outerPin : innerPin;
+  const [pin, setPin] = useState<LatLng | null>(hasInitialPin ? { lat: initial!.lat!, lng: initial!.lng! } : null);
   const [address, setAddress] = useState(initial?.address ?? "");
   const [addressTouched, setAddressTouched] = useState(Boolean(initial?.address));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [cityWarning, setCityWarning] = useState<string | null>(null);
   const [geoMsg, setGeoMsg] = useState("");
-  const [picked, setPicked] = useState<string | null>(null);
   const skipFirstGeocode = useRef(hasInitialPin && Boolean(initial?.address));
 
   const touch = () => onEdited?.();
@@ -140,38 +110,10 @@ export default function PlaceForm({
     };
   }, [pin, addressTouched]);
 
-  /** The one way the pin moves, whatever moved it. */
   const setPinFromUser = (p: LatLng) => {
-    const rounded = { lat: Number(p.lat.toFixed(6)), lng: Number(p.lng.toFixed(6)) };
-    if (controlled) onPinChange?.(rounded);
-    else setInnerPin(rounded);
-  };
-  // However the pin moved (here or by dragging it on the big map): clear its error, drop stale duplicates.
-  const firstPin = useRef(true);
-  useEffect(() => {
-    if (firstPin.current) {
-      firstPin.current = false;
-      return;
-    }
+    setPin({ lat: Number(p.lat.toFixed(6)), lng: Number(p.lng.toFixed(6)) });
     clearError("pin");
     touch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pin?.lat, pin?.lng]);
-
-  // Picked a business from the name suggestions: fill in what we know and drop the pin there.
-  const pickBusiness = (r: LookupPick) => {
-    setName(r.name);
-    clearError("name");
-    if (r.address) {
-      setAddress(r.address);
-      setAddressTouched(true);
-    }
-    if (r.subcategory_id != null && subcategoryId === null) {
-      setSubcategoryId(r.subcategory_id);
-      clearError("subcategory_id");
-    }
-    setPinFromUser({ lat: r.lat, lng: r.lng });
-    setPicked(r.address ? `Pinned at ${r.address}.` : `Pinned ${r.name} on the map.`);
   };
 
   const useMyLocation = () => {
@@ -198,8 +140,7 @@ export default function PlaceForm({
     if (locationId === null) next.location_id = "Choose a location.";
     if (!pin) next.pin = "Place the pin on the map.";
     setErrors(next);
-    const extraOk = validateExtra ? validateExtra() : true;
-    if (Object.keys(next).length || !extraOk || !pin || subcategoryId === null || locationId === null) return;
+    if (Object.keys(next).length || !pin || subcategoryId === null || locationId === null) return;
     onSubmit({
       name: name.trim(),
       name_ja: nameJa.trim() || null,
@@ -216,51 +157,58 @@ export default function PlaceForm({
 
   return (
     <form onSubmit={submit} noValidate className="space-y-4" aria-label={submitLabel}>
-      <section aria-labelledby={`${uid}-what`} className="space-y-3">
-        <h2 id={`${uid}-what`} className="font-semibold">
-          1. What's it called?
+      <section aria-labelledby={`${uid}-pin`} className="space-y-2">
+        <h2 id={`${uid}-pin`} className="font-semibold">
+          1. Where is it?
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={useMyLocation} className="btn btn-secondary btn-sm">
+            Use my location
+          </button>
+        </div>
+        <p aria-live="polite" className="hint">
+          {geoMsg}
+        </p>
+        <AddressSearch onPick={(p, label) => {
+          setPinFromUser(p);
+          if (!addressTouched) setAddress(label);
+        }} />
+        <BasePinMap lat={pin?.lat ?? null} lng={pin?.lng ?? null} draggable clickToSet onChange={setPinFromUser} height={300} label="Place pin map" />
+        <FieldError id={`${uid}-pin-err`} text={errors.pin} />
+        {outside && (
+          <div role="alert" className="card border-amber-400 bg-warning-soft text-sm text-warning-ink">
+            <p className="font-semibold">We only cover these cities for now</p>
+            <ul className="list-disc pl-5">
+              {coveredCities.map((c) => (
+                <li key={c.id}>{c.name}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      <section aria-labelledby={`${uid}-details`} className="space-y-3">
+        <h2 id={`${uid}-details`} className="font-semibold">
+          2. Details
         </h2>
         <div>
           <label htmlFor={`${uid}-name`} className="label">
             English name <span aria-hidden="true">*</span>
           </label>
-          {lookup ? (
-            <PlaceNameLookup
-              inputId={`${uid}-name`}
-              value={name}
-              onChange={(v) => {
-                setName(v);
-                setPicked(null);
-                clearError("name");
-                touch();
-              }}
-              onPick={pickBusiness}
-              near={pin ?? lookup.near}
-              city={lookup.city}
-              invalid={Boolean(errors.name)}
-              describedBy={errors.name ? `${uid}-name-err` : `${uid}-name-hint`}
-            />
-          ) : (
-            <input
-              id={`${uid}-name`}
-              value={name}
-              maxLength={200}
-              required
-              aria-invalid={errors.name ? true : undefined}
-              aria-describedby={errors.name ? `${uid}-name-err` : undefined}
-              onChange={(e) => {
-                setName(e.target.value);
-                clearError("name");
-                touch();
-              }}
-              className={input}
-            />
-          )}
-          {lookup ? (
-            <p id={`${uid}-name-hint`} className="mt-1 text-xs text-muted">
-              Pick a suggestion and we'll fill in the address and pin it for you.
-            </p>
-          ) : null}
+          <input
+            id={`${uid}-name`}
+            value={name}
+            maxLength={200}
+            required
+            aria-invalid={errors.name ? true : undefined}
+            aria-describedby={errors.name ? `${uid}-name-err` : undefined}
+            onChange={(e) => {
+              setName(e.target.value);
+              clearError("name");
+              touch();
+            }}
+            className={input}
+          />
           <FieldError id={`${uid}-name-err`} text={errors.name} />
         </div>
         <div>
@@ -282,57 +230,6 @@ export default function PlaceForm({
           />
           <FieldError id={`${uid}-ja-err`} text={errors.name_ja} />
         </div>
-        {picked ? (
-          <p role="status" className="card border-success bg-success-soft p-3 text-sm font-bold text-success-dark">
-            <span aria-hidden="true">📍 </span>
-            {picked} {controlled ? "Drag the pin on the map" : "Drag the pin below"} if it's not quite right.
-          </p>
-        ) : null}
-      </section>
-
-      <section aria-labelledby={`${uid}-pin`} className="space-y-2">
-        <h2 id={`${uid}-pin`} className="font-semibold">
-          2. Where is it?
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={useMyLocation} className="btn btn-secondary btn-sm">
-            Use my location
-          </button>
-        </div>
-        <p aria-live="polite" className="hint">
-          {geoMsg}
-        </p>
-        <AddressSearch onPick={(p, label) => {
-          setPinFromUser(p);
-          if (!addressTouched) setAddress(label);
-        }} />
-        {controlled ? (
-          <p className="card bg-brand-soft p-3 text-sm font-bold" data-testid="pin-readout">
-            <span aria-hidden="true">📍 </span>
-            {pin
-              ? "Drag the red pin on the map, or tap the map where the place is."
-              : "Tap the map where the place is."}
-          </p>
-        ) : (
-          <BasePinMap lat={pin?.lat ?? null} lng={pin?.lng ?? null} draggable clickToSet onChange={setPinFromUser} height={300} label="Place pin map" />
-        )}
-        <FieldError id={`${uid}-pin-err`} text={errors.pin} />
-        {outside && (
-          <div role="alert" className="card border-amber-400 bg-warning-soft text-sm text-warning-ink">
-            <p className="font-semibold">We only cover these cities for now</p>
-            <ul className="list-disc pl-5">
-              {coveredCities.map((c) => (
-                <li key={c.id}>{c.name}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </section>
-
-      <section aria-labelledby={`${uid}-details`} className="space-y-3">
-        <h2 id={`${uid}-details`} className="font-semibold">
-          3. Details
-        </h2>
         <SubcategoryPicker
           value={subcategoryId}
           onChange={(v) => {
@@ -374,7 +271,6 @@ export default function PlaceForm({
         </div>
       </section>
 
-      {extraFields}
       <LicenceNotice />
       {children}
       {serverErrors?.message && !serverErrors.coveredCities && (

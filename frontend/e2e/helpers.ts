@@ -208,3 +208,13 @@ export async function revealInList(page: Page, target: Locator): Promise<void> {
   }
   await expect(target).toBeVisible();
 }
+
+/** The name search on the map's Add a place panel. */
+export function addNameBox(page: Page): Locator {
+  return page.getByTestId("add-panel").getByRole("combobox", { name: /^Name/ });
+}
+
+/** Pick a food category chip on the Add a place panel (Food is the default group). */
+export async function pickFoodCategory(page: Page, name: string): Promise<void> {
+  await page.getByRole("group", { name: "Food kinds" }).getByRole("button", { name, exact: true }).click();
+}

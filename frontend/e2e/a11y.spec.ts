@@ -80,7 +80,7 @@ test.describe("accessibility (axe)", () => {
     await page.goto("/places/new?lat=35.7125&lng=139.795");
     await expect(page.getByRole("heading", { name: "Add a place" })).toBeVisible();
     await expect(page.getByTestId("add-pin")).toBeVisible();
-    await expect(page.getByLabel(/^Location/)).toHaveValue(/^\d+$/);
+    await expect(page.getByRole("button", { name: "Edit pin" })).toBeVisible();
     await expectNoSeriousViolations(page, "/places/new (pin set)");
   });
 

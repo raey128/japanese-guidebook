@@ -60,7 +60,7 @@ test("no match offers Add manually, which opens the form pre-filled for review",
   await add.click();
   await expect(page.getByRole("heading", { name: "Add a place" })).toBeVisible();
   await expect(page).toHaveURL(/source=manual/);
-  await expect(page.getByLabel(/English name/i)).toHaveValue(name);
+  await expect(page.getByTestId("add-panel").getByRole("combobox", { name: /^Name/ })).toHaveValue(name);
   await expect(page.getByRole("button", { name: "Send for review" })).toBeVisible();
 });
 

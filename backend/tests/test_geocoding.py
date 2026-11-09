@@ -139,7 +139,7 @@ async def test_submit_works_when_geocoding_fails(client, db, geocoder_stub):
     assert r.json()["place"]["address"] is None
 
 
-# --- Business lookup: subcategory guesses (R13.6) ---------------------------------------------
+# --- Business lookup: subcategory guesses (R13.11) ---------------------------------------------
 
 
 def test_guess_slug_from_tags_and_names():

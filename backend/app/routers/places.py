@@ -254,7 +254,7 @@ async def lookup_place(
     lng: Annotated[float | None, Query(ge=-180, le=180)] = None,
 ) -> PlaceLookupResponse:
     """Signed-in only. Businesses matching a name, near (lat, lng) when given, for the add-place
-    type-ahead (R13.6). Empty `results` when the lookup service is down or slow."""
+    type-ahead (R13.11). Empty `results` when the lookup service is down or slow."""
     ref = await load_reference(db)
     slugs = {sub.slug: sub.id for sub in ref.subcategories.values()}
     results = await geocoding.lookup_places(q, lat, lng)

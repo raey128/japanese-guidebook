@@ -2,11 +2,12 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map, { AttributionControl, Marker, NavigationControl, type MapRef } from "react-map-gl/maplibre";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 
 import type { Schemas } from "../api/client";
 import { prefersReducedMotion } from "../components/app/Celebration";
 import { useInlineSignIn } from "../components/app/InlineSignIn";
+import { TAB_BAR_HEIGHT } from "../components/app/TabBar";
 import AddPlacePanel from "../components/home/AddPlacePanel";
 import CategoryChips from "../components/home/CategoryChips";
 import MenuDrawer from "../components/home/MenuDrawer";
@@ -75,9 +76,13 @@ export default function MapPage() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [userLoc, setUserLoc] = useState<LatLng | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  // Add a place happens right here on the map (R13.7): `?add=1` opens the panel, `addPin` is the one pin.
+  // Add a place happens right here on the map (R13.12): `?add=1` opens the panel, `addPin` is the one pin.
   const adding = params.get("add") === "1";
   const [addPin, setAddPin] = useState<LatLng | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [pinEditing, setPinEditing] = useState(false);
+  // Where the map was when the panel opened: name suggestions prefer places near here.
+  const [addNear, setAddNear] = useState<LatLng | null>(null);
 
   const setParam = useCallback(
     (patch: Record<string, string>) => {
@@ -155,74 +160,104 @@ export default function MapPage() {
   const subName = useMemo(() => new globalThis.Map(subList.map((s) => [s.slug, s.name])), [subList]);
 
   type AddExtra = { name?: string; source?: "manual" };
+  const round6 = (p: LatLng) => ({ lat: Number(p.lat.toFixed(6)), lng: Number(p.lng.toFixed(6)) });
+
+  /** Bring the new pin into view above the panel, zoomed in on it. */
+  const flyToPin = useCallback((p: LatLng) => {
+    const map = mapRef.current;
+    if (!map) return;
+    // Offset (not padding) so the pin lands above the panel without changing the map for later.
+    const options = {
+      center: [p.lng, p.lat] as [number, number],
+      zoom: Math.max(map.getZoom(), ADD_ZOOM),
+      offset: [0, -addPanelPadding() / 2] as [number, number],
+    };
+    if (prefersReducedMotion()) map.jumpTo(options);
+    else map.flyTo({ ...options, duration: 1200 });
+  }, []);
+
+  /**
+   * Open Add a place (R13.12). Search comes first: the panel opens on the name field and the map
+   * stays where it is, with no pin until a place is picked. `at` (long-press, old links) starts
+   * with a pin there instead.
+   */
   const startAdd = useCallback(
-    (p: LatLng, extra: AddExtra = {}) => {
+    (extra: AddExtra = {}, at?: LatLng) => {
       requireUser(() => {
         setSelected(null);
-        setAddPin({ lat: Number(p.lat.toFixed(6)), lng: Number(p.lng.toFixed(6)) });
+        const c = mapRef.current?.getCenter();
+        setAddNear(at ?? (c ? { lat: c.lat, lng: c.lng } : null));
+        setAddPin(at ? round6(at) : null);
+        setPinEditing(false);
+        setAddOpen(true);
         setParam({ add: "1", name: extra.name ?? "", source: extra.source ?? "" });
-        const map = mapRef.current;
-        if (!map) return;
-        const options = {
-          center: [p.lng, p.lat] as [number, number],
-          zoom: Math.max(map.getZoom(), ADD_ZOOM),
-          padding: { top: 0, left: 0, right: 0, bottom: addPanelPadding() },
-        };
-        if (prefersReducedMotion()) map.jumpTo(options);
-        else map.easeTo({ ...options, duration: 600 });
       }, "Pick a username to add places");
     },
     [requireUser, setParam],
   );
-  const addAtCentre = useCallback(
-    (extra: AddExtra = {}) => {
-      const c = mapRef.current?.getCenter();
-      startAdd(c ? { lat: c.lat, lng: c.lng } : { lat: initialView.latitude, lng: initialView.longitude }, extra);
-    },
-    [startAdd, initialView],
-  );
 
-  /** The one way the new pin moves: drag, tap, a picked suggestion or address, my location. */
-  const moveAddPin = useCallback(
+  /** A place picked from the search (or an address, or my location): pin it and zoom there. */
+  const pinFromSearch = useCallback(
     (p: LatLng) => {
-      setAddPin({ lat: Number(p.lat.toFixed(6)), lng: Number(p.lng.toFixed(6)) });
-      const map = mapRef.current;
-      if (!map) return;
-      // If it landed off screen or under the panel, bring it into view.
-      const pt = map.project([p.lng, p.lat]);
-      const el = map.getContainer();
-      const visible = pt.x > 16 && pt.x < el.clientWidth - 16 && pt.y > 16 && pt.y < el.clientHeight - addPanelPadding();
-      if (!visible) {
-        const options = { center: [p.lng, p.lat] as [number, number], zoom: Math.max(map.getZoom(), ADD_ZOOM) };
-        if (prefersReducedMotion()) map.jumpTo(options);
-        else map.flyTo({ ...options, duration: 900 });
-      }
+      setAddPin(round6(p));
+      setPinEditing(false);
+      flyToPin(p);
     },
-    [],
+    [flyToPin],
   );
+  /** Moving the pin by hand, only in Edit pin mode: drag it or tap the map. The camera stays put. */
+  const pinByHand = useCallback((p: LatLng) => setAddPin(round6(p)), []);
+
+  const editPin = useCallback(() => {
+    const map = mapRef.current;
+    if (!addPin && map) {
+      // No pin yet: start in the middle of the part of the map the panel doesn't cover.
+      const el = map.getContainer();
+      const c = map.unproject([el.clientWidth / 2, Math.max(80, (el.clientHeight - addPanelPadding()) / 2)]);
+      setAddPin(round6({ lat: c.lat, lng: c.lng }));
+    } else if (addPin && map) {
+      const pt = map.project([addPin.lng, addPin.lat]);
+      const el = map.getContainer();
+      if (pt.x < 0 || pt.x > el.clientWidth || pt.y < 0 || pt.y > el.clientHeight - addPanelPadding()) flyToPin(addPin);
+    }
+    setPinEditing(true);
+  }, [addPin, flyToPin]);
 
   const closeAdd = useCallback(() => {
+    setAddOpen(false);
     setAddPin(null);
-    setParam({ add: "", name: "", source: "" });
-    mapRef.current?.easeTo({ padding: { top: 0, left: 0, right: 0, bottom: 0 }, duration: 0 });
+    setPinEditing(false);
+    setParam({ add: "", name: "", source: "", pin_lat: "", pin_lng: "" });
   }, [setParam]);
 
-  // Arriving with `?add=1` (old /places/new links, a reload): start at the map centre, signing in first.
+  // Arriving with `?add=1` (old /places/new links, a reload): open the panel, signing in first.
   const addStarted = useRef(false);
   useEffect(() => {
-    if (!adding || addPin || addStarted.current || !mapReady || me.isPending) return;
+    if (!adding || addOpen || addStarted.current || !mapReady || me.isPending) return;
     addStarted.current = true;
     const name = params.get("name") ?? "";
     const source = params.get("source") === "manual" ? "manual" : undefined;
+    const lat = num(params.get("pin_lat"));
+    const lng = num(params.get("pin_lng"));
+    const at = lat !== null && lng !== null ? { lat, lng } : undefined;
     setParam({ add: "" });
-    addAtCentre({ name, source });
+    startAdd({ name, source }, at);
+    if (at) flyToPin(at);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adding, addPin, mapReady, me.isPending]);
-  const showAdd = adding && addPin !== null;
+  }, [adding, addOpen, mapReady, me.isPending]);
+  const showAdd = adding && addOpen;
 
   const longPress = useMemo(
-    () => createLongPress<LatLng>((p) => (showAdd ? moveAddPin(p) : startAdd(p)), 600, 10),
-    [startAdd, moveAddPin, showAdd],
+    () =>
+      createLongPress<LatLng>(
+        (p) => {
+          if (!showAdd) startAdd({}, p);
+          else if (pinEditing) pinByHand(p);
+        },
+        600,
+        10,
+      ),
+    [startAdd, pinByHand, showAdd, pinEditing],
   );
   useEffect(() => () => longPress.cancel(), [longPress]);
 
@@ -279,7 +314,12 @@ export default function MapPage() {
   const pickSource: Source = userLoc ? "near_me" : "top_pick";
 
   return (
-    <div className="map-home fixed inset-0 overflow-hidden bg-canvas" data-testid="map-container">
+    <div
+      className="map-home fixed inset-x-0 top-0 overflow-hidden bg-canvas"
+      // Ends at the tab bar (Map | Lists), which sits below it.
+      style={{ bottom: `calc(${TAB_BAR_HEIGHT} + env(safe-area-inset-bottom))` }}
+      data-testid="map-container"
+    >
       <h1 className="sr-only">Map</h1>
       {cities.isPending ? (
         <div className="flex h-full items-center justify-center">
@@ -300,14 +340,15 @@ export default function MapPage() {
           }}
           onMoveEnd={updateView}
           onClick={(e) => {
-            if (showAdd) moveAddPin({ lat: e.lngLat.lat, lng: e.lngLat.lng });
-            else setSelected(null);
+            if (showAdd) {
+              if (pinEditing) pinByHand({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+            } else setSelected(null);
           }}
           onContextMenu={(e) => {
             e.originalEvent.preventDefault();
             const p = { lat: e.lngLat.lat, lng: e.lngLat.lng };
-            if (showAdd) moveAddPin(p);
-            else startAdd(p);
+            if (!showAdd) startAdd({}, p);
+            else if (pinEditing) pinByHand(p);
           }}
           onTouchStart={(e) => {
             const t = e.originalEvent.touches;
@@ -328,15 +369,17 @@ export default function MapPage() {
               latitude={addPin.lat}
               longitude={addPin.lng}
               anchor="bottom"
-              draggable
-              onDragEnd={(e) => moveAddPin({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
+              draggable={pinEditing}
+              onDragEnd={(e) => pinByHand({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
               style={{ zIndex: 10 }}
             >
               <span
                 role="img"
-                aria-label="New place pin. Drag it, or tap the map, to move it."
+                aria-label={pinEditing ? "New place pin. Drag it, or tap the map, to move it." : "New place pin"}
                 data-testid="add-pin"
-                className="block cursor-grab text-5xl leading-none drop-shadow-[0_3px_3px_rgba(0,0,0,0.35)] active:cursor-grabbing"
+                className={`block text-5xl leading-none drop-shadow-[0_3px_3px_rgba(0,0,0,0.35)] ${
+                  pinEditing ? "cursor-grab animate-bounce active:cursor-grabbing motion-reduce:animate-none" : ""
+                }`}
               >
                 📍
               </span>
@@ -378,7 +421,7 @@ export default function MapPage() {
                 // While adding, other pins fade and let taps through to move the new pin.
                 style={{
                   zIndex: selected?.id === p.id ? 5 : undefined,
-                  opacity: showAdd ? 0.45 : undefined,
+                  opacity: showAdd && pinEditing ? 0.45 : undefined,
                   pointerEvents: showAdd ? "none" : undefined,
                 }}
               >
@@ -413,7 +456,7 @@ export default function MapPage() {
               onPickArea={pickArea}
               onPickSubcategory={(s) => setParam({ category: s.slug })}
               onPickPlace={(p) => selectPlace(p, "search")}
-              onAddManually={(text) => addAtCentre({ source: "manual", name: text })}
+              onAddManually={(text) => startAdd({ source: "manual", name: text })}
               onOpenChange={(open) => {
                 if (open) setSheetExpanded(false);
               }}
@@ -462,23 +505,37 @@ export default function MapPage() {
           >
             <AddPlacePanel
               pin={addPin}
-              onPinChange={moveAddPin}
+              onPinFromSearch={pinFromSearch}
+              pinEditing={pinEditing}
+              onEditPin={editPin}
+              onDoneEditing={() => setPinEditing(false)}
+              near={addNear}
+              onPickExisting={(place) => {
+                closeAdd();
+                selectPlace(place, "search");
+              }}
               city={cityData ? { slug: cityData.slug, lat: cityData.lat, lng: cityData.lng } : null}
               initialName={params.get("name") ?? ""}
               manual={params.get("source") === "manual"}
               onClose={closeAdd}
-              onCreated={(id) => {
+              onCreated={(id, name) => {
                 closeAdd();
                 setSelected({ id, source: "pin" });
+                setToast(`📍 Pin added! ${name} is on the map.`);
               }}
             />
           </div>
         ) : null}
         <div className={`flex items-end gap-2 px-3 pb-3 ${showAdd ? "hidden" : ""}`}>
-          {/* Lists are one tap from the first screen (R14.6). */}
-          <Link to="/lists" className="pointer-events-auto btn btn-secondary shadow-lg">
-            <span aria-hidden="true">📋</span> {COPY.myLists}
-          </Link>
+          {(view?.zoom ?? 0) >= SCORE_ZOOM && cityData ? (
+            <button
+              type="button"
+              onClick={() => goTo(cityData.lng, cityData.lat, CITY_ZOOM)}
+              className="pointer-events-auto btn btn-secondary shadow-lg"
+            >
+              <span aria-hidden="true">🗾</span> All {cityData.name}
+            </button>
+          ) : null}
           <span className="flex-1" />
           <button type="button" onClick={nearMe} className="pointer-events-auto btn btn-secondary shadow-lg">
             <span aria-hidden="true">📍</span> {COPY.nearMe}
@@ -486,7 +543,7 @@ export default function MapPage() {
           <button
             type="button"
             aria-label={COPY.addPlace}
-            onClick={() => addAtCentre()}
+            onClick={() => startAdd()}
             className="pointer-events-auto btn btn-primary btn-icon size-14 text-3xl shadow-lg"
           >
             <span aria-hidden="true">+</span>
@@ -511,7 +568,7 @@ export default function MapPage() {
               track("place_open", pickSource);
               selectPlace(p, pickSource);
             }}
-            onAddPlace={() => addAtCentre()}
+            onAddPlace={() => startAdd()}
           />
         )}
       </div>

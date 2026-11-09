@@ -31,8 +31,8 @@ export const router = createBrowserRouter([
       { path: "/", lazy: page(() => import("./pages/MapPage")) },
       { path: "/map", element: <KeepQuery to="/" /> },
       { path: "/search", element: <KeepQuery to="/" /> },
-      // Adding a place happens on the map itself (R13.7); old links open the add panel there.
-      { path: "/places/new", element: <KeepQuery to="/" set={{ add: "1", z: "17" }} /> },
+      // Adding a place happens on the map itself (R13.12); old links open the add panel there.
+      { path: "/places/new", element: <KeepQuery to="/" rename={{ lat: "pin_lat", lng: "pin_lng" }} set={{ add: "1" }} /> },
       {
         Component: Layout,
         children: [

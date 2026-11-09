@@ -206,7 +206,7 @@ async def test_plain_add_has_no_ranking(client, db):
     assert r.json()["ranking"] is None
 
 
-# --- Business lookup by name (R13.6) ----------------------------------------------------------
+# --- Business lookup by name (R13.11) ----------------------------------------------------------
 
 PHOTON_BODY = {
     "type": "FeatureCollection",
