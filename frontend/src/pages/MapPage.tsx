@@ -1,6 +1,6 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Map, { AttributionControl, Marker, type MapRef } from "react-map-gl/maplibre";
 import { useSearchParams } from "react-router";
 
@@ -9,7 +9,7 @@ import { prefersReducedMotion } from "../components/app/Celebration";
 import { useInlineSignIn } from "../components/app/InlineSignIn";
 import { TAB_BAR_HEIGHT } from "../components/app/TabBar";
 import AddPlacePanel from "../components/home/AddPlacePanel";
-import MapPin from "../components/ui/MapPin";
+import MapPin, { PinIcon } from "../components/ui/MapPin";
 import CategoryChips from "../components/home/CategoryChips";
 import MenuDrawer from "../components/home/MenuDrawer";
 import PlacePin from "../components/home/PlacePin";
@@ -80,7 +80,7 @@ export default function MapPage() {
     savePicksOpen(v);
   }, []);
   const [userLoc, setUserLoc] = useState<LatLng | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ReactNode>(null);
   // Add a place happens right here on the map (R13.12): `?add=1` opens the panel, `addPin` is the one pin.
   const adding = params.get("add") === "1";
   const [addPin, setAddPin] = useState<LatLng | null>(null);
@@ -550,12 +550,16 @@ export default function MapPage() {
               onCreated={(id, name) => {
                 closeAdd();
                 setSelected({ id, source: "pin" });
-                setToast(`📍 Pin added! ${name} is on the map.`);
+                setToast(
+                  <>
+                    <PinIcon className="mr-1" /> Pin added! {name} is on the map.
+                  </>,
+                );
               }}
             />
           </div>
         ) : null}
-        <div className={`flex items-end gap-2 px-3 pb-8 ${showAdd ? "hidden" : ""}`}>
+        <div className={`flex items-end gap-2 pb-8 pl-2 pr-3 ${showAdd ? "hidden" : ""}`}>
           {/* Top picks: opens upwards from here, next to Near me (R15.6). */}
           <TopPicksPanel
             data={picks.data}
@@ -574,7 +578,7 @@ export default function MapPage() {
           />
           <span className="flex-1" />
           <button type="button" onClick={nearMe} className="pointer-events-auto btn btn-secondary shadow-lg">
-            <span aria-hidden="true">📍</span> {COPY.nearMe}
+            <PinIcon size={20} /> {COPY.nearMe}
           </button>
           <button
             type="button"

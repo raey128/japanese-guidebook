@@ -14,7 +14,7 @@ function PickRow({ place, rank, userLoc, onPick }: { place: Place; rank: number;
     <li>
       <button type="button" onClick={onPick} className="flex w-full items-center gap-3 rounded-xl px-1 py-2 text-left hover:bg-stone-50">
         <span className="w-6 text-right text-lg font-extrabold text-brand">{rank}</span>
-        <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full text-lg" style={{ background: info?.color }}>
+        <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full text-lg" style={{ background: info?.iconBg }}>
           {info?.emoji}
         </span>
         <span className="min-w-0 flex-1">
@@ -84,7 +84,7 @@ export default function TopPicksPanel({
         <section
           id="top-picks-panel"
           aria-label={title}
-          className="card absolute bottom-full left-0 mb-2 flex w-80 max-w-[calc(100vw-1.5rem)] flex-col p-0 shadow-xl"
+          className="card absolute bottom-full left-0 mb-2 flex w-72 max-w-[calc(100vw-1.5rem)] flex-col p-0 shadow-xl"
           style={{ maxHeight: "min(50vh, 26rem)" }}
         >
           <div className="flex items-center gap-2 border-b-2 border-line px-3 py-2">
@@ -126,16 +126,24 @@ export default function TopPicksPanel({
       </div>
         </section>
       ) : null}
+      {/* Compact (emoji + count) so it hugs the left edge and leaves the map clear. */}
       <button
         type="button"
         onClick={() => onOpenChange(!open)}
         aria-expanded={open}
         aria-controls="top-picks-panel"
-        className={`btn shadow-lg ${open ? "btn-primary" : "btn-secondary"}`}
+        aria-label={`${title}${items.length ? `, ${items.length} places` : ""}`}
+        title={title}
+        className={`btn gap-1 px-3 shadow-lg ${open ? "btn-primary" : "btn-secondary"}`}
       >
-        <span aria-hidden="true">{emoji}</span>
-        <span className="max-w-[9rem] truncate sm:max-w-none">{title}</span>
-        {items.length ? <span className={`badge ${open ? "bg-white/25 text-white" : "bg-brand-soft text-brand-dark"}`}>{items.length}</span> : null}
+        <span aria-hidden="true" className="text-xl">
+          {emoji}
+        </span>
+        {items.length ? (
+          <span aria-hidden="true" className={`badge ${open ? "bg-white/25 text-white" : "bg-brand-soft text-brand-dark"}`}>
+            {items.length}
+          </span>
+        ) : null}
       </button>
     </div>
   );

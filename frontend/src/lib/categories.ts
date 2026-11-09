@@ -7,18 +7,22 @@ export interface TopCategoryInfo {
   emoji: string;
   color: string;
   colorDark: string;
+  /** Background behind the emoji (pins, icon circles). Same as `color` except where a lighter
+   * shade makes the emoji stand out (Sights: red ⛩️ on light teal). Never has text on it. */
+  iconBg: string;
 }
 
 export const TOP_CATEGORY_INFO: TopCategoryInfo[] = [
-  { slug: "food", name: "Food", emoji: "🍜", color: "var(--color-food)", colorDark: "var(--color-food-dark)" },
-  { slug: "sights", name: "Sights", emoji: "⛩️", color: "var(--color-sights)", colorDark: "var(--color-sights-dark)" },
-  { slug: "stays", name: "Stays", emoji: "🏨", color: "var(--color-stays)", colorDark: "var(--color-stays-dark)" },
+  { slug: "food", name: "Food", emoji: "🍜", color: "var(--color-food)", colorDark: "var(--color-food-dark)", iconBg: "var(--color-food)" },
+  { slug: "sights", name: "Sights", emoji: "⛩️", color: "var(--color-sights)", colorDark: "var(--color-sights-dark)", iconBg: "var(--color-sights-light)" },
+  { slug: "stays", name: "Stays", emoji: "🏨", color: "var(--color-stays)", colorDark: "var(--color-stays-dark)", iconBg: "var(--color-stays)" },
   {
     slug: "experiences",
-    name: "Experiences & Nightlife",
+    name: "Experiences",
     emoji: "🏮",
     color: "var(--color-experiences)",
     colorDark: "var(--color-experiences-dark)",
+    iconBg: "var(--color-experiences)",
   },
 ];
 

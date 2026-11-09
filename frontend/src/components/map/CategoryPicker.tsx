@@ -69,7 +69,7 @@ export default function CategoryPicker({ value, onChange, error }: Props) {
               setAdding(false);
             }}
           >
-            {c.slug === "experiences" ? "Experiences" : c.name}
+            {c.name}
           </Chip>
         ))}
       </div>

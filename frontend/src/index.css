@@ -14,8 +14,11 @@
 
   --color-food: #b45309;
   --color-food-dark: #7c3a06;
-  --color-sights: #c2255c;
-  --color-sights-dark: #8a1a41;
+  /* Teal, not pink: the red ⛩️ emoji needs a contrasting background. White on it is 5.2:1. */
+  --color-sights: #0b7a75;
+  --color-sights-dark: #075450;
+  /* Behind the ⛩️ emoji only (pins, icon circles): lighter, so the red torii pops. No text on it. */
+  --color-sights-light: #5cc6bb;
   --color-stays: #1971c2;
   --color-stays-dark: #114f88;
   --color-experiences: #6741d9;

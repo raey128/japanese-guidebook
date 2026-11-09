@@ -41,7 +41,7 @@ export default function MenuDrawer() {
         onClick={() => setOpen(true)}
         className="btn btn-secondary btn-icon relative size-14 shrink-0 shadow-lg"
       >
-        <span aria-hidden="true" className="text-xl">
+        <span aria-hidden="true" className="text-3xl leading-none">
           ⚙️
         </span>
         {count > 0 ? <span aria-hidden="true" className="absolute -right-1 -top-1 size-3.5 rounded-full border-2 border-white bg-brand" /> : null}
@@ -67,7 +67,7 @@ export default function MenuDrawer() {
             </div>
             {user ? <p className="px-3 pb-2 hint">Signed in as {user.username}</p> : null}
             <Link to="/lists" className={item}>
-              <span aria-hidden="true">🏆</span> Lists
+              <span aria-hidden="true">📋</span> Lists
             </Link>
             {user ? (
               <>

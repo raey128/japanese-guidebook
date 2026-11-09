@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { PinIcon } from "./MapPin";
 
 type City = { id: number; slug: string; name: string; name_ja?: string | null };
 
@@ -77,7 +78,7 @@ export default function CityPicker({ cities, value, onChange, variant = "pill", 
         }}
         className={buttonClass}
       >
-        {variant === "title" ? <span aria-hidden="true">📍</span> : null}
+        {variant === "title" ? <PinIcon size={26} /> : null}
         <span>{current?.name ?? "City"}</span>
         <svg aria-hidden="true" viewBox="0 0 20 20" className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} fill="currentColor">
           <path d="M5.5 7.5 10 12l4.5-4.5" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />

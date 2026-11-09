@@ -18,6 +18,7 @@ import SaveButton from "../SaveButton";
 import Score from "../Score";
 import Chip from "../ui/Chip";
 import type { LatLng } from "./geo";
+import { PinIcon } from "../ui/MapPin";
 
 const SORTS: { key: NoteSort; label: string }[] = [
   { key: "newest", label: "Newest" },
@@ -160,7 +161,7 @@ export default function PinSummary({
           </p>
           {place.address ? (
             <p className="text-sm">
-              <span aria-hidden="true">📍 </span>
+              <PinIcon className="mr-1" />
               {place.address}
             </p>
           ) : null}

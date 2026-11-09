@@ -76,7 +76,7 @@ export function Legend() {
     <ul aria-label="Map key" className="space-y-1.5 text-sm font-bold">
       {TOP_CATEGORY_INFO.map((c) => (
         <li key={c.slug} className="flex items-center gap-2">
-          <span aria-hidden="true" className="flex size-6 items-center justify-center rounded-full border-2 border-white text-sm shadow" style={{ background: c.color }}>
+          <span aria-hidden="true" className="flex size-6 items-center justify-center rounded-full border-2 border-white text-sm shadow" style={{ background: c.iconBg }}>
             {c.emoji}
           </span>
           {c.name}

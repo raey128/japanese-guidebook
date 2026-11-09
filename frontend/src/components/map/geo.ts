@@ -129,7 +129,7 @@ export const TOP_CATEGORY_LABELS: Record<string, string> = {
   food: "Food",
   sights: "Sights",
   stays: "Stays",
-  experiences: "Experiences & Nightlife",
+  experiences: "Experiences",
 };
 export const TOP_CATEGORY_ORDER = ["food", "sights", "stays", "experiences"];
 

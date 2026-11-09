@@ -7,6 +7,7 @@ import { topCategoryInfo } from "../../lib/categories";
 import { track } from "../../lib/track";
 import type { Bbox } from "../map/geo";
 import CityPicker from "../ui/CityPicker";
+import { PinIcon } from "../ui/MapPin";
 
 type City = Schemas["CityWithLocations"];
 type Loc = Schemas["LocationOut"];
@@ -233,7 +234,7 @@ function OptionBody({ option: o }: { option: Option }) {
   if (o.kind === "area")
     return (
       <>
-        <span aria-hidden="true">📍</span>
+        <PinIcon />
         <span className="font-bold">{o.loc.name}</span>
         {o.loc.name_ja ? (
           <span lang="ja" className="hint">

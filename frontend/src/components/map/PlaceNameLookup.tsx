@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router";
 import type { Schemas } from "../../api/client";
 import { useSuggest } from "../../hooks/map";
 import { usePlaceLookup } from "../../hooks/places";
+import { PinIcon } from "../ui/MapPin";
 
 export type LookupPick = Schemas["PlaceLookupResult"];
 
@@ -212,7 +213,7 @@ export default function PlaceNameLookup({
                     onClick={() => choose(o)}
                   >
                     <span className="font-extrabold">
-                      <span aria-hidden="true">📍 </span>
+                      <PinIcon className="mr-1" />
                       {o.result.name}
                     </span>
                     {o.result.address ? <span className="text-sm text-muted">{o.result.address}</span> : null}

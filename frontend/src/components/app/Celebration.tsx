@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 type Celebration = { title: string; big: boolean; confetti: boolean };
 const Ctx = createContext<{ celebrate: (title: string, opts?: { big?: boolean; confetti?: boolean }) => void } | null>(null);
 
-const COLORS = ["#d93a1f", "#b45309", "#c2255c", "#1971c2", "#6741d9", "#237a35", "#f59f00"];
+const COLORS = ["#d93a1f", "#b45309", "#0b7a75", "#1971c2", "#6741d9", "#237a35", "#f59f00"];
 
 export function prefersReducedMotion(): boolean {
   try {

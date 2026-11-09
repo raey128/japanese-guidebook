@@ -10,6 +10,7 @@ import CategoryPicker from "../map/CategoryPicker";
 import { distanceMetres, formatDistance, mapApiErrors, type FormErrors, type LatLng } from "../map/geo";
 import PlaceNameLookup, { type LookupPick } from "../map/PlaceNameLookup";
 import PlaceNames from "../PlaceNames";
+import { PinIcon } from "../ui/MapPin";
 
 function without(errors: Record<string, string>, key: string): Record<string, string> {
   if (!(key in errors)) return errors;
@@ -216,7 +217,7 @@ export default function AddPlacePanel({
           ) : pin ? (
             <div className="flex flex-wrap items-center gap-2 rounded-(--radius-chunky) bg-success-soft px-3 py-2 text-sm">
               <span className="min-w-0 flex-1 font-bold text-success-dark">
-                <span aria-hidden="true">📍 </span>
+                <PinIcon className="mr-1" />
                 {address ?? "Pinned on the map"}
               </span>
               <button type="button" onClick={onEditPin} className="link text-sm">

@@ -117,7 +117,7 @@ export default function AllLists() {
             colorDark={c.colorDark}
             onClick={() => update({ category: c.slug })}
           >
-            {c.slug === "experiences" ? "Experiences" : c.name}
+            {c.name}
           </Chip>
         ))}
       </div>

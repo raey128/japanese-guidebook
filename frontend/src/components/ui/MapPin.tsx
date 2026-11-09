@@ -43,3 +43,12 @@ export default function MapPin({
     </span>
   );
 }
+
+/** The app's pin as a small inline icon, in place of the 📍 emoji (R16.3). */
+export function PinIcon({ size = 18, className = "" }: { size?: number; className?: string }) {
+  return (
+    <span className={`inline-block align-[-0.2em] ${className}`}>
+      <MapPin color="var(--color-brand)" colorDark="var(--color-brand-dark)" size={size} />
+    </span>
+  );
+}
