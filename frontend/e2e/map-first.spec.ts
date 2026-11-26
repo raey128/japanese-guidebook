@@ -120,8 +120,10 @@ test("N5.6: manual add is pending for the submitter, invisible to others, then a
   const stranger = await playwright.request.newContext({ baseURL: test.info().project.use.baseURL });
   const visible = async () => {
     const r = await stranger.get(`/api/suggest?q=${encodeURIComponent(name)}&city=tokyo`);
-    const body = (await r.json()) as { on_map: unknown[]; elsewhere: unknown[] };
-    return body.on_map.length + body.elsewhere.length;
+    // Count only this exact name: search is fuzzy, and other runs of this test (other
+    // browsers, approved already) have similar "Manual …" names.
+    const body = (await r.json()) as { on_map: { name: string }[]; elsewhere: { name: string }[] };
+    return [...body.on_map, ...body.elsewhere].filter((p) => p.name === name).length;
   };
   expect(await visible()).toBe(0);
 

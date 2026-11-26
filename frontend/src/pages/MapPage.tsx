@@ -122,9 +122,16 @@ export default function MapPage() {
   );
 
   /** flyTo, or an instant jump with reduced motion (N3.6). */
+  // A move asked for before the map has loaded (e.g. Near me tapped straight away) waits here
+  // and happens on load, instead of being dropped.
+  const pendingMove = useRef<{ lng: number; lat: number; zoom: number } | null>(null);
+  const loadedOnce = useRef(false);
   const goTo = useCallback((lng: number, lat: number, zoom: number) => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !loadedOnce.current) {
+      pendingMove.current = { lng, lat, zoom };
+      return;
+    }
     if (prefersReducedMotion()) map.jumpTo({ center: [lng, lat], zoom });
     else map.flyTo({ center: [lng, lat], zoom, duration: 1200 });
   }, []);
@@ -355,7 +362,11 @@ export default function MapPage() {
           style={{ width: "100%", height: "100%" }}
           attributionControl={false}
           onLoad={() => {
+            loadedOnce.current = true;
             setMapReady(true);
+            const move = pendingMove.current;
+            pendingMove.current = null;
+            if (move) mapRef.current?.jumpTo({ center: [move.lng, move.lat], zoom: move.zoom });
             updateView();
           }}
           onMoveEnd={updateView}
