@@ -94,7 +94,7 @@ test("ranking a place celebrates with the city count", async ({ page }) => {
   await expect(page.getByText(/(That's your \d+\w\w place in Tokyo|places? in Tokyo)/).first()).toBeVisible();
 });
 
-test("N5.6: manual add is pending for the submitter, invisible to others, then approved", async ({ browser, page }) => {
+test("N5.6: manual add is pending for the submitter, invisible to others, then approved", async ({ browser, page, playwright }) => {
   const run = runId();
   const name = `Manual ${run}`;
   await signInApi(page);
@@ -115,11 +115,11 @@ test("N5.6: manual add is pending for the submitter, invisible to others, then a
   await expect(sent.first()).toBeVisible();
   await expect(page.getByRole("button", { name: new RegExp(`^${name}, .*pending review`) })).toBeVisible();
 
-  // Someone else can't find it.
-  const other = await browser.newPage();
-  await stubMapStyle(other);
+  // Someone else can't find it: a fresh request context with no cookies at all (a page from
+  // `browser.newPage()` isn't guaranteed to be signed out in every browser engine).
+  const stranger = await playwright.request.newContext({ baseURL: test.info().project.use.baseURL });
   const visible = async () => {
-    const r = await other.request.get(`/api/suggest?q=${encodeURIComponent(name)}&city=tokyo`);
+    const r = await stranger.get(`/api/suggest?q=${encodeURIComponent(name)}&city=tokyo`);
     const body = (await r.json()) as { on_map: unknown[]; elsewhere: unknown[] };
     return body.on_map.length + body.elsewhere.length;
   };
@@ -135,4 +135,5 @@ test("N5.6: manual add is pending for the submitter, invisible to others, then a
   await card.getByRole("button", { name: "Approve" }).click();
   await expect(card).toHaveCount(0);
   expect(await visible()).toBe(1);
+  await stranger.dispose();
 });

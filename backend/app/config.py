@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     # Paths
     data_dir: Path = REPO_ROOT / "data"
     dump_dir: Path = REPO_ROOT / "dumps"
+    # Public address of the site, for the links the organizer shares (V1).
+    site_url: str = "http://localhost:5173"
+    # Vote rate limits (V1.4): writes per minute per link and per voter.
+    vote_writes_per_list_per_minute: int = 300
+    vote_writes_per_voter_per_minute: int = 60
 
 
 @lru_cache

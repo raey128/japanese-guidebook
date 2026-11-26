@@ -243,6 +243,21 @@ _Own discovery, saving and ranking; hand off only turn-by-turn directions._
 | R19.2 | All my reviews, editable | Every rating the user made is listed with its stars and comment; each can have its comment edited (a comment can't be removed from a rating below 3 stars), be re-rated, or be deleted |
 | R19.3 | Saved and added places | Settings lists the places the user saved (each removable) and every place they added (any way), with review status for manual adds and Edit within 24 hours of adding |
 
+### V1: Round 1 vote link (group voting) `⬜ new`
+
+Round 1 tests whether an organizer sends one link and friends vote without an account (see the round 1 MVP doc). Step 1 is the vote page on demo data; the organizer list, share screen, curator pages and results come next.
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| V1.1 | A list is opened by its link | `/v/<token>` shows "<Organizer> picked N places for <City>. Tap yes, maybe or no." with no sign-in, app header or tabs. An unknown token shows "This link doesn't work" |
+| V1.2 | The link is the only key | Tokens are 32+ random URL-safe characters; lists are never listed or searchable anywhere |
+| V1.3 | Voters need no account | A random id kept in the browser identifies the voter, plus an optional name. Another device is another voter. If browser storage is blocked the page still works (the id lives for the visit) |
+| V1.4 | Each tap saves, last tap wins | Yes / Maybe / No (equal 48 px buttons, icon + word) save on tap and show "Saved"; a failure shows an inline Retry. Per-link and per-voter rate limits answer 429 with a friendly message |
+| V1.5 | Cards show honest evidence | Each card: name, area, category and, only when curators ranked it, "Ranked by N curators · updated 12 Nov". No invented numbers |
+| V1.6 | Name and Done | "Your name, so <Organizer> knows it's you" is visible and optional, saved on leaving the field. A sticky Done shows "Thanks. 3 of 4 have voted." (or "3 people have voted" without a group size) and "Planning your own trip? Start a list." |
+| V1.7 | Closed voting is read-only results | When the organizer closes voting, the link shows yes / maybe / no counts and the names of named voters per place, most yeses first, instead of an error |
+| V1.8 | Demo data | `python -m app.cli vote-demo [--token T] [--closed]` creates "Maya picked 12 places for Tokyo" (optionally closed, with sample votes) for the mockup test and e2e |
+
 ## Stretch
 
 - **S1: Photos on rankings**: _Why stretch:_ storage and moderation cost; notes cover the MVP.

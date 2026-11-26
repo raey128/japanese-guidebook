@@ -96,6 +96,9 @@ jobs:
           curl -sf -X POST localhost:8000/api/auth/sign-in -H 'content-type: application/json' \
             -d '{"username":"e2e_admin","create":true}' > /dev/null
           uv run python -m app.cli make-admin e2e_admin
+          # Round 1 vote links for e2e/vote.spec.ts (V1).
+          uv run python -m app.cli vote-demo --token e2e-vote-open-000000000000000000
+          uv run python -m app.cli vote-demo --token e2e-vote-closed-0000000000000000 --closed
       - name: Playwright
         working-directory: frontend
         run: |

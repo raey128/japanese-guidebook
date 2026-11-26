@@ -31,6 +31,8 @@ export const router = createBrowserRouter([
       { path: "/", lazy: page(() => import("./pages/MapPage")) },
       { path: "/map", element: <KeepQuery to="/" /> },
       { path: "/search", element: <KeepQuery to="/" /> },
+      // Round 1 vote link (V1): its own full page, no app header or tabs.
+      { path: "/v/:token", lazy: page(() => import("./pages/VotePage")) },
       // Adding a place happens on the map itself (R13.12); old links open the add panel there.
       { path: "/places/new", element: <KeepQuery to="/" rename={{ lat: "pin_lat", lng: "pin_lng" }} set={{ add: "1" }} /> },
       {

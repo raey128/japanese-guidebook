@@ -5,6 +5,7 @@
     python -m app.cli make-admin USERNAME
     python -m app.cli dump [--out DIR]
     python -m app.cli synthetic [--count N]
+    python -m app.cli vote-demo [--token T] [--closed]
 
 Each command runs in one transaction and rolls back on failure.
 """
@@ -32,6 +33,9 @@ def main(argv: list[str] | None = None) -> int:
     synth = sub.add_parser("synthetic", help="Load synthetic places/rankings for load testing")
     synth.add_argument("--count", type=int, default=50000)
     synth.add_argument("--seed", type=int, default=42)
+    demo = sub.add_parser("vote-demo", help="Create a demo vote link (round 1, fake data)")
+    demo.add_argument("--token", default=None, help="Fixed link token (tests); default random")
+    demo.add_argument("--closed", action="store_true", help="Add sample votes and close it")
     args = parser.parse_args(argv)
 
     try:

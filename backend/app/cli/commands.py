@@ -47,6 +47,12 @@ async def run_in_session(db: AsyncSession, command: str, options: dict[str, Any]
                 db, int(options.get("count", 50000)), int(options.get("seed", 42))
             )
             return f"synthetic: {n} places created"
+        if command == "vote-demo":
+            from app import vote_demo
+
+            return await vote_demo.create(
+                db, token=options.get("token"), closed=bool(options.get("closed"))
+            )
     except (seeding.SeedError, LookupError) as e:
         raise CommandError(str(e)) from e
     raise CommandError(f"unknown command {command!r}")

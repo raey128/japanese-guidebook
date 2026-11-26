@@ -22,6 +22,7 @@ from app.routers import (
     rankings,
     review,
     search,
+    voting,
 )
 
 ROUTERS = [
@@ -41,6 +42,7 @@ ROUTERS = [
     discover,
     review,
     events,
+    voting,
 ]
 
 

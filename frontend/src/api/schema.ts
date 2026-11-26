@@ -896,6 +896,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Vote List
+         * @description The vote page. `voter` is this browser's random id: its own choices come back. Once
+         *     voting is closed every place also carries its tally (read-only results).
+         */
+        get: operations["getVoteList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v/{token}/vote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Cast Vote
+         * @description One tap: yes, maybe or no for one place. Tapping again changes it (last tap wins).
+         */
+        put: operations["castVote"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v/{token}/name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Voter Name
+         * @description Optional name, "so Maya knows it's you". Empty clears it.
+         */
+        put: operations["setVoterName"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v/{token}/done": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Voter Done
+         * @description The voter tapped Done. Returns progress for "Thanks. 3 of 4 have voted."
+         */
+        post: operations["voterDone"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1297,6 +1378,15 @@ export interface components {
             /** Truncated */
             truncated: boolean;
         };
+        /** MeOut */
+        MeOut: {
+            /** Name */
+            name: string | null;
+            /** Done */
+            done: boolean;
+            /** Voted Count */
+            voted_count: number;
+        };
         /** MeResponse */
         MeResponse: {
             user: components["schemas"]["UserOut"] | null;
@@ -1337,6 +1427,16 @@ export interface components {
         MyRankings: {
             /** Cities */
             cities: components["schemas"]["CityLists"][];
+        };
+        /** NameRequest */
+        NameRequest: {
+            /**
+             * Voter
+             * Format: uuid
+             */
+            voter: string;
+            /** Name */
+            name?: string | null;
         };
         /** NoteFlagIn */
         NoteFlagIn: {
@@ -1656,6 +1756,13 @@ export interface components {
             /** Lists */
             lists: components["schemas"]["ProfileList"][];
         };
+        /** Progress */
+        Progress: {
+            /** Voter Count */
+            voter_count: number;
+            /** Group Size */
+            group_size: number | null;
+        };
         /** PublicList */
         PublicList: {
             /** Title */
@@ -1957,6 +2064,25 @@ export interface components {
             elsewhere: components["schemas"]["PlaceSummary"][];
         };
         /**
+         * Tally
+         * @description Counts per choice, and the names of voters who gave one (unnamed voters count but
+         *     aren't listed).
+         */
+        Tally: {
+            /** Yes */
+            yes: number;
+            /** Maybe */
+            maybe: number;
+            /** No */
+            no: number;
+            /** Yes Names */
+            yes_names: string[];
+            /** Maybe Names */
+            maybe_names: string[];
+            /** No Names */
+            no_names: string[];
+        };
+        /**
          * TopNote
          * @description The most recent note from a "Liked" ranking, quoted in the place popup (R17.7).
          */
@@ -2021,6 +2147,71 @@ export interface components {
             /** Is Bookmarked */
             is_bookmarked: boolean;
             my_ranking: components["schemas"]["MyRanking"] | null;
+        };
+        /** VoteItemOut */
+        VoteItemOut: {
+            /** Item Id */
+            item_id: number;
+            place: components["schemas"]["PlaceSummary"];
+            /** Curator Count */
+            curator_count: number | null;
+            /** Evidence Updated */
+            evidence_updated: string | null;
+            /** My Choice */
+            my_choice: ("yes" | "maybe" | "no") | null;
+            tally: components["schemas"]["Tally"] | null;
+        };
+        /** VoteListOut */
+        VoteListOut: {
+            /** Title */
+            title: string;
+            /** Organizer Name */
+            organizer_name: string;
+            city: components["schemas"]["CityOut"];
+            /** Is Open */
+            is_open: boolean;
+            /** Group Size */
+            group_size: number | null;
+            /** Item Count */
+            item_count: number;
+            /** Voter Count */
+            voter_count: number;
+            /** Items */
+            items: components["schemas"]["VoteItemOut"][];
+            me: components["schemas"]["MeOut"] | null;
+        };
+        /** VoteRequest */
+        VoteRequest: {
+            /**
+             * Voter
+             * Format: uuid
+             */
+            voter: string;
+            /** Item Id */
+            item_id: number;
+            /**
+             * Choice
+             * @enum {string}
+             */
+            choice: "yes" | "maybe" | "no";
+        };
+        /** VoteSaved */
+        VoteSaved: {
+            /**
+             * Choice
+             * @enum {string}
+             */
+            choice: "yes" | "maybe" | "no";
+            /** Voted Count */
+            voted_count: number;
+        };
+        /** VoterRequest */
+        VoterRequest: {
+            /**
+             * Voter
+             * Format: uuid
+             */
+            voter: string;
         };
         /** WrongInfoFlagIn */
         WrongInfoFlagIn: {
@@ -4405,6 +4596,252 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getVoteList: {
+        parameters: {
+            query?: {
+                voter?: string | null;
+            };
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoteListOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    castVote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoteSaved"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    setVoterName: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NameRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    voterDone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Progress"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
                 };
             };
         };
