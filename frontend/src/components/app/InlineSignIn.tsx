@@ -32,16 +32,29 @@ export function InlineSignInProvider({ children }: { children: ReactNode }) {
   const titleId = useId();
   const errId = useId();
 
+  // Tapped before we know who's signed in: wait for that, instead of asking a signed-in person
+  // to sign in again.
+  const [deferred, setDeferred] = useState<{ action: Action; reason: string } | null>(null);
   const requireUser = useCallback(
     (action: Action, reason: string = COPY.pickUsername) => {
-      if (me.data?.user) action();
+      if (me.isPending) setDeferred({ action, reason });
+      else if (me.data?.user) action();
       else {
         setError(null);
         setPending({ action, reason });
       }
     },
-    [me.data?.user],
+    [me.isPending, me.data?.user],
   );
+  useEffect(() => {
+    if (!deferred || me.isPending) return;
+    setDeferred(null);
+    if (me.data?.user) deferred.action();
+    else {
+      setError(null);
+      setPending(deferred);
+    }
+  }, [deferred, me.isPending, me.data?.user]);
 
   useEffect(() => {
     if (pending) inputRef.current?.focus();

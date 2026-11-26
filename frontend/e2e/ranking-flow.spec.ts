@@ -148,7 +148,7 @@ test("Went: one-tap rating on the place card, and a comment for a low number", a
   await tap(3);
   await expect(card.getByRole("textbox", { name: /Tell others why/ })).toBeVisible();
   await card.getByRole("textbox", { name: /Tell others why/ }).fill("Too salty for me");
-  await card.getByRole("button", { name: "Save", exact: true }).click();
+  await card.getByRole("button", { name: "Save rating", exact: true }).click();
   await expect(card.getByText("Saved: you gave it 3 · Not great")).toBeVisible();
   expect((await snapshotApi(page, p.id)).my_ranking).toMatchObject({ rating: 3, bucket: "disliked", note: "Too salty for me" });
 });

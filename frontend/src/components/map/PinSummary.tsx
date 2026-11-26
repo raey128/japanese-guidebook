@@ -4,12 +4,11 @@ import { Link } from "react-router";
 import { COPY } from "../../copy";
 import { usePlace } from "../../hooks/places";
 import { usePlaceNotes, type NoteSort } from "../../hooks/ranking";
-import { topCategoryInfo } from "../../lib/categories";
 import { walkLabel } from "../../lib/walk";
 import Badges from "../Badges";
 import FlagButton from "../FlagButton";
 import FlagNoteButton from "../FlagNoteButton";
-import PlaceNames from "../PlaceNames";
+import PlaceArt from "../ui/PlaceArt";
 import MyRankingSummary from "../ranking/MyRankingSummary";
 import WentPanel from "../ranking/WentPanel";
 import { formatVisit } from "../ranking/NoteFields";
@@ -95,7 +94,6 @@ export default function PinSummary({
     ref.current?.scrollTo({ top: 0 });
   }, [placeId]);
 
-  const info = place ? topCategoryInfo(place.subcategory.top_category) : undefined;
   const v = place?.viewer;
   const ranked = v?.my_ranking != null;
   const canRate = place && place.status !== "rejected" && (ranked || !v?.signed_in || v.can_rank);
@@ -112,17 +110,41 @@ export default function PinSummary({
       className="card pointer-events-auto relative mx-auto w-full max-w-md overflow-y-auto overscroll-contain p-0 shadow-xl"
       style={{ maxHeight: "62vh" }}
     >
-      <div className="sticky top-0 z-10 flex items-start gap-2 border-b-2 border-line bg-white px-4 pb-2 pt-3">
-        <div className="min-w-0 flex-1">
-          {place ? <PlaceNames name={place.name} nameJa={place.name_ja} as="h2" /> : null}
-          {isPending ? <p className="hint">{COPY.loading}</p> : null}
-          {isError ? <p role="alert">{COPY.loadError}</p> : null}
-        </div>
+      {/* Poster header (Partiful-style): the place's art with its name on it. */}
+      <div className="relative p-2 pb-0">
+        {place ? (
+          <PlaceArt
+            id={place.id}
+            subcategorySlug={place.subcategory.slug}
+            topCategory={place.subcategory.top_category}
+            variant="banner"
+            name={place.name}
+            nameAs="h2"
+            className="min-h-36"
+            caption={
+              <>
+                {place.name_ja ? (
+                  <span lang="ja" className="block">
+                    {place.name_ja}
+                  </span>
+                ) : null}
+                <span>
+                  {place.subcategory.name} · {place.location.is_catch_all ? place.city.name : place.location.name}
+                </span>
+              </>
+            }
+          />
+        ) : (
+          <div className="min-h-20 p-4">
+            {isPending ? <p className="hint">{COPY.loading}</p> : null}
+            {isError ? <p role="alert">{COPY.loadError}</p> : null}
+          </div>
+        )}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close place summary"
-          className="rounded-xl px-2 py-1 text-xl text-muted hover:bg-stone-100"
+          className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-full bg-black/35 text-xl text-white backdrop-blur hover:bg-black/50"
         >
           <span aria-hidden="true">×</span>
         </button>
@@ -154,11 +176,7 @@ export default function PinSummary({
             <Score score={place.public_score} rankerCount={place.ranker_count} />
             <Badges badges={place.badges} />
           </div>
-          <p className="text-sm font-bold text-muted">
-            <span aria-hidden="true">{info?.emoji} </span>
-            {place.subcategory.name} · {place.location.is_catch_all ? place.city.name : place.location.name}
-            {userLoc ? ` · ${walkLabel(userLoc, place)}` : ""}
-          </p>
+          {userLoc ? <p className="text-sm font-bold text-muted">{walkLabel(userLoc, place)}</p> : null}
           {place.address ? (
             <p className="text-sm">
               <PinIcon className="mr-1" />

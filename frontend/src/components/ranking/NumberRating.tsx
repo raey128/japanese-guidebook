@@ -78,7 +78,7 @@ export function RatingBadge({ rating, className = "" }: { rating: number; classN
       className={`inline-flex items-center rounded-full border-2 px-2 text-sm font-extrabold leading-5 ${tone(rating)} ${className}`}
     >
       {rating}
-      <span className="text-[0.7em] opacity-80">/{RATING_MAX}</span>
+      <span className="text-[0.75em]">/{RATING_MAX}</span>
     </span>
   );
 }

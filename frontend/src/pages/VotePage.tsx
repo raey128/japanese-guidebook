@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router";
 import { ApiError } from "../api/client";
 import PlaceNames from "../components/PlaceNames";
 import Loading from "../components/ui/Loading";
+import PlaceArt from "../components/ui/PlaceArt";
 import {
   castVote,
   evidenceLine,
@@ -15,7 +16,6 @@ import {
   type VoteItem,
   type VoteList,
 } from "../hooks/voting";
-import { topCategoryInfo } from "../lib/categories";
 import { voterId } from "../lib/voterId";
 
 type Status = "saving" | "saved" | "error";
@@ -49,26 +49,30 @@ function VoteCard({
   onRetry: () => void;
 }) {
   const id = useId();
-  const info = topCategoryInfo(item.place.subcategory.top_category);
   const evidence = evidenceLine(item.curator_count, item.evidence_updated);
   return (
-    <li className="card space-y-3" aria-labelledby={`${id}-name`}>
-      <div className="flex items-start gap-3">
-        <span
-          aria-hidden="true"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full text-xl"
-          style={{ background: info?.iconBg ?? info?.color }}
-        >
-          {info?.emoji}
-        </span>
-        <div className="min-w-0 flex-1">
-          <h2 id={`${id}-name`} className="text-lg font-extrabold leading-tight">
-            <PlaceNames name={item.place.name} nameJa={item.place.name_ja} as="span" />
-          </h2>
-          <p className="text-sm font-bold text-muted">{placeLine(item)}</p>
-          {evidence ? <p className="text-sm text-muted">{evidence}</p> : null}
-        </div>
-      </div>
+    <li className="card space-y-3 p-2 pb-3" aria-labelledby={`${id}-name`}>
+      {/* Poster (Partiful-style): the place's art with its name on it. */}
+      <PlaceArt
+        id={item.place.id}
+        subcategorySlug={item.place.subcategory.slug}
+        topCategory={item.place.subcategory.top_category}
+        variant="banner"
+        className="min-h-32"
+      >
+        <h2 id={`${id}-name`} className="font-display text-2xl font-black leading-tight text-white [text-shadow:0_2px_8px_rgb(0_0_0/0.35)]">
+          {item.place.name}
+        </h2>
+        <p className="text-sm font-bold text-white/90">
+          {item.place.name_ja ? (
+            <span lang="ja" className="block">
+              {item.place.name_ja}
+            </span>
+          ) : null}
+          {placeLine(item)}
+        </p>
+      </PlaceArt>
+      {evidence ? <p className="text-sm font-bold text-muted">{evidence}</p> : null}
       <div role="group" aria-labelledby={`${id}-name`} className="grid grid-cols-3 gap-2">
         {CHOICES.map((c) => {
           const pressed = choice === c.key;

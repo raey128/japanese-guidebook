@@ -7,6 +7,9 @@
  */
 @theme {
   --font-sans: "Nunito Variable", ui-rounded, "Hiragino Maru Gothic ProN", system-ui, sans-serif;
+  /* Headings and place names (Partiful-style posters). Falls back to Nunito until the display
+     font package is installed. */
+  --font-display: "Bricolage Grotesque Variable", "Nunito Variable", ui-rounded, system-ui, sans-serif;
 
   --color-brand: #d93a1f;
   --color-brand-dark: #a82a13;
@@ -56,7 +59,7 @@ body {
 h1,
 h2,
 h3 {
-  @apply font-extrabold tracking-tight;
+  @apply font-display font-extrabold tracking-tight;
 }
 
 :focus-visible {

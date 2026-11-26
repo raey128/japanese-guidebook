@@ -9,19 +9,21 @@ import { useEffect, useRef, type ReactNode } from "react";
 export default function MarkerContent({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
+    const wrapper = ref.current?.closest(".maplibregl-marker");
+    if (!wrapper) return;
     const strip = () => {
-      const wrapper = ref.current?.closest(".maplibregl-marker");
-      if (!wrapper) return;
-      wrapper.removeAttribute("role");
-      wrapper.removeAttribute("aria-label");
-      wrapper.removeAttribute("tabindex");
+      if (wrapper.hasAttribute("role")) wrapper.removeAttribute("role");
+      if (wrapper.hasAttribute("aria-label")) wrapper.removeAttribute("aria-label");
+      if (wrapper.hasAttribute("tabindex")) wrapper.removeAttribute("tabindex");
     };
     strip();
-    // The parent <Marker> adds the marker to the map (which sets those attributes) in its own
-    // effect, which runs after this child's; strip again on the next frame.
-    const frame = requestAnimationFrame(strip);
-    return () => cancelAnimationFrame(frame);
-  });
+    // MapLibre sets them again whenever it (re)adds the marker to the map, which can happen
+    // after this effect; watch for that and strip them each time.
+    const watcher = new MutationObserver(strip);
+    watcher.observe(wrapper, { attributes: true, attributeFilter: ["role", "aria-label", "tabindex"] });
+    return () => watcher.disconnect();
+  }, []);
+
   return (
     <span ref={ref} style={{ display: "contents" }}>
       {children}

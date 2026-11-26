@@ -1,22 +1,19 @@
 import type { Schemas } from "../../api/client";
 import { COPY } from "../../copy";
-import { topCategoryInfo } from "../../lib/categories";
 import { walkLabel } from "../../lib/walk";
 import type { LatLng } from "../map/geo";
 import Button from "../ui/Button";
+import PlaceArt from "../ui/PlaceArt";
 
 type Place = Schemas["PlaceSummary"];
 type TopPicks = Schemas["TopPicks"];
 
 function PickRow({ place, rank, userLoc, onPick }: { place: Place; rank: number; userLoc: LatLng | null; onPick: () => void }) {
-  const info = topCategoryInfo(place.subcategory.top_category);
   return (
     <li>
       <button type="button" onClick={onPick} className="flex w-full items-center gap-3 rounded-xl px-1 py-2 text-left hover:bg-stone-50">
         <span className="w-6 text-right text-lg font-extrabold text-brand">{rank}</span>
-        <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full text-lg" style={{ background: info?.iconBg }}>
-          {info?.emoji}
-        </span>
+        <PlaceArt id={place.id} subcategorySlug={place.subcategory.slug} topCategory={place.subcategory.top_category} className="size-12 text-base" />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-extrabold">{place.name}</span>
           <span className="block truncate text-xs text-muted">

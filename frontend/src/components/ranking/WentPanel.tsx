@@ -121,7 +121,7 @@ export default function WentPanel({
             className="field"
           />
           <button type="submit" className="btn btn-primary btn-sm" disabled={!note.trim() || save.isPending}>
-            Save
+            Save rating
           </button>
           <p className="hint">Ratings of 4 or lower need a short comment.</p>
         </form>

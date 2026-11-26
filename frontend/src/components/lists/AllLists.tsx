@@ -8,6 +8,7 @@ import Badges from "../Badges";
 import PlaceNames from "../PlaceNames";
 import Score from "../Score";
 import Chip from "../ui/Chip";
+import PlaceArt from "../ui/PlaceArt";
 import CityPicker from "../ui/CityPicker";
 import EmptyState from "../ui/EmptyState";
 import ErrorState from "../ui/ErrorState";
@@ -43,10 +44,11 @@ function ListCard({ list, city }: { list: Featured; city: string }) {
       <ol className="px-4 pb-3">
         {list.items.map((p) => (
           <li key={p.id} className="flex items-center gap-3 border-b-2 border-line py-2 last:border-b-0">
-            <span className="w-6 text-right text-lg font-extrabold text-brand">
+            <span className="w-6 text-right font-display text-xl font-black text-brand">
               <span aria-hidden="true">{p.rank ?? "·"}</span>
               <span className="sr-only">{p.rank ? `Rank ${p.rank}` : "Not ranked yet"}</span>
             </span>
+            <PlaceArt id={p.id} subcategorySlug={p.subcategory.slug} topCategory={p.subcategory.top_category} className="size-14 text-lg" />
             <div className="min-w-0 flex-1">
               <Link to={`/?place=${p.id}`} className="font-bold underline-offset-2 hover:underline">
                 <PlaceNames name={p.name} nameJa={p.name_ja} as="span" />

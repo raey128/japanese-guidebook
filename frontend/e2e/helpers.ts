@@ -205,7 +205,7 @@ export async function rankViaUi(
 export async function revealInList(page: Page, target: Locator): Promise<void> {
   const more = page.getByRole("button", { name: "Load more" });
   for (let i = 0; i < 40; i++) {
-    await expect(target.or(more)).toBeVisible();
+    await expect(target.or(more).first()).toBeVisible();
     if (await target.isVisible()) return;
     await more.click();
   }
