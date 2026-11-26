@@ -144,12 +144,12 @@ async def test_visited_place_needs_a_rating(client, db):
     await sign_in(client, "adder")
     r = await client.post("/api/places", json=await place_body(db, visited=True))
     assert r.status_code == 422
-    assert "star rating" in r.text
+    assert "rating from 1 to 10" in r.text
 
 
 async def test_review_without_visit_is_rejected(client, db):
     await sign_in(client, "adder")
-    body = await place_body(db, review={"rating": 5})
+    body = await place_body(db, review={"rating": 9})
     assert (await client.post("/api/places", json=body)).status_code == 422
 
 
@@ -165,23 +165,23 @@ async def test_low_rating_on_add_needs_a_comment(client, db):
 
 async def test_add_with_rating_ranks_it_for_the_adder(client, db):
     await sign_in(client, "adder")
-    review = {"rating": 4, "note": "Rich broth", "visit_month": 5, "visit_year": 2025}
+    review = {"rating": 8, "note": "Rich broth", "visit_month": 5, "visit_year": 2025}
     r = await client.post("/api/places", json=await place_body(db, visited=True, review=review))
     assert r.status_code == 201, r.text
     data = r.json()
     assert data["ranking"]["bucket"] == "liked"
-    assert data["ranking"]["rating"] == 4
+    assert data["ranking"]["rating"] == 8
     assert data["ranking"]["note"] == "Rich broth"
     assert (data["ranking"]["visit_month"], data["ranking"]["visit_year"]) == (5, 2025)
     assert data["compare_count"] == 0
     assert data["city_name"] == "Tokyo" and data["city_rank_count"] == 1
-    assert data["place"]["viewer"]["my_ranking"]["rating"] == 4
+    assert data["place"]["viewer"]["my_ranking"]["rating"] == 8
 
 
 async def test_add_with_rating_lands_below_equal_or_better_ratings(client, db):
     await sign_in(client, "adder")
     made = {}
-    for name, stars, lat in (("Five", 5, 0.0), ("Four", 4, 0.001), ("Also Five", 5, 0.002)):
+    for name, stars, lat in (("Five", 10, 0.0), ("Four", 8, 0.001), ("Also Five", 10, 0.002)):
         body = await place_body(
             db,
             name=name,
@@ -274,3 +274,12 @@ async def test_lookup_failure_gives_empty_results(client, geocoder_stub):
     await sign_in(client, "adder")
     r = await client.get("/api/places/lookup", params={"q": "anything"})
     assert r.status_code == 200 and r.json() == {"results": []}
+
+
+async def test_add_as_want_to_go_saves_it(client, db):
+    await sign_in(client, "wanter")
+    r = await client.post("/api/places", json=await place_body(db, want_to_go=True))
+    assert r.status_code == 201, r.text
+    assert r.json()["place"]["viewer"]["is_bookmarked"] is True and r.json()["ranking"] is None
+    both = await place_body(db, name="Both", visited=True, want_to_go=True, review={"rating": 9})
+    assert (await client.post("/api/places", json=both)).status_code == 422

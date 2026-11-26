@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { createPlaceApi, pickStars, rankViaUi, runId, seedRankedList, signInApi, snapshotApi } from "./helpers";
+import { createPlaceApi, pickRating, rankViaUi, runId, seedRankedList, signInApi, snapshotApi, stubMapStyle } from "./helpers";
 
 test.describe("ranking flow", () => {
   test("binary search asks at most ceil(log2(n+1)) questions and orders by the answers", async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe("ranking flow", () => {
     const target = await createPlaceApi(page, { name: `Order New ${run}` });
 
     await page.goto(`/places/${target.id}/rank`);
-    await pickStars(page, 5);
+    await pickRating(page, 9);
 
     // n = 3 -> at most ceil(log2(4)) = 2 comparisons. First against #2.
     await expect(page.getByText("Comparison 1 (at most 2)")).toBeVisible();
@@ -51,8 +51,8 @@ test.describe("ranking flow", () => {
     await seedRankedList(page, 2, `Bucket ${run}`);
     const target = await createPlaceApi(page, { name: `Bucket New ${run}` });
     await page.goto(`/places/${target.id}/rank`);
-    await pickStars(page, 2);
-    // Below 3 stars the comment is required.
+    await pickRating(page, 3);
+    // At 4 or lower the comment is required.
     await expect(page.getByRole("heading", { name: "Tell others why" })).toBeVisible();
     await expect(page.getByText(/#1 of 1 in your Disliked list\./)).toBeVisible();
     await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -69,7 +69,7 @@ test.describe("ranking flow", () => {
     const target = await createPlaceApi(page, { name: `Cancel New ${run}` });
 
     await page.goto(`/places/${target.id}/rank`);
-    await pickStars(page, 5);
+    await pickRating(page, 9);
     await expect(page.getByText("Comparison 1 (at most")).toBeVisible();
     await page.getByTestId("choose-new").click();
     await page.getByRole("link", { name: "Cancel" }).click();
@@ -77,7 +77,7 @@ test.describe("ranking flow", () => {
     // Back on the map with the place card open.
     await expect(page).toHaveURL(/^[^?]*\/(\?|$)/);
     const summary = page.getByRole("region", { name: "Place summary" });
-    await expect(summary.getByRole("button", { name: "Rate", exact: true })).toBeVisible();
+    await expect(summary.getByRole("button", { name: "Went", exact: true })).toBeVisible();
     await expect(summary.getByRole("heading", { name: "Your ranking" })).toHaveCount(0);
     expect((await snapshotApi(page, target.id)).my_ranking).toBeNull();
 
@@ -100,7 +100,7 @@ test.describe("ranking flow", () => {
     await expect(other.getByRole("heading", { name: "How was it?" })).toBeVisible();
 
     // Tab 2 gets as far as the note step with the list version it loaded...
-    await pickStars(other, 5);
+    await pickRating(other, 9);
     await other.getByTestId("choose-new").click();
     await expect(other.getByText("Comparison 2 (at most")).toBeVisible();
     await other.getByTestId("choose-new").click();
@@ -129,4 +129,26 @@ test.describe("ranking flow", () => {
       expect.arrayContaining([x1!.name, x2!.name]),
     );
   });
+});
+
+// R3.7: Went rates a place 1-10 in one tap on its card; 4 or lower asks for a comment first.
+test("Went: one-tap rating on the place card, and a comment for a low number", async ({ page }) => {
+  await stubMapStyle(page);
+  await signInApi(page);
+  const p = await createPlaceApi(page, { name: `Went ${runId()}` });
+  await page.goto(`/?place=${p.id}`);
+  const card = page.getByRole("region", { name: "Place summary" });
+  await card.getByRole("button", { name: "Went", exact: true }).click();
+  const tap = (n: number) =>
+    card.locator("label").filter({ has: page.getByRole("radio", { name: new RegExp(`^${n} out of 10`) }) }).click();
+  await tap(8);
+  await expect(card.getByText("Saved: you gave it 8 · Great")).toBeVisible();
+  expect((await snapshotApi(page, p.id)).my_ranking).toMatchObject({ rating: 8, bucket: "liked" });
+
+  await tap(3);
+  await expect(card.getByRole("textbox", { name: /Tell others why/ })).toBeVisible();
+  await card.getByRole("textbox", { name: /Tell others why/ }).fill("Too salty for me");
+  await card.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(card.getByText("Saved: you gave it 3 · Not great")).toBeVisible();
+  expect((await snapshotApi(page, p.id)).my_ranking).toMatchObject({ rating: 3, bucket: "disliked", note: "Too salty for me" });
 });

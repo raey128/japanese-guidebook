@@ -16,6 +16,12 @@ ALLOWED: dict[str, set[str | None]] = {
     "search_no_result": {None},
     "near_me": {None, "granted", "denied"},
     "directions": {None, "ios", "android", "desktop"},
+    # Decided 2026-11-27: Went taps, place card views and shared-list use.
+    "went": {"new", "change"},
+    "place_view": {None, "pin", "top_pick", "search", "list", "share"},
+    "share_create": {None},
+    "share_open": {None},
+    "share_save": {None},
 }
 RETENTION_DAYS = 90
 PER_BROWSER_HOURLY_CAP = 300

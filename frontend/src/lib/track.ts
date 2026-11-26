@@ -10,7 +10,12 @@ export type EventType =
   | "add"
   | "search_no_result"
   | "near_me"
-  | "directions";
+  | "directions"
+  | "went"
+  | "place_view"
+  | "share_create"
+  | "share_open"
+  | "share_save";
 
 const KEY = "jg.browserId";
 let memoryId: string | null = null;

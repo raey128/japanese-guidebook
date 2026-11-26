@@ -1,4 +1,4 @@
-import { Stars } from "../ranking/StarRating";
+import { RatingBadge } from "../ranking/NumberRating";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
 
@@ -55,7 +55,7 @@ export default function MyRankingsList() {
                           <Link className="min-w-0 flex-1 hover:underline" to={`/?place=${it.place_id}`}>
                             <PlaceNames name={it.name} nameJa={it.name_ja} as="span" />
                           </Link>
-                          {it.rating ? <Stars rating={it.rating} className="text-sm" /> : null}
+                          {it.rating ? <RatingBadge rating={it.rating} className="text-sm" /> : null}
                           <span className="badge bg-success-soft text-success-dark">{it.personal_score.toFixed(1)}</span>
                           <Badges badges={it.badges} />
                           <ShowOnMapLink placeId={it.place_id} name={it.name} />

@@ -1,6 +1,6 @@
 import { needsComment } from "../../lib/rating";
 import NoteFields, { type NoteValue } from "./NoteFields";
-import StarRating from "./StarRating";
+import NumberRating from "./NumberRating";
 
 export type ReviewValue = NoteValue & { rating: number | null };
 export const EMPTY_REVIEW: ReviewValue = { rating: null, note: "", month: null, year: null };
@@ -11,12 +11,12 @@ type Props = {
   errors?: { rating?: string; note?: string };
 };
 
-/** Star rating (required) plus comment (required below 3 stars) and visit date (R3.6). */
+/** A 1-10 rating (required) plus comment (required at 4 or lower) and visit date (R3.6). */
 export default function ReviewFields({ value, onChange, errors }: Props) {
   const required = needsComment(value.rating);
   return (
     <div className="space-y-3">
-      <StarRating value={value.rating} onChange={(rating) => onChange({ ...value, rating })} error={errors?.rating} />
+      <NumberRating value={value.rating} onChange={(rating) => onChange({ ...value, rating })} error={errors?.rating} />
       {required ? (
         <p className="hint" aria-live="polite">
           Sorry it wasn't great! A short comment helps others know why.

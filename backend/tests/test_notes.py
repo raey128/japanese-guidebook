@@ -34,7 +34,7 @@ async def test_notes_newest_first_with_author_and_ownership(client_factory, db):
         "visit_month": 4,
         "visit_year": 2024,
         "bucket": "liked",
-        "rating": 5,
+        "rating": 9,
         "created_at": out[1]["created_at"],
         "is_own": False,
     }

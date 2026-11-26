@@ -120,7 +120,7 @@ async def create_place(body: PlaceCreateRequest, response: Response, db: DB, use
     )
     extra: dict = {}
     if body.review is not None:
-        # R3.6: the adder has been here, so rank it from their stars in the same transaction.
+        # R3.6: the adder has been here, so rank it from their rating in the same transaction.
         review = body.review
         ranked = await ranking_core.rank_by_rating(
             db, user_id=user.id, place=place, rating=review.rating
@@ -149,6 +149,14 @@ async def create_place(body: PlaceCreateRequest, response: Response, db: DB, use
             "city_name": ref.cities[place.city_id].name,
             "city_rank_count": city_count,
         }
+    if body.want_to_go:
+        # "Want to go" (R3.6): straight onto the adder's list.
+        await db.execute(
+            text(
+                "INSERT INTO bookmarks (user_id, place_id) VALUES (:u, :p) ON CONFLICT DO NOTHING"
+            ),
+            {"u": user.id, "p": place.id},
+        )
     await db.commit()
     return PlaceCreateResponse(status="created", place=await place_detail(db, place, user), **extra)
 

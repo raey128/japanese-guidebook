@@ -47,8 +47,8 @@ class Snapshot(Out):
 
 class RankRequest(BaseModel):
     place_id: int
-    # Required (R3.6). 4-5 stars = liked, 3 = fine, 1-2 = disliked; below 3 needs a note.
-    rating: int = Field(ge=1, le=5)
+    # Required (R3.6). 1-10: 8-10 = liked, 5-7 = fine, 1-4 = disliked; 4 or lower needs a note.
+    rating: int = Field(ge=1, le=10)
     # Optional: derived from `rating`. If sent it must match the rating's bucket.
     bucket: Bucket | None = None
     position: int = Field(ge=1, description="1-based among the target List's other items")
@@ -67,6 +67,22 @@ class RankResponse(Out):
     is_new: bool = True  # False for a re-rank
     city_name: str = ""
     city_rank_count: int = 0  # the user's rankings in this place's city, after this save
+
+
+class QuickRating(BaseModel):
+    """Went (R3.7): rate a place 1-10 in one tap. `note` is optional unless the rating is 4 or
+    lower; omit it to keep an existing comment."""
+
+    rating: int = Field(ge=1, le=10)
+    note: str | None = Field(default=None, max_length=NOTE_MAX)
+
+
+class QuickRatingResponse(Out):
+    ranking: MyRanking
+    is_new: bool
+    city_name: str
+    city_rank_count: int  # the user's rated places in this city, after this one
+    compare_count: int  # other places in the same list: "Fine-tune" offers comparisons
 
 
 class StaleListOut(BaseModel):

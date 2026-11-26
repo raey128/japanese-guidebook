@@ -16,21 +16,21 @@ function Harness({ onValue }: { onValue?: (v: ReviewValue) => void }) {
   );
 }
 
-test("the stars are a labelled radio group", () => {
+test("the 1-10 numbers are a labelled radio group", () => {
   const seen: ReviewValue[] = [];
   render(<Harness onValue={(v) => seen.push(v)} />);
   expect(screen.getByRole("group", { name: /your rating/i })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("radio", { name: /4 stars/i }));
-  expect(seen.at(-1)?.rating).toBe(4);
-  expect(screen.getByRole("radio", { name: /4 stars/i })).toBeChecked();
+  expect(screen.getAllByRole("radio")).toHaveLength(10);
+  fireEvent.click(screen.getByRole("radio", { name: /^8 out of 10/ }));
+  expect(seen.at(-1)?.rating).toBe(8);
+  expect(screen.getByRole("radio", { name: /^8 out of 10/ })).toBeChecked();
 });
 
-test("the comment becomes required below 3 stars", () => {
+test("the comment becomes required at 4 or lower", () => {
   render(<Harness />);
-  fireEvent.click(screen.getByRole("radio", { name: /5 stars/i }));
+  fireEvent.click(screen.getByRole("radio", { name: /^9 out of 10/ }));
   expect(screen.getByLabelText(/comment \(optional\)/i)).not.toBeRequired();
-  fireEvent.click(screen.getByRole("radio", { name: /2 stars/i }));
-  const comment = screen.getByRole("textbox", { name: /comment/i });
-  expect(comment).toBeRequired();
+  fireEvent.click(screen.getByRole("radio", { name: /^4 out of 10/ }));
+  expect(screen.getByRole("textbox", { name: /comment/i })).toBeRequired();
   expect(screen.queryByLabelText(/optional/i)).toBeNull();
 });

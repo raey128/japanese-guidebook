@@ -206,5 +206,5 @@ async def test_my_rankings_include_my_comment(client, db):
         "Great broth",
         3,
         2025,
-        5,
+        9,
     )

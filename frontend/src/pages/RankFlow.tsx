@@ -4,7 +4,7 @@ import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-r
 
 import { api, ApiError, unwrap, type Schemas } from "../api/client";
 import NoteFields, { type NoteValue } from "../components/ranking/NoteFields";
-import StarRating from "../components/ranking/StarRating";
+import NumberRating from "../components/ranking/NumberRating";
 import PlaceNames from "../components/PlaceNames";
 import { useMe } from "../hooks/auth";
 import { invalidateAfterRankingChange, usePlace, useSnapshot } from "../hooks/ranking";
@@ -13,7 +13,7 @@ import Loading from "../components/ui/Loading";
 import { useCelebrate } from "../components/app/Celebration";
 import { rankingMessage } from "../lib/celebrate";
 import { track } from "../lib/track";
-import { bucketForRating, needsComment, RATING_LABELS, reviewProblem } from "../lib/rating";
+import { bucketForRating, needsComment, ratingWord, reviewProblem } from "../lib/rating";
 
 type Bucket = Schemas["MyRanking"]["bucket"];
 type Step = "rating" | "compare" | "note" | "done";
@@ -28,7 +28,7 @@ function isTyping(t: EventTarget | null) {
 export default function RankFlow() {
   const id = Number(useParams().id);
   const loc = useLocation();
-  // `?refine=1`: just added with a rating, so skip the stars and go straight to comparisons.
+  // `?refine=1`: just rated, so skip the rating step and go straight to comparisons.
   const refine = useSearchParams()[0].get("refine") === "1";
   const qc = useQueryClient();
   const celebrate = useCelebrate();
@@ -57,7 +57,7 @@ export default function RankFlow() {
   );
   const items = itemsFor(snap, bucket);
 
-  // Prefill the stars and note from an existing ranking once.
+  // Prefill the rating and note from an existing ranking once.
   useEffect(() => {
     if (snap?.my_ranking && !noteInit) {
       const r = snap.my_ranking;
@@ -118,8 +118,9 @@ export default function RankFlow() {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
       if (step === "rating") {
-        const stars = Number(e.key);
-        if (stars >= 1 && stars <= 5) chooseRating(stars);
+        // 1-9, and 0 for 10.
+        const n = e.key === "0" ? 10 : Number(e.key);
+        if (Number.isInteger(n) && n >= 1 && n <= 10) chooseRating(n);
       } else if (e.key === "ArrowLeft" || e.key === "1") {
         choose(true);
       } else if (e.key === "ArrowRight" || e.key === "2") {
@@ -225,8 +226,8 @@ export default function RankFlow() {
           <h2 id="q-rating" className="text-xl font-semibold" aria-live="polite">
             How was it?
           </h2>
-          <p className="hint">Pick the stars, then Next. Or just press 1–5.</p>
-          <StarRating value={rating} onChange={setRating} label="Your rating" autoFocus />
+          <p className="hint">Pick a number from 1 to 10, then Next. Or just press 1–9 (0 for 10).</p>
+          <NumberRating value={rating} onChange={setRating} label="Your rating" autoFocus />
           <div className="mt-4 flex gap-2">
             <button
               type="button"
@@ -298,7 +299,7 @@ export default function RankFlow() {
             {needsComment(rating) ? "Tell others why" : "Add a comment (optional)"}
           </h2>
           <p>
-            {rating ? `${rating} ★ ${RATING_LABELS[rating]} · ` : ""}#{position(search)} of {total + 1} in your{" "}
+            {rating ? `${rating}/10 ${ratingWord(rating)} · ` : ""}#{position(search)} of {total + 1} in your{" "}
             {bucket ? BUCKET_LABEL[bucket] : ""} list.
           </p>
           <NoteFields

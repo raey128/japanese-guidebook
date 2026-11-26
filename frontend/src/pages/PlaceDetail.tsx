@@ -1,4 +1,4 @@
-import { Stars } from "../components/ranking/StarRating";
+import { RatingBadge } from "../components/ranking/NumberRating";
 import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
@@ -99,7 +99,7 @@ export default function PlaceDetail() {
                   {n.rating ? (
                     <>
                       {" · "}
-                      <Stars rating={n.rating} />
+                      <RatingBadge rating={n.rating} />
                     </>
                   ) : null}
                   {visit ? ` · visited ${visit}` : ""}

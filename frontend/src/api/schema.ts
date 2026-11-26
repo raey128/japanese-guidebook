@@ -331,6 +331,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/places/{place_id}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Rate Place
+         * @description Went (R3.7): one tap rates (or re-rates) a place 1-10. It's placed in your list by its
+         *     number, among places you rated the same; "Fine-tune" can do the comparisons later.
+         */
+        put: operations["ratePlace"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/rankings/{ranking_id}": {
         parameters: {
             query?: never;
@@ -375,7 +396,7 @@ export interface paths {
         };
         /**
          * Place Notes
-         * @description Reviews with a comment. `sort`: newest first (default), or by star rating, highest or
+         * @description Reviews with a comment. `sort`: newest first (default), or by rating, highest or
          *     lowest first (unrated ones last, newest first within a rating).
          */
         get: operations["getPlaceNotes"];
@@ -1546,6 +1567,11 @@ export interface components {
              */
             visited: boolean;
             review?: components["schemas"]["ReviewIn"] | null;
+            /**
+             * Want To Go
+             * @default false
+             */
+            want_to_go: boolean;
         };
         /**
          * PlaceCreateResponse
@@ -1781,6 +1807,29 @@ export interface components {
             /** Items */
             items: components["schemas"]["ListItem"][];
         };
+        /**
+         * QuickRating
+         * @description Went (R3.7): rate a place 1-10 in one tap. `note` is optional unless the rating is 4 or
+         *     lower; omit it to keep an existing comment.
+         */
+        QuickRating: {
+            /** Rating */
+            rating: number;
+            /** Note */
+            note?: string | null;
+        };
+        /** QuickRatingResponse */
+        QuickRatingResponse: {
+            ranking: components["schemas"]["MyRanking"];
+            /** Is New */
+            is_new: boolean;
+            /** City Name */
+            city_name: string;
+            /** City Rank Count */
+            city_rank_count: number;
+            /** Compare Count */
+            compare_count: number;
+        };
         /** RankRequest */
         RankRequest: {
             /** Place Id */
@@ -1862,7 +1911,7 @@ export interface components {
         /**
          * ReviewIn
          * @description The adder's own rating when they've been there (R3.6). Rating is required; a comment is
-         *     optional unless the rating is below 3 stars.
+         *     optional unless the rating is 4 or lower.
          */
         ReviewIn: {
             /** Rating */
@@ -2939,6 +2988,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ratePlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                place_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuickRating"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuickRatingResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
                 };
             };
         };

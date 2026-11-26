@@ -10,6 +10,8 @@ import CategoryPicker from "../map/CategoryPicker";
 import { distanceMetres, formatDistance, mapApiErrors, type FormErrors, type LatLng } from "../map/geo";
 import PlaceNameLookup, { type LookupPick } from "../map/PlaceNameLookup";
 import PlaceNames from "../PlaceNames";
+import ReviewFields, { EMPTY_REVIEW, type ReviewValue } from "../ranking/ReviewFields";
+import { reviewProblem } from "../../lib/rating";
 import { PinIcon } from "../ui/MapPin";
 
 function without(errors: Record<string, string>, key: string): Record<string, string> {
@@ -70,6 +72,8 @@ export default function AddPlacePanel({
   const [serverErrors, setServerErrors] = useState<FormErrors | null>(null);
   const [candidates, setCandidates] = useState<Schemas["PlaceSummary"][] | null>(null);
   const lastValues = useRef<PlaceValues | null>(null);
+  const [plan, setPlan] = useState<"been" | "want" | null>(null);
+  const [review, setReview] = useState<ReviewValue>(EMPTY_REVIEW);
 
   // The area (location) comes from the pin; nobody has to pick it.
   const suggestion = useSuggestLocation(pin);
@@ -109,12 +113,23 @@ export default function AddPlacePanel({
   const send = (values: PlaceValues, confirm: boolean) => {
     lastValues.current = values;
     setServerErrors(null);
+    const been = plan === "been" && review.rating !== null;
     create.mutate(
-      { ...values, confirm_not_duplicate: confirm, source: manual ? "manual" : "pin", visited: false, review: null },
+      {
+        ...values,
+        confirm_not_duplicate: confirm,
+        source: manual ? "manual" : "pin",
+        visited: been,
+        review: been
+          ? { rating: review.rating!, note: review.note.trim() || null, visit_month: review.month, visit_year: review.year }
+          : null,
+        want_to_go: plan === "want",
+      },
       {
         onSuccess: (res) => {
           if (res.status === "created" && res.place) {
             track("add", manual ? "manual" : "pin");
+            if (res.ranking) track("went", "new");
             celebrate(manual ? SENT_FOR_REVIEW_MESSAGE : ADDED_MESSAGE);
             onCreated(res.place.id, res.place.name);
           } else {
@@ -137,6 +152,12 @@ export default function AddPlacePanel({
     if (!name.trim()) next.name = "Type the place's name.";
     if (!pin) next.pin = "Pick the place from the suggestions so we can pin it.";
     if (subcategoryId === null) next.subcategory_id = "Choose a category.";
+    if (plan === null) next.plan = "Have you been, or do you want to go?";
+    else if (plan === "been") {
+      const problem = reviewProblem(review.rating, review.note);
+      if (problem?.rating) next.rating = problem.rating;
+      if (problem?.note) next.note = problem.note;
+    }
     setErrors(next);
     if (Object.keys(next).length || !pin || subcategoryId === null) return;
     if (locationId === null) return; // still working out the area; the button shows it
@@ -260,6 +281,49 @@ export default function AddPlacePanel({
         }}
         error={errors.subcategory_id}
       />
+
+      {/* Been there (rate 1-10) or Want to go: one is required (R3.6). */}
+      <fieldset className="space-y-2" aria-describedby={errors.plan ? `${uid}-plan-err` : undefined}>
+        <legend className="label">
+          Have you been? <span aria-hidden="true">*</span>
+        </legend>
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              { v: "been", label: "Been there", emoji: "✔️" },
+              { v: "want", label: "Want to go", emoji: "🔖" },
+            ] as const
+          ).map((o) => (
+            <button
+              key={o.v}
+              type="button"
+              aria-pressed={plan === o.v}
+              onClick={() => {
+                setPlan(o.v);
+                setErrors((e) => without(without(without(e, "plan"), "rating"), "note"));
+              }}
+              className={`btn ${plan === o.v ? "btn-primary" : "btn-secondary"}`}
+            >
+              <span aria-hidden="true">{o.emoji}</span> {o.label}
+            </button>
+          ))}
+        </div>
+        {errors.plan ? (
+          <p id={`${uid}-plan-err`} role="alert" className="text-sm text-danger">
+            {errors.plan}
+          </p>
+        ) : null}
+        {plan === "been" ? (
+          <ReviewFields
+            value={review}
+            onChange={(v) => {
+              setReview(v);
+              setErrors((e) => without(without(e, "rating"), "note"));
+            }}
+            errors={{ rating: errors.rating, note: errors.note }}
+          />
+        ) : null}
+      </fieldset>
 
       {candidates && lastValues.current ? (
         <section aria-labelledby={`${uid}-dup`} className="card border-amber-400 bg-warning-soft">

@@ -77,7 +77,7 @@ async def test_submitter_can_rank_and_save_pending_but_it_does_not_count(client,
         "/api/rankings",
         json={
             "place_id": pid,
-            "rating": 5,
+            "rating": 9,
             "position": 1,
             "list_version": snap["buckets"][0]["version"],
         },

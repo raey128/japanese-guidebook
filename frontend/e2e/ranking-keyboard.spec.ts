@@ -13,9 +13,9 @@ test("rank a place using only the keyboard", async ({ page }) => {
   await page.goto(`/places/${target.id}/rank`);
   await expect(page.getByRole("heading", { name: "How was it?" })).toBeVisible();
 
-  // Rating step: the stars have focus; a number key picks that many stars and moves on (5 = Liked).
-  await expect(page.getByRole("radio", { name: /^1 star:/ })).toBeFocused();
-  await page.keyboard.press("5");
+  // Rating step: the numbers have focus; a number key picks that rating and moves on (9 = Liked).
+  await expect(page.getByRole("radio", { name: /^1 out of 10/ })).toBeFocused();
+  await page.keyboard.press("9");
 
   // Comparison 1 (n=3 -> compares against #2): the "new" button has focus. Press 2 = existing is better.
   await expect(page.getByRole("heading", { name: "Which was better?" })).toBeVisible();
@@ -36,7 +36,7 @@ test("rank a place using only the keyboard", async ({ page }) => {
 
   await expect(page.getByText("Saved", { exact: true })).toBeVisible();
   const snap = await snapshotApi(page, target.id);
-  expect(snap.my_ranking).toMatchObject({ bucket: "liked", position: 4, rating: 5 });
+  expect(snap.my_ranking).toMatchObject({ bucket: "liked", position: 4, rating: 9 });
 });
 
 test("arrow keys and Enter also answer comparisons", async ({ page }) => {
@@ -46,10 +46,10 @@ test("arrow keys and Enter also answer comparisons", async ({ page }) => {
   const target = await createPlaceApi(page, { name: `Arrow Target ${run}` });
 
   await page.goto(`/places/${target.id}/rank`);
-  // Arrow keys move through the stars; Tab to Next, Enter continues (4 stars = Liked).
-  await expect(page.getByRole("radio", { name: /^1 star:/ })).toBeFocused();
-  for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
-  await expect(page.getByRole("radio", { name: /^4 stars:/ })).toBeChecked();
+  // Arrow keys move through the numbers; Tab to Next, Enter continues (8 = Liked).
+  await expect(page.getByRole("radio", { name: /^1 out of 10/ })).toBeFocused();
+  for (let i = 0; i < 7; i++) await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("radio", { name: /^8 out of 10/ })).toBeChecked();
   await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: "Next", exact: true })).toBeFocused();
   await page.keyboard.press("Enter");

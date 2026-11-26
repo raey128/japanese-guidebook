@@ -29,15 +29,16 @@ BANDS: dict[str, tuple[float, float]] = {
 }
 NOTE_MAX_LEN = 1000
 # R3.6: a rating below this needs a comment, so low ratings always say why.
-COMMENT_REQUIRED_BELOW = 3
-LOW_RATING_NEEDS_COMMENT = "Please add a comment: ratings below 3 stars need a reason."
+RATING_MAX = 10
+COMMENT_REQUIRED_BELOW = 5  # a rating of 4 or lower needs a comment
+LOW_RATING_NEEDS_COMMENT = "Please add a comment: ratings of 4 or lower need a reason."
 
 
 def bucket_for_rating(rating: int) -> str:
-    """4-5 stars = liked, 3 = fine, 1-2 = disliked."""
-    if not 1 <= rating <= 5:
-        raise ValueError("Rating must be 1-5 stars.")
-    return "liked" if rating >= 4 else "fine" if rating == 3 else "disliked"
+    """8-10 = liked, 5-7 = fine, 1-4 = disliked."""
+    if not 1 <= rating <= RATING_MAX:
+        raise ValueError(f"Rating must be 1-{RATING_MAX}.")
+    return "liked" if rating >= 8 else "fine" if rating >= 5 else "disliked"
 
 
 def check_review(rating: int | None, note: str | None) -> None:
@@ -277,13 +278,13 @@ async def update_note(
 
 
 async def rank_by_rating(db: AsyncSession, *, user_id: int, place: Place, rating: int) -> Ranking:
-    """Rank a place from its star rating alone (adding a place you've been to, R3.6): it goes
+    """Rank a place from its 1-10 rating alone (Went, or adding a place you've been to): it goes
     in the rating's bucket below every item rated the same or higher, so it lands among its
     peers without any comparisons. Unrated items count as the middle of their bucket."""
     bucket = bucket_for_rating(rating)
     key = ListKey(user_id, place.city_id, place.subcategory_id, bucket)
     lst = await _lock_list(db, key)
-    default = {"liked": 4, "fine": 3, "disliked": 2}[bucket]
+    default = {"liked": 9, "fine": 6, "disliked": 3}[bucket]
     others = [r for r in await _items(db, key) if r.place_id != place.id]
     position = 1 + sum(1 for r in others if (r.rating or default) >= rating)
     ranking = await place_ranking(

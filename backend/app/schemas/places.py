@@ -37,9 +37,9 @@ class PlaceCheckRequest(BaseModel):
 
 class ReviewIn(BaseModel):
     """The adder's own rating when they've been there (R3.6). Rating is required; a comment is
-    optional unless the rating is below 3 stars."""
+    optional unless the rating is 4 or lower."""
 
-    rating: int = Field(ge=1, le=5)
+    rating: int = Field(ge=1, le=10)
     note: str | None = Field(default=None, max_length=NOTE_MAX_LEN)
     visit_month: int | None = Field(default=None, ge=1, le=12)
     visit_year: int | None = Field(default=None, ge=1900, le=2100)
@@ -65,17 +65,20 @@ class PlaceCreateRequest(PlaceCheckRequest):
     confirm_not_duplicate: bool = False
     # "manual" = added via "Add manually" from search: saved pending admin review (R13).
     source: Literal["pin", "manual"] = "pin"
-    # "I've been here" (R3.6): then `review` (a star rating) is required and the place is
-    # ranked for the adder as it's created.
+    # "Been there" (R3.6): `review` (a 1-10 rating) is required and the place is ranked for
+    # the adder as it's created. "Want to go": it goes on the adder's Want to go list.
     visited: bool = False
     review: ReviewIn | None = None
+    want_to_go: bool = False
 
     @model_validator(mode="after")
     def _visited_needs_rating(self) -> "PlaceCreateRequest":
         if self.visited and self.review is None:
-            raise ValueError("You've been here, so please give it a star rating.")
+            raise ValueError("You've been here, so please give it a rating from 1 to 10.")
         if not self.visited and self.review is not None:
             raise ValueError("Only rate places you've been to.")
+        if self.visited and self.want_to_go:
+            raise ValueError("Choose Been there or Want to go, not both.")
         return self
 
 

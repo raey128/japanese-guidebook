@@ -10,10 +10,10 @@ import Badges from "../Badges";
 import FlagButton from "../FlagButton";
 import FlagNoteButton from "../FlagNoteButton";
 import PlaceNames from "../PlaceNames";
-import RankButton from "../RankButton";
 import MyRankingSummary from "../ranking/MyRankingSummary";
+import WentPanel from "../ranking/WentPanel";
 import { formatVisit } from "../ranking/NoteFields";
-import { Stars } from "../ranking/StarRating";
+import { RatingBadge } from "../ranking/NumberRating";
 import SaveButton from "../SaveButton";
 import Score from "../Score";
 import Chip from "../ui/Chip";
@@ -56,7 +56,7 @@ function Reviews({ placeId, signedIn }: { placeId: number; signedIn: boolean }) 
             <li key={n.ranking_id} className="rounded-xl bg-stone-50 px-3 py-2">
               <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
                 <strong className="text-ink">{n.author}</strong>
-                {n.rating ? <Stars rating={n.rating} className="text-sm" /> : null}
+                {n.rating ? <RatingBadge rating={n.rating} className="text-sm" /> : null}
                 {visit ? <span>visited {visit}</span> : null}
                 {signedIn && !n.is_own ? (
                   <span className="ml-auto">
@@ -130,9 +130,9 @@ export default function PinSummary({
 
       {place && v ? (
         <div className="space-y-3 px-4 pb-4 pt-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {canRate ? (
-              <RankButton placeId={place.id} ranked={ranked} className="flex-1 min-h-11 text-base" />
+              <WentPanel key={place.id} placeId={place.id} current={v.my_ranking?.rating ?? null} canRate />
             ) : (
               <p className="flex-1 text-sm font-bold text-muted">Reported closed: not taking new ratings</p>
             )}

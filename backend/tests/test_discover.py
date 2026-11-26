@@ -167,7 +167,7 @@ async def test_rank_response_has_city_count(client, db):
                 "/api/rankings",
                 json={
                     "place_id": p.id,
-                    "rating": 5,
+                    "rating": 9,
                     "position": i,
                     "list_version": snap["buckets"][0]["version"],
                 },

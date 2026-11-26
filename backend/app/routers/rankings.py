@@ -21,6 +21,8 @@ from app.schemas.rankings import (
     NotePatch,
     PlaceNote,
     PlaceNotes,
+    QuickRating,
+    QuickRatingResponse,
     RankingItem,
     RankRequest,
     RankResponse,
@@ -115,7 +117,7 @@ async def put_ranking(body: RankRequest, db: DB, user: CurrentUser):  # type: ig
     bucket = ranking_core.bucket_for_rating(body.rating)
     if body.bucket is not None and body.bucket != bucket:
         raise HTTPException(
-            422, f"A {body.rating}-star rating belongs in {bucket}, not {body.bucket}."
+            422, f"A rating of {body.rating} belongs in {bucket}, not {body.bucket}."
         )
     existing = await ranking_core.get_user_ranking(db, user.id, place.id)
     if "note" in body.model_fields_set:
@@ -187,6 +189,63 @@ async def put_ranking(body: RankRequest, db: DB, user: CurrentUser):  # type: ig
         is_new=existing is None,
         city_name=ref.cities[place.city_id].name,
         city_rank_count=city_count,
+    )
+
+
+@router.put(
+    "/places/{place_id}/rating",
+    response_model=QuickRatingResponse,
+    responses={404: {"model": Message}, 409: {"model": Message}, 422: {"model": Message}},
+    operation_id="ratePlace",
+)
+async def rate_place(  # type: ignore[no-untyped-def]
+    place_id: int, body: QuickRating, db: DB, user: CurrentUser
+):
+    """Went (R3.7): one tap rates (or re-rates) a place 1-10. It's placed in your list by its
+    number, among places you rated the same; "Fine-tune" can do the comparisons later."""
+    place = await _visible_place(db, place_id, user.id)
+    existing = await ranking_core.get_user_ranking(db, user.id, place.id)
+    note_after = (
+        body.note if "note" in body.model_fields_set else (existing.note if existing else None)
+    )
+    try:
+        ranking_core.check_review(body.rating, note_after)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    try:
+        ranked = await ranking_core.rank_by_rating(
+            db, user_id=user.id, place=place, rating=body.rating
+        )
+        if "note" in body.model_fields_set:
+            await ranking_core.update_note(
+                db,
+                ranked,
+                note=body.note,
+                visit_month=ranked.visit_month,
+                visit_year=ranked.visit_year,
+            )
+    except ranking_core.RankingNotAllowed as e:
+        raise HTTPException(409, str(e)) from e
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    await db.commit()
+    snaps = await ranking_core.get_snapshot(db, user.id, place.city_id, place.subcategory_id)
+    city_count = (
+        await db.execute(
+            text(
+                "SELECT count(*) FROM rankings r JOIN places p ON p.id = r.place_id "
+                "WHERE r.user_id = :u AND p.city_id = :c"
+            ),
+            {"u": user.id, "c": place.city_id},
+        )
+    ).scalar_one()
+    ref = await load_reference(db)
+    return QuickRatingResponse(
+        ranking=MyRanking.model_validate(ranked),
+        is_new=existing is None,
+        city_name=ref.cities[place.city_id].name,
+        city_rank_count=city_count,
+        compare_count=len(snaps[ranked.bucket].items) - 1,
     )
 
 
@@ -302,7 +361,7 @@ async def place_notes(
     offset: int = Query(0, ge=0),
     sort: Literal["newest", "highest", "lowest"] = "newest",
 ):  # type: ignore[no-untyped-def]
-    """Reviews with a comment. `sort`: newest first (default), or by star rating, highest or
+    """Reviews with a comment. `sort`: newest first (default), or by rating, highest or
     lowest first (unrated ones last, newest first within a rating)."""
     place = await db.get(Place, place_id)
     if place is None or not can_see(place, viewer):

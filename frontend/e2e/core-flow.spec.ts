@@ -22,6 +22,7 @@ test("sign in, add a place by pin, rank three places, see them in both lists", a
   await addNameBox(page).fill(nameA);
   await addNameBox(page).press("Escape");
   await pickFoodCategory(page, "Ramen");
+  await page.getByRole("button", { name: "Want to go", exact: true }).click();
   await page.getByRole("button", { name: "Add place", exact: true }).click();
 
   // The duplicate step only appears if a seeded/earlier place is nearby; dismiss it if so.
@@ -40,10 +41,10 @@ test("sign in, add a place by pin, rank three places, see them in both lists", a
   const c = await createPlaceApi(page, { name: `Corefl Tonkotsu ${run}` });
 
   // 3. Rank all three through the RankFlow UI: A first, then B (A is better), then C (B is better).
-  await summary.getByRole("button", { name: "Rate", exact: true }).click();
-  await expect(page).toHaveURL(/\/places\/\d+\/rank$/);
-  const idA = Number(/\/places\/(\d+)\/rank$/.exec(page.url())?.[1]);
-  expect(await rankViaUi(page, idA)).toBe(0);
+  // Went: rate it 9 in one tap, right on the card (R3.7).
+  await summary.getByRole("button", { name: "Went", exact: true }).click();
+  await summary.locator("label").filter({ has: page.getByRole("radio", { name: /^9 out of 10/ }) }).click();
+  await expect(summary.getByText(/Saved: you gave it 9/)).toBeVisible();
   expect(await rankViaUi(page, b.id, { answers: ["existing"] })).toBe(1);
   expect(await rankViaUi(page, c.id, { answers: ["existing"], note: `Great bowl ${run}` })).toBe(1);
 

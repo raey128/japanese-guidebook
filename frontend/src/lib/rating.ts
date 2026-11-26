@@ -2,20 +2,27 @@ import type { Schemas } from "../api/client";
 
 type Bucket = Schemas["MyRanking"]["bucket"];
 
-/** R3.6: a rating below this needs a comment, so low ratings always say why. Mirrors the API. */
-export const COMMENT_REQUIRED_BELOW = 3;
+/** Ratings are numbers from 1 to 10 (R3.6). Mirrors the API. */
+export const RATING_MAX = 10;
+/** A rating of 4 or lower needs a comment, so low ratings always say why. */
+export const COMMENT_REQUIRED_BELOW = 5;
 
-export const RATING_LABELS: Record<number, string> = {
-  1: "Awful",
-  2: "Not great",
-  3: "Okay",
-  4: "Good",
-  5: "Amazing",
-};
+/** Words for the two ends of the scale, shown under the buttons. */
+export const RATING_ENDS = { low: "skip it", high: "must go" } as const;
 
-/** 4–5 stars = Liked, 3 = Fine, 1–2 = Disliked (the same split as the API). */
+/** A short word for a rating, used in screen-reader labels and "You gave it 8 · Great". */
+export function ratingWord(rating: number): string {
+  if (rating >= 9) return "Must go";
+  if (rating >= 8) return "Great";
+  if (rating >= 6) return "Good";
+  if (rating === 5) return "Okay";
+  if (rating >= 3) return "Not great";
+  return "Skip it";
+}
+
+/** 8-10 = Liked, 5-7 = Fine, 1-4 = Disliked (the same split as the API). */
 export function bucketForRating(rating: number): Bucket {
-  return rating >= 4 ? "liked" : rating === 3 ? "fine" : "disliked";
+  return rating >= 8 ? "liked" : rating >= 5 ? "fine" : "disliked";
 }
 
 export function needsComment(rating: number | null): boolean {
@@ -24,13 +31,9 @@ export function needsComment(rating: number | null): boolean {
 
 /** What's missing before a review can be sent, or null when it's fine. */
 export function reviewProblem(rating: number | null, note: string): { rating?: string; note?: string } | null {
-  if (rating === null) return { rating: "Pick a star rating." };
+  if (rating === null) return { rating: "Pick a number from 1 to 10." };
   if (needsComment(rating) && !note.trim()) {
-    return { note: `Tell others why: ratings below ${COMMENT_REQUIRED_BELOW} stars need a comment.` };
+    return { note: "Tell others why: ratings of 4 or lower need a comment." };
   }
   return null;
-}
-
-export function starsText(rating: number): string {
-  return "★".repeat(rating) + "☆".repeat(5 - rating);
 }

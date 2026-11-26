@@ -5,7 +5,7 @@ import { api, unwrap, type Schemas } from "../../api/client";
 import { invalidateAfterRankingChange } from "../../hooks/ranking";
 import { needsComment, reviewProblem } from "../../lib/rating";
 import NoteFields, { formatVisit, type NoteValue } from "./NoteFields";
-import { Stars } from "./StarRating";
+import { RatingBadge } from "./NumberRating";
 
 const BUCKET_LABEL = { liked: "Liked", fine: "Fine", disliked: "Disliked" } as const;
 
@@ -58,7 +58,7 @@ export default function MyRankingSummary({
       <p>
         {rating ? (
           <>
-            <Stars rating={rating} /> ·{" "}
+            <RatingBadge rating={rating} /> ·{" "}
           </>
         ) : null}
         {BUCKET_LABEL[ranking.bucket]} · #{ranking.position} in your list · personal score {ranking.personal_score.toFixed(1)}

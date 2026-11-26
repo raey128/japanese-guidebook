@@ -78,11 +78,12 @@ export function useCreatePlace() {
         source?: "pin" | "manual";
         visited?: boolean;
         review?: Schemas["ReviewIn"] | null;
+        want_to_go?: boolean;
       },
-    ) => unwrap(await api.POST("/api/places", { body: { source: "pin", visited: false, ...v } })),
+    ) => unwrap(await api.POST("/api/places", { body: { source: "pin", visited: false, want_to_go: false, ...v } })),
     onSuccess: (res) => {
       if (res.status === "created") {
-        for (const key of ["map", "search", "suggest", "topPicks", "pendingCount", "myRankings", "snapshot"])
+        for (const key of ["map", "search", "suggest", "topPicks", "pendingCount", "myRankings", "snapshot", "bookmarks"])
           void qc.invalidateQueries({ queryKey: [key] });
       }
     },

@@ -126,9 +126,9 @@ export async function rankApi(
   const bucket = opts.bucket ?? "liked";
   const snap = await snapshotApi(page, placeId);
   const version = snap.buckets.find((b) => b.bucket === bucket)?.version ?? 0;
-  // R3.6: the star rating decides the bucket; below 3 stars needs a comment.
-  const rating = { liked: 5, fine: 3, disliked: 2 }[bucket];
-  const note = opts.note ?? (rating < 3 ? "Not for me." : undefined);
+  // R3.6: the 1-10 rating decides the bucket; 4 or lower needs a comment.
+  const rating = { liked: 9, fine: 6, disliked: 3 }[bucket];
+  const note = opts.note ?? (rating <= 4 ? "Not for me." : undefined);
   const r = await page.request.put("/api/rankings", {
     data: {
       place_id: placeId,
@@ -161,16 +161,16 @@ export async function seedPlaceId(page: Page, name: string): Promise<number> {
   return hit.id;
 }
 
-/** RankFlow's first step: pick `stars` and press Next. */
-export async function pickStars(page: Page, stars: number): Promise<void> {
+/** RankFlow's first step: pick a number from 1 to 10 and press Next. */
+export async function pickRating(page: Page, rating: number): Promise<void> {
   // The radio is visually hidden; tap its star (the label), like a person would.
-  const radio = page.getByRole("radio", { name: new RegExp(`^${stars} stars?:`) });
+  const radio = page.getByRole("radio", { name: new RegExp(`^${rating} out of 10`) });
   await page.locator("label").filter({ has: radio }).click();
   await expect(radio).toBeChecked();
   await page.getByRole("button", { name: "Next", exact: true }).click();
 }
 
-export const STARS_FOR = { Liked: 5, Fine: 3, Disliked: 2 } as const;
+export const RATING_FOR = { Liked: 9, Fine: 6, Disliked: 3 } as const;
 
 /**
  * Drive the RankFlow UI for the place at /places/:id/rank: choose the bucket, answer each
@@ -183,7 +183,7 @@ export async function rankViaUi(
   opts: { bucket?: "Liked" | "Fine" | "Disliked"; answers?: ("new" | "existing")[]; note?: string } = {},
 ): Promise<number> {
   if (!new RegExp(`/places/${placeId}/rank$`).test(page.url())) await page.goto(`/places/${placeId}/rank`);
-  await pickStars(page, STARS_FOR[opts.bucket ?? "Liked"]);
+  await pickRating(page, RATING_FOR[opts.bucket ?? "Liked"]);
   const save = page.getByRole("button", { name: "Save", exact: true });
   let asked = 0;
   for (;;) {

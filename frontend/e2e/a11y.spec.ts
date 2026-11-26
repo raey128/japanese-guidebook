@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-import { createPlaceApi, pickStars, rankApi, runId, seedPlaceId, seedRankedList, signInApi, stubMapStyle } from "./helpers";
+import { createPlaceApi, pickRating, rankApi, runId, seedPlaceId, seedRankedList, signInApi, stubMapStyle } from "./helpers";
 
 // N3.1: no serious or critical WCAG 2.1 A/AA violations. The MapLibre canvas and attribution are
 // third-party and excluded.
@@ -60,7 +60,7 @@ test.describe("accessibility (axe)", () => {
     await expect(page.getByRole("heading", { name: "How was it?" })).toBeVisible();
     await expectNoSeriousViolations(page, "ranking flow: bucket step");
 
-    await pickStars(page, 5);
+    await pickRating(page, 9);
     await expect(page.getByRole("heading", { name: "Which was better?" })).toBeVisible();
     await expectNoSeriousViolations(page, "ranking flow: comparison step");
   });
@@ -69,7 +69,7 @@ test.describe("accessibility (axe)", () => {
     await signInApi(page);
     const target = await createPlaceApi(page, { name: `Axe Note ${runId()}` });
     await page.goto(`/places/${target.id}/rank`);
-    await pickStars(page, 5);
+    await pickRating(page, 9);
     await expect(page.getByRole("heading", { name: "Add a comment (optional)" })).toBeVisible();
     await expectNoSeriousViolations(page, "ranking flow: note step");
   });
