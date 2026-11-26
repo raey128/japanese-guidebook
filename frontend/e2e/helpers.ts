@@ -163,8 +163,10 @@ export async function seedPlaceId(page: Page, name: string): Promise<number> {
 
 /** RankFlow's first step: pick `stars` and press Next. */
 export async function pickStars(page: Page, stars: number): Promise<void> {
-  // The radio is visually hidden behind its star label (which takes the click), so force it.
-  await page.getByRole("radio", { name: new RegExp(`^${stars} stars?:`) }).check({ force: true });
+  // The radio is visually hidden; tap its star (the label), like a person would.
+  const radio = page.getByRole("radio", { name: new RegExp(`^${stars} stars?:`) });
+  await page.locator("label").filter({ has: radio }).click();
+  await expect(radio).toBeChecked();
   await page.getByRole("button", { name: "Next", exact: true }).click();
 }
 

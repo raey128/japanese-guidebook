@@ -89,13 +89,21 @@ export default function MapPage() {
   const [pinEditing, setPinEditing] = useState(false);
   // Where the map was when the panel opened: name suggestions prefer places near here.
   const [addNear, setAddNear] = useState<LatLng | null>(null);
+  // "Add manually" from search and its name, kept here (not read back from the URL).
+  const [addExtra, setAddExtra] = useState<{ name: string; manual: boolean }>({ name: "", manual: false });
 
   // URL updates build on the latest params (two updates in one tick must not undo each other),
   // and are skipped while another page is loading: replacing "/" then would cancel that
   // navigation (tapping Lists while the map finished moving bounced back to the map).
   const navigation = useNavigation();
   const latestParams = useRef(params);
-  latestParams.current = params;
+  // Adopt the router's params only when they actually change: a re-render with the old params
+  // (before our own update lands) must not undo the update we just asked for.
+  const seenParams = useRef(params.toString());
+  if (params.toString() !== seenParams.current) {
+    seenParams.current = params.toString();
+    latestParams.current = params;
+  }
   const navigating = useRef(false);
   navigating.current = navigation.state !== "idle" && navigation.location?.pathname !== "/";
   const setParam = useCallback(
@@ -201,6 +209,7 @@ export default function MapPage() {
         setAddNear(at ?? (c ? { lat: c.lat, lng: c.lng } : null));
         setAddPin(at ? round6(at) : null);
         setPinEditing(false);
+        setAddExtra({ name: extra.name ?? "", manual: extra.source === "manual" });
         setAddOpen(true);
         setParam({ add: "1", name: extra.name ?? "", source: extra.source ?? "" });
       }, "Pick a username to add places");
@@ -555,8 +564,8 @@ export default function MapPage() {
                 selectPlace(place, "search");
               }}
               city={cityData ? { slug: cityData.slug, lat: cityData.lat, lng: cityData.lng } : null}
-              initialName={params.get("name") ?? ""}
-              manual={params.get("source") === "manual"}
+              initialName={addExtra.name}
+              manual={addExtra.manual}
               onClose={closeAdd}
               onCreated={(id, name) => {
                 closeAdd();

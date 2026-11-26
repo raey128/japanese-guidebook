@@ -9,11 +9,18 @@ import { useEffect, useRef, type ReactNode } from "react";
 export default function MarkerContent({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
-    const wrapper = ref.current?.closest(".maplibregl-marker");
-    if (!wrapper) return;
-    wrapper.removeAttribute("role");
-    wrapper.removeAttribute("aria-label");
-    wrapper.removeAttribute("tabindex");
+    const strip = () => {
+      const wrapper = ref.current?.closest(".maplibregl-marker");
+      if (!wrapper) return;
+      wrapper.removeAttribute("role");
+      wrapper.removeAttribute("aria-label");
+      wrapper.removeAttribute("tabindex");
+    };
+    strip();
+    // The parent <Marker> adds the marker to the map (which sets those attributes) in its own
+    // effect, which runs after this child's; strip again on the next frame.
+    const frame = requestAnimationFrame(strip);
+    return () => cancelAnimationFrame(frame);
   });
   return (
     <span ref={ref} style={{ display: "contents" }}>

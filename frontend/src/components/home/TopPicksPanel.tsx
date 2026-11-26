@@ -132,19 +132,17 @@ export default function TopPicksPanel({
         onClick={() => onOpenChange(!open)}
         aria-expanded={open}
         aria-controls="top-picks-panel"
-        aria-label={`${title}${items.length ? `, ${items.length} places` : ""}`}
         title={title}
         className={`btn gap-1 px-3 shadow-lg ${open ? "btn-primary" : "btn-secondary"}`}
       >
         <span aria-hidden="true" className="text-xl">
           {emoji}
         </span>
-        <span aria-hidden="true" className="max-w-[10rem] truncate">
-          {title}
-        </span>
+        <span className="max-w-[10rem] truncate">{title}</span>
         {items.length ? (
-          <span aria-hidden="true" className={`badge ${open ? "bg-white/25 text-white" : "bg-brand-soft text-brand-dark"}`}>
+          <span className={`badge ${open ? "bg-white/25 text-white" : "bg-brand-soft text-brand-dark"}`}>
             {items.length}
+            <span className="sr-only"> places</span>
           </span>
         ) : null}
       </button>

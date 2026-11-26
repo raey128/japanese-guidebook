@@ -44,7 +44,7 @@ test("script and img payloads in a place name and a note render as literal text"
   // The place card on the map: the name, and the note in Reviews.
   await page.goto(`/?place=${place.id}`);
   const card = page.getByRole("region", { name: "Place summary" });
-  await expect(card.getByRole("heading", { level: 2 })).toContainText(name);
+  await expect(card.getByRole("heading", { level: 2 }).first()).toContainText(name);
   await expect(card.getByText(note, { exact: true }).first()).toBeVisible();
   await noXss();
 

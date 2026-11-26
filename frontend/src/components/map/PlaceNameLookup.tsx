@@ -116,6 +116,12 @@ export default function PlaceNameLookup({
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={(e) => {
+          if (e.key === "Escape" && open) {
+            // Close just the suggestions (even before they've loaded), not the Add panel.
+            e.stopPropagation();
+            setOpen(false);
+            return;
+          }
           if (!show || options.length === 0) return;
           if (e.key === "ArrowDown") {
             e.preventDefault();
@@ -126,10 +132,6 @@ export default function PlaceNameLookup({
           } else if (e.key === "Enter" && active >= 0) {
             e.preventDefault();
             choose(options[active]!);
-          } else if (e.key === "Escape") {
-            // Close just the suggestions, not the Add panel around them.
-            e.stopPropagation();
-            setOpen(false);
           }
         }}
         className="field mt-1"

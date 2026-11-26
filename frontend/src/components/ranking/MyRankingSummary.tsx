@@ -85,6 +85,7 @@ export default function MyRankingSummary({
         </>
       ) : (
         <form
+          noValidate
           className="mt-2 space-y-3"
           onSubmit={(e) => {
             e.preventDefault();

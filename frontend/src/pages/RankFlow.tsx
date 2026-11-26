@@ -281,6 +281,7 @@ export default function RankFlow() {
 
       {step === "note" ? (
         <form
+          noValidate
           aria-labelledby="q-note"
           className="space-y-4"
           onSubmit={(e) => {
