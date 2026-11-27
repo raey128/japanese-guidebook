@@ -2,9 +2,9 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 
 import { ApiError } from "../api/client";
-import PlaceNames from "../components/PlaceNames";
 import Loading from "../components/ui/Loading";
 import PlaceArt from "../components/ui/PlaceArt";
+import ReviewPeek from "../components/ui/ReviewPeek";
 import {
   castVote,
   evidenceLine,
@@ -14,9 +14,13 @@ import {
   useVoteList,
   type Choice,
   type VoteItem,
-  type VoteList,
 } from "../hooks/voting";
 import { voterId } from "../lib/voterId";
+import { useInlineSignIn } from "../components/app/InlineSignIn";
+import ListMap from "../components/lists/ListMap";
+import { googleMapsUrl, useSaveListPlaces } from "../hooks/myLists";
+import { TOP_CATEGORY_INFO, topCategoryInfo } from "../lib/categories";
+import { track } from "../lib/track";
 
 type Status = "saving" | "saved" | "error";
 
@@ -35,6 +39,7 @@ function placeLine(item: VoteItem): string {
 /** One place: name, area and category, the curator evidence, and Yes / Maybe / No (V1.5). */
 function VoteCard({
   item,
+  voting,
   choice,
   status,
   error,
@@ -42,6 +47,8 @@ function VoteCard({
   onRetry,
 }: {
   item: VoteItem;
+  /** "Let friends vote" is on: show Yes / Maybe / No. */
+  voting: boolean;
   choice: Choice | null;
   status: Status | null;
   error: string | null;
@@ -61,9 +68,9 @@ function VoteCard({
         image={item.place.image}
         className="min-h-32"
       >
-        <h2 id={`${id}-name`} className="font-display text-2xl font-black leading-tight text-white [text-shadow:0_2px_8px_rgb(0_0_0/0.35)]">
+        <h3 id={`${id}-name`} className="font-display text-2xl font-black leading-tight text-white [text-shadow:0_2px_8px_rgb(0_0_0/0.35)]">
           {item.place.name}
-        </h2>
+        </h3>
         <p className="text-sm font-bold text-white/90">
           {item.place.name_ja ? (
             <span lang="ja" className="block">
@@ -73,7 +80,20 @@ function VoteCard({
           {placeLine(item)}
         </p>
       </PlaceArt>
-      {evidence ? <p className="text-sm font-bold text-muted">{evidence}</p> : null}
+      {evidence ? <p className="px-1 text-sm font-bold text-muted">{evidence}</p> : null}
+      {/* A sneak peek of what people say (decided 2026-11-27). */}
+      <ReviewPeek peek={item.place.peek} className="mx-1 rounded-xl border-l-4 border-brand bg-brand-soft px-3 py-2" />
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm">
+        <a href={googleMapsUrl(item.place)} target="_blank" rel="noopener noreferrer" className="link">
+          Open in Google Maps<span className="sr-only"> (opens a new tab)</span>
+        </a>
+        {item.tally && item.tally.yes + item.tally.maybe + item.tally.no > 0 ? (
+          <span className="font-bold text-muted" aria-label={`Votes so far: ${item.tally.yes} yes, ${item.tally.maybe} maybe, ${item.tally.no} no`}>
+            ✅ {item.tally.yes} · 🤔 {item.tally.maybe} · ✖️ {item.tally.no}
+          </span>
+        ) : null}
+      </div>
+      {voting ? (
       <div role="group" aria-labelledby={`${id}-name`} className="grid grid-cols-3 gap-2">
         {CHOICES.map((c) => {
           const pressed = choice === c.key;
@@ -90,7 +110,8 @@ function VoteCard({
           );
         })}
       </div>
-      <p aria-live="polite" className="min-h-5 text-sm">
+      ) : null}
+      <p aria-live="polite" className="min-h-5 px-1 text-sm">
         {status === "saving" ? <span className="text-muted">Saving…</span> : null}
         {status === "saved" ? <span className="font-bold text-success-dark">Saved</span> : null}
         {status === "error" ? (
@@ -152,53 +173,6 @@ function NameField({ token, voter, organizer, initial }: { token: string; voter:
   );
 }
 
-/** Voting closed: read-only results, most yeses first (V1.7). */
-function Results({ list }: { list: VoteList }) {
-  const items = [...list.items].sort((a, b) => (b.tally?.yes ?? 0) - (a.tally?.yes ?? 0) || (a.tally?.no ?? 0) - (b.tally?.no ?? 0));
-  return (
-    <>
-      <header className="space-y-1">
-        <p className="text-sm font-extrabold uppercase tracking-wide text-muted">{list.title}</p>
-        <h1 className="text-2xl font-extrabold">Voting has closed</h1>
-        <p className="text-muted">
-          Here's how it went: {progressLine(list.voter_count, list.group_size)} on {list.organizer_name}'s {list.item_count}{" "}
-          places.
-        </p>
-      </header>
-      <ol className="space-y-3">
-        {items.map((item) => {
-          const t = item.tally;
-          return (
-            <li key={item.item_id} className="card space-y-2">
-              <h2 className="text-lg font-extrabold leading-tight">
-                <PlaceNames name={item.place.name} nameJa={item.place.name_ja} as="span" />
-              </h2>
-              <p className="text-sm font-bold text-muted">{placeLine(item)}</p>
-              {t ? (
-                <dl className="grid grid-cols-3 gap-2 text-center">
-                  {CHOICES.map((c) => {
-                    const names = t[`${c.key}_names` as "yes_names"];
-                    return (
-                      <div key={c.key} className="rounded-xl bg-stone-50 px-2 py-1.5">
-                        <dt className="text-xs font-extrabold uppercase text-muted">
-                          <span aria-hidden="true">{c.icon} </span>
-                          {c.label}
-                        </dt>
-                        <dd className="text-xl font-extrabold">{t[c.key]}</dd>
-                        {names.length ? <dd className="truncate text-xs text-muted">{names.join(", ")}</dd> : null}
-                      </div>
-                    );
-                  })}
-                </dl>
-              ) : null}
-            </li>
-          );
-        })}
-      </ol>
-    </>
-  );
-}
-
 /**
  * The vote page (V1, the product under test): "Maya picked 12 places for Tokyo. Tap yes, maybe
  * or no." No account; every tap saves straight away; Done shows how many friends have voted.
@@ -213,6 +187,13 @@ export default function VotePage() {
   const [errors, setErrors] = useState<Record<number, string | null>>({});
   const [finished, setFinished] = useState(false);
   const seq = useRef<Record<number, number>>({});
+  const opened = useRef(false);
+  useEffect(() => {
+    if (q.data && !opened.current) {
+      opened.current = true;
+      if (!q.data.is_owner) track("share_open");
+    }
+  }, [q.data]);
 
   // Start from what this browser already voted.
   useEffect(() => {
@@ -264,13 +245,7 @@ export default function VotePage() {
   }
 
   const list = q.data;
-  if (!list.is_open) {
-    return (
-      <main className="mx-auto max-w-md space-y-4 px-4 py-6">
-        <Results list={list} />
-      </main>
-    );
-  }
+  const voting = list.is_open;
 
   const votedCount = list.items.filter((i) => choices[i.item_id]).length;
 
@@ -304,7 +279,11 @@ export default function VotePage() {
         <h1 className="text-2xl font-extrabold leading-tight">
           {list.organizer_name} picked {list.item_count} {list.item_count === 1 ? "place" : "places"} for {list.city.name}.
         </h1>
-        <p className="text-lg font-bold">Tap yes, maybe or no.</p>
+        {voting ? <p className="text-lg font-bold">Tap yes, maybe or no.</p> : null}
+        {list.voter_count > 0 ? (
+          <p className="text-sm font-bold text-muted">{progressLine(list.voter_count, list.group_size)} so far.</p>
+        ) : null}
+        {voting ? (
         <div className="flex items-center gap-3 pt-1">
           <div
             role="progressbar"
@@ -320,14 +299,35 @@ export default function VotePage() {
             {votedCount} of {list.item_count}
           </span>
         </div>
+        ) : null}
       </header>
 
-      <NameField token={token} voter={voter} organizer={list.organizer_name} initial={list.me?.name ?? ""} />
+      {list.is_owner ? (
+        <p className="card bg-brand-soft p-3 text-sm font-bold">
+          This is your list.{" "}
+          <Link to="/lists?tab=shared" className="link">
+            Edit it in Shared lists
+          </Link>
+        </p>
+      ) : null}
 
+      <ListMap places={list.items.map((i) => i.place)} />
+
+      <SaveAll token={token} />
+
+      {voting ? <NameField token={token} voter={voter} organizer={list.organizer_name} initial={list.me?.name ?? ""} /> : null}
+
+      {groupByCategory(list.items).map(([top, items]) => (
+      <section key={top} aria-label={topCategoryInfo(top)?.name ?? top} className="space-y-3">
+        <h2 className="font-display text-xl font-black">
+          <span aria-hidden="true">{topCategoryInfo(top)?.emoji} </span>
+          {topCategoryInfo(top)?.name ?? top}
+        </h2>
       <ul className="space-y-3">
-        {list.items.map((item) => (
+        {items.map((item) => (
           <VoteCard
             key={item.item_id}
+            voting={voting}
             item={item}
             choice={choices[item.item_id] ?? null}
             status={status[item.item_id] ?? null}
@@ -343,8 +343,11 @@ export default function VotePage() {
           />
         ))}
       </ul>
+      </section>
+      ))}
 
-      {/* Sticky Done (V1.6). */}
+      {/* Sticky Done (V1.6), only while voting is on. */}
+      {voting ? (
       <div className="fixed inset-x-0 bottom-0 z-20 border-t-2 border-line bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-3">
           <p className="flex-1 text-sm font-bold text-muted">
@@ -365,6 +368,48 @@ export default function VotePage() {
           </p>
         ) : null}
       </div>
+      ) : null}
     </main>
+  );
+}
+
+/** Places grouped by category (Food, Sights…), in the list's order within each. */
+function groupByCategory(items: VoteItem[]): [string, VoteItem[]][] {
+  const groups = new Map<string, VoteItem[]>();
+  for (const it of items) {
+    const top = it.place.subcategory.top_category;
+    groups.set(top, [...(groups.get(top) ?? []), it]);
+  }
+  const order = TOP_CATEGORY_INFO.map((c) => c.slug as string);
+  return [...groups.entries()].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
+}
+
+/** "Save these places": all of them onto your Want to go (decided 2026-11-27). */
+function SaveAll({ token }: { token: string }) {
+  const { requireUser } = useInlineSignIn();
+  const save = useSaveListPlaces(token);
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        className="btn btn-secondary w-full"
+        disabled={save.isPending}
+        onClick={() =>
+          requireUser(
+            () => save.mutate(undefined, { onSuccess: () => track("share_save") }),
+            "Pick a username to save these places",
+          )
+        }
+      >
+        <span aria-hidden="true">🔖</span> {save.isPending ? "Saving…" : "Save these places"}
+      </button>
+      <p aria-live="polite" className="text-center text-sm font-bold text-success-dark">
+        {save.data
+          ? save.data.saved
+            ? `Saved ${save.data.saved} ${save.data.saved === 1 ? "place" : "places"} to your Want to go.`
+            : "They're all on your lists already."
+          : ""}
+      </p>
+    </div>
   );
 }

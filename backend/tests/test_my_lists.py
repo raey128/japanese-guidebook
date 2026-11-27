@@ -157,3 +157,27 @@ async def test_demo_lists_have_no_owner(db):
         await db.execute(text("SELECT count(*) FROM vote_lists WHERE owner_id IS NOT NULL"))
     ).scalar_one()
     assert row == 0
+
+
+async def test_community_lists_show_only_lists_people_chose_to_show(client_factory, db):
+    (a,) = await ramen_places(db, 1, "C")
+    owner = client_factory()
+    await sign_in(owner, "owner7")
+    shown = (
+        await owner.post("/api/me/lists", json={"title": "Shown", "city_slug": "tokyo"})
+    ).json()
+    hidden = (
+        await owner.post("/api/me/lists", json={"title": "Hidden", "city_slug": "tokyo"})
+    ).json()
+    empty = (
+        await owner.post("/api/me/lists", json={"title": "Empty", "city_slug": "tokyo"})
+    ).json()
+    for lst in (shown, hidden):
+        await owner.post(f"/api/me/lists/{lst['id']}/items", json={"place_ids": [a.id]})
+    for lst in (shown, empty):
+        r = await owner.patch(f"/api/me/lists/{lst['id']}", json={"is_public": True})
+        assert r.json()["is_public"] is True
+    anon = client_factory()
+    got = (await anon.get("/api/community-lists?city=tokyo")).json()
+    assert [(g["title"], g["owner"]) for g in got] == [("Shown", "owner7")]
+    assert (await anon.get("/api/community-lists?city=kyoto")).json() == []

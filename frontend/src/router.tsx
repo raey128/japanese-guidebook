@@ -32,6 +32,9 @@ export const router = createBrowserRouter([
       { path: "/map", element: <KeepQuery to="/" /> },
       { path: "/search", element: <KeepQuery to="/" /> },
       // Round 1 vote link (V1): its own full page, no app header or tabs.
+      // A shared list (decided 2026-11-27): its own full page, no app header. /v/ was the round-1
+      // vote link; both open the same page.
+      { path: "/l/:token", lazy: page(() => import("./pages/VotePage")) },
       { path: "/v/:token", lazy: page(() => import("./pages/VotePage")) },
       // Adding a place happens on the map itself (R13.12); old links open the add panel there.
       { path: "/places/new", element: <KeepQuery to="/" rename={{ lat: "pin_lat", lng: "pin_lng" }} set={{ add: "1" }} /> },
@@ -43,6 +46,7 @@ export const router = createBrowserRouter([
           { path: "/places/:id/edit", lazy: page(() => import("./pages/EditPlace")) },
           { path: "/places/:id/rank", lazy: page(() => import("./pages/RankFlow")) },
           { path: "/lists", lazy: page(() => import("./pages/Lists")) },
+          { path: "/lists/mine/:id", lazy: page(() => import("./pages/ListEditor")) },
           { path: "/lists/:city/:category", lazy: page(() => import("./pages/RankedList")) },
           { path: "/me/rankings", element: <Navigate to="/lists?tab=mine" replace /> },
           { path: "/me/want-to-go", element: <Navigate to="/lists?tab=want_to_go" replace /> },

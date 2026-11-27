@@ -14,7 +14,7 @@ test("a ranked place shows under My rankings and 'Show on map' opens it on the m
   await rankApi(page, place.id);
 
   await page.goto("/lists");
-  await page.getByRole("button", { name: "My ratings" }).click();
+  await page.getByRole("button", { name: "Been there" }).click();
   await expect(page).toHaveURL(/\/lists\?tab=mine$/);
   await expect(page.getByRole("heading", { level: 3, name: "Ramen" })).toBeVisible();
   const row = page.getByRole("listitem").filter({ hasText: place.name });
@@ -34,10 +34,10 @@ test("old list URLs redirect to the matching segment", async ({ page }) => {
   await signInApi(page);
   await page.goto("/me/rankings");
   await expect(page).toHaveURL(/\/lists\?tab=mine$/);
-  await expect(page.getByRole("button", { name: "My ratings" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Been there" })).toHaveAttribute("aria-pressed", "true");
   await page.goto("/me/want-to-go");
   await expect(page).toHaveURL(/\/lists\?tab=want_to_go$/);
-  await expect(page.getByRole("button", { name: "Saved" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Want to go", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("logged out: All works, personal segments ask to sign in", async ({ page }) => {
@@ -45,7 +45,7 @@ test("logged out: All works, personal segments ask to sign in", async ({ page })
   await expect(page.getByRole("button", { name: "Rankings" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("heading", { level: 2, name: /^Overall ranking in / })).toBeVisible();
 
-  await page.getByRole("button", { name: "Saved" }).click();
+  await page.getByRole("button", { name: "Want to go", exact: true }).click();
   const signIn = page.getByRole("link", { name: "Sign in" }).last();
   await expect(page.getByText("to see your lists.")).toBeVisible();
   await expect(signIn).toHaveAttribute("href", "/sign-in?next=%2Flists%3Ftab%3Dwant_to_go");

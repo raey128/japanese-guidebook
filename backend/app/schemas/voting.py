@@ -90,6 +90,8 @@ class MyListSummary(Out):
     title: str
     city: CityOut
     is_open: bool  # "Let friends vote"
+    is_public: bool = False  # shown on Community lists
+    owner: str = ""  # who made it (username)
     place_count: int
     voter_count: int
     updated_at: str
@@ -119,6 +121,7 @@ class CreateListRequest(BaseModel):
 class UpdateListRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=80)
     is_open: bool | None = None
+    is_public: bool | None = None
 
 
 class AddItemsRequest(BaseModel):

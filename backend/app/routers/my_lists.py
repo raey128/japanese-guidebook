@@ -30,6 +30,9 @@ share_router = APIRouter(tags=["lists"])
 
 ERRORS: dict[int | str, dict[str, Any]] = {404: {"model": Message}, 422: {"model": Message}}
 MAX_ITEMS = 100
+LIST_COLS = (
+    "l.id, l.token, l.title, l.city_id, l.is_open, l.is_public, l.updated_at, o.username AS owner"
+)
 
 
 def share_url(token: str) -> str:
@@ -40,8 +43,8 @@ async def _own(db, list_id: int, user) -> Any:  # type: ignore[no-untyped-def]
     row = (
         await db.execute(
             text(
-                "SELECT id, token, title, city_id, is_open, updated_at FROM vote_lists "
-                "WHERE id = :i AND owner_id = :u"
+                f"SELECT {LIST_COLS} FROM vote_lists l JOIN users o ON o.id = l.owner_id "
+                "WHERE l.id = :i AND l.owner_id = :u"
             ),
             {"i": list_id, "u": user.id},
         )
@@ -84,6 +87,8 @@ async def _summaries(db, rows, ref) -> list[MyListSummary]:  # type: ignore[no-u
             title=r.title,
             city=ref.cities[r.city_id],
             is_open=r.is_open,
+            is_public=r.is_public,
+            owner=r.owner,
             place_count=stats[r.id].places,
             voter_count=stats[r.id].voters,
             updated_at=r.updated_at.isoformat(),
@@ -107,8 +112,8 @@ async def my_lists(db: DB, user: CurrentUser) -> list[MyListSummary]:
     rows = (
         await db.execute(
             text(
-                "SELECT id, token, title, city_id, is_open, updated_at FROM vote_lists "
-                "WHERE owner_id = :u ORDER BY updated_at DESC, id DESC"
+                f"SELECT {LIST_COLS} FROM vote_lists l JOIN users o ON o.id = l.owner_id "
+                "WHERE l.owner_id = :u ORDER BY l.updated_at DESC, l.id DESC"
             ),
             {"u": user.id},
         )
@@ -162,6 +167,29 @@ async def create_list(body: CreateListRequest, db: DB, user: CurrentUser) -> MyL
     return await _detail(db, list_id, user)
 
 
+@router.get("/community-lists", response_model=list[MyListSummary], operation_id="communityLists")
+async def community_lists(db: DB, city: str | None = None, limit: int = 30) -> list[MyListSummary]:
+    """Lists other people made and chose to show (decided 2026-11-27), newest first; only ones
+    with at least one place, from accounts that aren't private or banned."""
+    rows = (
+        await db.execute(
+            text(
+                f"""
+                SELECT {LIST_COLS} FROM vote_lists l
+                JOIN users o ON o.id = l.owner_id
+                JOIN cities c ON c.id = l.city_id
+                WHERE l.is_public AND NOT o.is_private
+                  AND (CAST(:city AS text) IS NULL OR c.slug = :city)
+                  AND EXISTS (SELECT 1 FROM vote_items i WHERE i.list_id = l.id)
+                ORDER BY l.updated_at DESC, l.id DESC LIMIT :n
+                """
+            ),
+            {"city": city, "n": max(1, min(limit, 60))},
+        )
+    ).all()
+    return await _summaries(db, rows, await load_reference(db))
+
+
 @router.get(
     "/me/lists/{list_id}", response_model=MyListDetail, responses=ERRORS, operation_id="getMyList"
 )
@@ -183,6 +211,11 @@ async def update_list(
             raise HTTPException(422, "Give the list a name.")
         await db.execute(
             text("UPDATE vote_lists SET title = :t WHERE id = :i"), {"t": title, "i": list_id}
+        )
+    if body.is_public is not None:
+        await db.execute(
+            text("UPDATE vote_lists SET is_public = :o WHERE id = :i"),
+            {"o": body.is_public, "i": list_id},
         )
     if body.is_open is not None:
         await db.execute(

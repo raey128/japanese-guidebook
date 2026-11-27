@@ -87,9 +87,9 @@ test("defaults to the All segment with the last-used city's food list", async ()
 test("switching segments updates the URL without leaving the page", async () => {
   stubApi({ id: 1, username: "rei", is_admin: false });
   renderAt("/lists");
-  fireEvent.click(screen.getByRole("button", { name: "Saved" }));
+  fireEvent.click(screen.getByRole("button", { name: "Want to go" }));
   expect(screen.getByTestId("url")).toHaveTextContent("/lists?tab=want_to_go");
-  expect(screen.getByRole("button", { name: "Saved" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Want to go" })).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(screen.getByRole("button", { name: "Rankings" }));
   expect(screen.getByTestId("url")).toHaveTextContent(/^\/lists$/);
 });

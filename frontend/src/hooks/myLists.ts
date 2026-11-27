@@ -51,7 +51,7 @@ export function useCreateList() {
 }
 
 export function useUpdateList(id: number) {
-  return useListMutation(id, async (body: { title?: string; is_open?: boolean }) =>
+  return useListMutation(id, async (body: { title?: string; is_open?: boolean; is_public?: boolean }) =>
     unwrap(await api.PATCH("/api/me/lists/{list_id}", { params: { path: { list_id: id } }, body })),
   );
 }
@@ -116,4 +116,12 @@ export async function shareList(title: string, url: string): Promise<"shared" | 
       return "failed";
     }
   }
+}
+
+/** Lists other people made and chose to show (decided 2026-11-27). */
+export function useCommunityLists(city: string) {
+  return useQuery({
+    queryKey: ["communityLists", city],
+    queryFn: async () => unwrap(await api.GET("/api/community-lists", { params: { query: { city } } })),
+  });
 }

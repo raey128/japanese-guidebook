@@ -1160,6 +1160,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community-lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Community Lists
+         * @description Lists other people made and chose to show (decided 2026-11-27), newest first; only ones
+         *     with at least one place, from accounts that aren't private or banned.
+         */
+        get: operations["communityLists"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/lists/{list_id}": {
         parameters: {
             query?: never;
@@ -1634,6 +1655,7 @@ export interface components {
             /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
             image?: components["schemas"]["PlaceImage"] | null;
+            peek?: components["schemas"]["TopNote"] | null;
             /** Rank */
             rank: number | null;
         };
@@ -1749,6 +1771,16 @@ export interface components {
             city: components["schemas"]["CityOut"];
             /** Is Open */
             is_open: boolean;
+            /**
+             * Is Public
+             * @default false
+             */
+            is_public: boolean;
+            /**
+             * Owner
+             * @default
+             */
+            owner: string;
             /** Place Count */
             place_count: number;
             /** Voter Count */
@@ -1772,6 +1804,16 @@ export interface components {
             city: components["schemas"]["CityOut"];
             /** Is Open */
             is_open: boolean;
+            /**
+             * Is Public
+             * @default false
+             */
+            is_public: boolean;
+            /**
+             * Owner
+             * @default
+             */
+            owner: string;
             /** Place Count */
             place_count: number;
             /** Voter Count */
@@ -2019,6 +2061,7 @@ export interface components {
             /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
             image?: components["schemas"]["PlaceImage"] | null;
+            peek?: components["schemas"]["TopNote"] | null;
             /** Creator */
             creator: string;
             /** Created At */
@@ -2144,6 +2187,7 @@ export interface components {
             /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
             image?: components["schemas"]["PlaceImage"] | null;
+            peek?: components["schemas"]["TopNote"] | null;
         };
         /**
          * PlaceUpdateRequest
@@ -2384,6 +2428,7 @@ export interface components {
             /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
             image?: components["schemas"]["PlaceImage"] | null;
+            peek?: components["schemas"]["TopNote"] | null;
             /**
              * Is Bookmarked
              * @default false
@@ -2595,6 +2640,8 @@ export interface components {
             title?: string | null;
             /** Is Open */
             is_open?: boolean | null;
+            /** Is Public */
+            is_public?: boolean | null;
         };
         /** UpdateMeRequest */
         UpdateMeRequest: {
@@ -5762,6 +5809,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    communityLists: {
+        parameters: {
+            query?: {
+                city?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyListSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

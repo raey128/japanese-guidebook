@@ -114,22 +114,23 @@ test("a failed save shows Retry, which re-sends", async () => {
   expect(await screen.findByText("Saved")).toBeInTheDocument();
 });
 
-test("closed voting shows read-only results, most yeses first", async () => {
+test("with voting off the link is just recommendations, with the counts so far", async () => {
   const closed = list({
     is_open: false,
     voter_count: 3,
     items: [
-      { ...list().items[1], tally: { yes: 0, maybe: 2, no: 1, yes_names: [], maybe_names: ["Ken"], no_names: [] } },
-      { ...list().items[0], tally: { yes: 2, maybe: 0, no: 1, yes_names: ["Aiko", "Ken"], maybe_names: [], no_names: [] } },
+      { ...list().items[0], tally: { yes: 2, maybe: 0, no: 1, yes_names: [], maybe_names: [], no_names: [] } },
+      { ...list().items[1], tally: { yes: 0, maybe: 0, no: 0, yes_names: [], maybe_names: [], no_names: [] } },
     ],
   });
   vi.stubGlobal("fetch", vi.fn(async () => json(closed)));
   renderPage();
-  expect(await screen.findByRole("heading", { level: 1, name: "Voting has closed" })).toBeInTheDocument();
-  const names = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-  expect(names).toEqual(["AFURI Ebisu", "Fuunji"]);
-  expect(screen.getByText("Aiko, Ken")).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /Yes/ })).toBeNull();
+  expect(await screen.findByText(/3 .*voted so far/)).toBeInTheDocument();
+  expect(screen.getByLabelText("Votes so far: 2 yes, 0 maybe, 1 no")).toBeInTheDocument();
+  expect(screen.getAllByRole("link", { name: /Open in Google Maps/ })).toHaveLength(2);
+  expect(screen.getByRole("button", { name: /Save these places/ })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^✅ Yes/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
 });
 
 test("an unknown link explains itself", async () => {

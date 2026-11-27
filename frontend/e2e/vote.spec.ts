@@ -27,9 +27,10 @@ test("a friend votes with no account: taps save, name is optional, Done shows pr
   await expect(page.getByRole("heading", { name: /^Thanks\. \d+ of 4 (has|have) voted\.$/ })).toBeVisible();
 });
 
-test("closed voting shows read-only results", async ({ page }) => {
+test("with voting off the link shows the places to go, without vote buttons", async ({ page }) => {
   await page.goto(CLOSED);
-  await expect(page.getByRole("heading", { level: 1, name: "Voting has closed" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /picked \d+ places? for/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Open in Google Maps/ }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Yes" })).toHaveCount(0);
 });
 

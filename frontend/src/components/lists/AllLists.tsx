@@ -9,6 +9,7 @@ import PlaceNames from "../PlaceNames";
 import Score from "../Score";
 import Chip from "../ui/Chip";
 import PlaceArt from "../ui/PlaceArt";
+import ReviewPeek from "../ui/ReviewPeek";
 import CityPicker from "../ui/CityPicker";
 import EmptyState from "../ui/EmptyState";
 import ErrorState from "../ui/ErrorState";
@@ -61,6 +62,7 @@ function ListCard({ list, city }: { list: Featured; city: string }) {
                   {p.location.is_catch_all ? p.city.name : p.location.name}
                 </span>
               </div>
+              <ReviewPeek peek={p.peek} className="mt-0.5" />
             </div>
           </li>
         ))}
