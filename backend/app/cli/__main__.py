@@ -6,6 +6,7 @@
     python -m app.cli dump [--out DIR]
     python -m app.cli synthetic [--count N]
     python -m app.cli vote-demo [--token T] [--closed]
+    python -m app.cli fetch-place-images [--limit N] [--refresh]
 
 Each command runs in one transaction and rolls back on failure.
 """
@@ -36,6 +37,9 @@ def main(argv: list[str] | None = None) -> int:
     demo = sub.add_parser("vote-demo", help="Create a demo vote link (round 1, fake data)")
     demo.add_argument("--token", default=None, help="Fixed link token (tests); default random")
     demo.add_argument("--closed", action="store_true", help="Add sample votes and close it")
+    wiki = sub.add_parser("fetch-place-images", help="Find Wikimedia photos for places")
+    wiki.add_argument("--limit", type=int, default=500)
+    wiki.add_argument("--refresh", action="store_true", help="Look up every place again")
     args = parser.parse_args(argv)
 
     try:

@@ -13,3 +13,4 @@ test-results/
 dumps/
 .env
 .DS_Store
+media/

@@ -7,6 +7,8 @@ import NoteFields, { type NoteValue } from "../components/ranking/NoteFields";
 import NumberRating from "../components/ranking/NumberRating";
 import PlaceNames from "../components/PlaceNames";
 import { useMe } from "../hooks/auth";
+import PhotoPicker from "../components/photos/PhotoPicker";
+import { invalidateAfterPhotoChange, photoProblem, uploadReviewPhotos } from "../hooks/photos";
 import { invalidateAfterRankingChange, usePlace, useSnapshot } from "../hooks/ranking";
 import { answer, next, position, start, type SearchState } from "../lib/binarySearch";
 import Loading from "../components/ui/Loading";
@@ -45,6 +47,8 @@ export default function RankFlow() {
   const [noteValue, setNoteValue] = useState<NoteValue>({ note: "", month: null, year: null });
   const [noteInit, setNoteInit] = useState(false);
   const [noteError, setNoteError] = useState<string | undefined>(undefined);
+  const [newPhotos, setNewPhotos] = useState<File[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Schemas["RankResponse"] | null>(null);
@@ -135,7 +139,7 @@ export default function RankFlow() {
     mutationFn: async () => {
       if (!snap || !bucket || rating === null) throw new Error("Nothing to save");
       const version = snap.buckets.find((b) => b.bucket === bucket)?.version ?? 0;
-      return unwrap(
+      const res = unwrap(
         await api.PUT("/api/rankings", {
           body: {
             place_id: id,
@@ -148,9 +152,20 @@ export default function RankFlow() {
           },
         }),
       );
+      // The rating is saved either way; a photo problem is shown on the done step (R20.2).
+      if (newPhotos.length) {
+        try {
+          await uploadReviewPhotos(res.ranking.id, newPhotos);
+          setNewPhotos([]);
+        } catch (e) {
+          setPhotoError(e instanceof Error ? e.message : "Couldn't add the photos.");
+        }
+      }
+      return res;
     },
     onSuccess: (res) => {
       setResult(res);
+      invalidateAfterPhotoChange(qc);
       setStep("done");
       invalidateAfterRankingChange(qc);
       track("rank", res.is_new ? "new" : "rerank");
@@ -287,6 +302,7 @@ export default function RankFlow() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
+            if (photoProblem(newPhotos, snap.my_ranking?.photos?.length ?? 0)) return;
             const problem = reviewProblem(rating, noteValue.note);
             if (problem) {
               setNoteError(problem.note ?? problem.rating);
@@ -311,6 +327,7 @@ export default function RankFlow() {
             required={needsComment(rating)}
             error={noteError}
           />
+          <PhotoPicker files={newPhotos} onChange={setNewPhotos} alreadyHave={snap.my_ranking?.photos?.length ?? 0} />
           {error ? (
             <p role="alert" className="text-danger">
               {error}
@@ -337,6 +354,11 @@ export default function RankFlow() {
             <h2 id="q-done" className="text-2xl font-extrabold">
               Saved
             </h2>
+            {photoError ? (
+              <p role="alert" className="text-sm font-bold text-danger">
+                Your rating is saved, but the photos weren't added: {photoError}
+              </p>
+            ) : null}
             {result.city_rank_count > 0 ? (
               <p className="font-bold text-success-dark">{rankingMessage(result.city_rank_count, result.city_name).title}</p>
             ) : null}

@@ -19,6 +19,7 @@ from sqlalchemy import delete, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import scores
+from app.config import get_settings
 from app.models import BUCKETS, Bookmark, Place, Ranking, RankList
 from app.visibility import can_use
 
@@ -30,8 +31,7 @@ BANDS: dict[str, tuple[float, float]] = {
 NOTE_MAX_LEN = 1000
 # R3.6: a rating below this needs a comment, so low ratings always say why.
 RATING_MAX = 10
-COMMENT_REQUIRED_BELOW = 5  # a rating of 4 or lower needs a comment
-LOW_RATING_NEEDS_COMMENT = "Please add a comment: ratings of 4 or lower need a reason."
+LOW_RATING_NEEDS_COMMENT = "Please add a comment: low ratings need a reason."
 
 
 def bucket_for_rating(rating: int) -> str:
@@ -43,7 +43,8 @@ def bucket_for_rating(rating: int) -> str:
 
 def check_review(rating: int | None, note: str | None) -> None:
     """Raise ValueError when a low rating has no comment."""
-    if rating is not None and rating < COMMENT_REQUIRED_BELOW and not (note or "").strip():
+    below = get_settings().comment_required_below  # 0 = never required (the default for now)
+    if rating is not None and rating < below and not (note or "").strip():
         raise ValueError(LOW_RATING_NEEDS_COMMENT)
 
 

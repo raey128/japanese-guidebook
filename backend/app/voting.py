@@ -31,7 +31,8 @@ class VoteList:
     organizer_name: str
     city_id: int
     group_size: int | None
-    is_open: bool
+    is_open: bool  # "Let friends vote"
+    owner_id: int | None
 
 
 class NotFound(LookupError):
@@ -50,7 +51,7 @@ async def get_list(db: AsyncSession, token: str) -> VoteList:
     row = (
         await db.execute(
             text(
-                "SELECT id, token, title, organizer_name, city_id, group_size, is_open "
+                "SELECT id, token, title, organizer_name, city_id, group_size, is_open, owner_id "
                 "FROM vote_lists WHERE token = :t"
             ),
             {"t": token},
@@ -177,6 +178,7 @@ async def create_list(
     items: Sequence[tuple[int, int | None, str | None]],  # (place_id, curators, ISO date)
     group_size: int | None = 4,
     token: str | None = None,
+    owner_id: int | None = None,
 ) -> tuple[str, str]:
     """Insert a list and its places in order. Returns (vote token, edit token)."""
     token = token or new_token()
@@ -186,8 +188,8 @@ async def create_list(
             text(
                 """
                 INSERT INTO vote_lists (token, edit_token, title, organizer_name, city_id,
-                                        group_size)
-                VALUES (:t, :e, :title, :o, :c, :g) RETURNING id
+                                        group_size, owner_id)
+                VALUES (:t, :e, :title, :o, :c, :g, :owner) RETURNING id
                 """
             ),
             {
@@ -197,6 +199,7 @@ async def create_list(
                 "o": organizer_name,
                 "c": city_id,
                 "g": group_size,
+                "owner": owner_id,
             },
         )
     ).scalar_one()

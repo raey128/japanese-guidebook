@@ -15,6 +15,9 @@ export default function AdminNav() {
       <NavLink to="/admin" end className={tab}>
         Flags
       </NavLink>
+      <NavLink to="/admin/photos" className={tab}>
+        Photos
+      </NavLink>
       <NavLink to="/admin/seeds" className={tab}>
         Seeds
       </NavLink>

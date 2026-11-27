@@ -1,7 +1,6 @@
 """Round 1 vote page API (V1). Public: the long random token in the link is the only key.
 Every tap is saved straight away; nothing needs an account."""
 
-from collections import defaultdict
 from typing import Any
 from uuid import UUID
 
@@ -9,15 +8,15 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 
 from app import voting
-from app.deps import DB
-from app.place_views import load_reference, place_summaries
+from app.deps import DB, CurrentUser, OptionalUser
+from app.list_views import list_items
+from app.place_views import load_reference
 from app.schemas.common import Message
 from app.schemas.voting import (
     MeOut,
     NameRequest,
     Progress,
-    Tally,
-    VoteItemOut,
+    SaveAllResult,
     VoteListOut,
     VoteRequest,
     VoterRequest,
@@ -44,24 +43,17 @@ def _http(e: Exception) -> HTTPException:
 
 
 @router.get("/v/{token}", response_model=VoteListOut, responses=ERRORS, operation_id="getVoteList")
-async def get_vote_list(token: str, db: DB, voter: UUID | None = None) -> VoteListOut:
-    """The vote page. `voter` is this browser's random id: its own choices come back. Once
-    voting is closed every place also carries its tally (read-only results)."""
+async def get_vote_list(
+    token: str, db: DB, viewer: OptionalUser, voter: UUID | None = None
+) -> VoteListOut:
+    """The list page. `voter` is this browser's random id: its own choices come back. Every
+    place carries live yes/maybe/no counts; voters' names only for the list's owner."""
     try:
         lst = await voting.get_list(db, token)
     except voting.NotFound as e:
         raise _http(e) from e
-    items = (
-        await db.execute(
-            text(
-                "SELECT id, place_id, curator_count, evidence_updated FROM vote_items "
-                "WHERE list_id = :l ORDER BY position, id"
-            ),
-            {"l": lst.id},
-        )
-    ).all()
     ref = await load_reference(db)
-    summaries = await place_summaries(db, [i.place_id for i in items], ref)
+    is_owner = viewer is not None and lst.owner_id == viewer.id
 
     me: MeOut | None = None
     mine: dict[int, str] = {}
@@ -78,58 +70,56 @@ async def get_vote_list(token: str, db: DB, voter: UUID | None = None) -> VoteLi
         }
         me = MeOut(name=row.name, done=row.done_at is not None, voted_count=len(mine))
 
-    tallies: dict[int, Tally] = {}
-    if not lst.is_open:
-        counts: dict[int, dict[str, int]] = defaultdict(lambda: {"yes": 0, "maybe": 0, "no": 0})
-        names: dict[int, dict[str, list[str]]] = defaultdict(
-            lambda: {"yes": [], "maybe": [], "no": []}
-        )
-        for r in await db.execute(
-            text(
-                """
-                SELECT v.item_id, v.choice, vr.name FROM votes v
-                JOIN voters vr ON vr.id = v.voter_id
-                WHERE vr.list_id = :l ORDER BY vr.name NULLS LAST, vr.id
-                """
-            ),
-            {"l": lst.id},
-        ):
-            counts[r.item_id][r.choice] += 1
-            if r.name:
-                names[r.item_id][r.choice].append(r.name)
-        for i in items:
-            c, n = counts[i.id], names[i.id]
-            tallies[i.id] = Tally(
-                yes=c["yes"],
-                maybe=c["maybe"],
-                no=c["no"],
-                yes_names=n["yes"],
-                maybe_names=n["maybe"],
-                no_names=n["no"],
-            )
-
+    items = await list_items(db, lst.id, ref, my_choices=mine, with_names=is_owner)
     return VoteListOut(
         title=lst.title,
         organizer_name=lst.organizer_name,
+        is_owner=is_owner,
         city=ref.cities[lst.city_id],
         is_open=lst.is_open,
         group_size=lst.group_size,
         item_count=len(items),
         voter_count=await voting.voter_count(db, lst.id),
-        items=[
-            VoteItemOut(
-                item_id=i.id,
-                place=summaries[i.place_id],
-                curator_count=i.curator_count,
-                evidence_updated=i.evidence_updated.isoformat() if i.evidence_updated else None,
-                my_choice=mine.get(i.id),  # type: ignore[arg-type]
-                tally=tallies.get(i.id),
-            )
-            for i in items
-            if i.place_id in summaries
-        ],
+        items=items,
         me=me,
     )
+
+
+@router.post(
+    "/v/{token}/save",
+    response_model=SaveAllResult,
+    responses=ERRORS,
+    operation_id="saveListPlaces",
+)
+async def save_list_places(token: str, db: DB, user: CurrentUser) -> SaveAllResult:
+    """ "Save these places" (decided 2026-11-27): every place on the list that you haven't
+    rated or saved goes on your Want to go."""
+    try:
+        lst = await voting.get_list(db, token)
+    except voting.NotFound as e:
+        raise _http(e) from e
+    rows = (
+        await db.execute(
+            text(
+                """
+                INSERT INTO bookmarks (user_id, place_id)
+                SELECT :u, i.place_id FROM vote_items i
+                JOIN places p ON p.id = i.place_id
+                WHERE i.list_id = :l AND NOT p.is_hidden AND p.merged_into_id IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM rankings r
+                                  WHERE r.user_id = :u AND r.place_id = i.place_id)
+                ON CONFLICT DO NOTHING
+                RETURNING place_id
+                """
+            ),
+            {"u": user.id, "l": lst.id},
+        )
+    ).all()
+    total = (
+        await db.execute(text("SELECT count(*) FROM vote_items WHERE list_id = :l"), {"l": lst.id})
+    ).scalar_one()
+    await db.commit()
+    return SaveAllResult(saved=len(rows), already=total - len(rows))
 
 
 @router.put("/v/{token}/vote", response_model=VoteSaved, responses=ERRORS, operation_id="castVote")

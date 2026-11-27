@@ -26,11 +26,8 @@ test("the 1-10 numbers are a labelled radio group", () => {
   expect(screen.getByRole("radio", { name: /^8 out of 10/ })).toBeChecked();
 });
 
-test("the comment becomes required at 4 or lower", () => {
+test("the comment stays optional, even for a low rating", () => {
   render(<Harness />);
-  fireEvent.click(screen.getByRole("radio", { name: /^9 out of 10/ }));
+  fireEvent.click(screen.getByRole("radio", { name: /^2 out of 10/ }));
   expect(screen.getByLabelText(/comment \(optional\)/i)).not.toBeRequired();
-  fireEvent.click(screen.getByRole("radio", { name: /^4 out of 10/ }));
-  expect(screen.getByRole("textbox", { name: /comment/i })).toBeRequired();
-  expect(screen.queryByLabelText(/optional/i)).toBeNull();
 });

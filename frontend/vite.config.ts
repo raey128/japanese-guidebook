@@ -32,6 +32,11 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
-    proxy: { "/api": { target: apiProxy, changeOrigin: true } },
+    // /share/l/<token> is the link people send: the API serves a preview for chat apps, then
+    // redirects into the app. (In production the web server must route /share to the API too.)
+    proxy: {
+      "/api": { target: apiProxy, changeOrigin: true },
+      "/share": { target: apiProxy, changeOrigin: true },
+    },
   },
 });

@@ -7,10 +7,11 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import select, text
 
+from app import media, scores
 from app import ranking as ranking_core
-from app import scores
 from app.deps import DB, CurrentUser, OptionalUser
-from app.models import BUCKETS, Place, Ranking
+from app.models import BUCKETS, Photo, Place, Ranking
+from app.photos import photos_for_rankings
 from app.place_views import load_reference
 from app.schemas.common import ANONYMOUS, Message, MyRanking
 from app.schemas.rankings import (
@@ -289,8 +290,13 @@ async def patch_ranking(ranking_id: int, body: NotePatch, db: DB, user: CurrentU
 )
 async def delete_ranking(ranking_id: int, db: DB, user: CurrentUser) -> Response:
     ranking = await _own_ranking(db, ranking_id, user)
-    await ranking_core.delete_ranking(db, ranking)
+    keys = list(
+        (await db.execute(select(Photo.key).where(Photo.ranking_id == ranking.id))).scalars()
+    )
+    await ranking_core.delete_ranking(db, ranking)  # photo rows go with it (ON DELETE CASCADE)
     await db.commit()
+    for key in keys:
+        media.delete(key)
     return Response(status_code=204)
 
 
@@ -317,10 +323,13 @@ async def my_rankings(db: DB, user: CurrentUser) -> MyRankings:
         )
     }
     grouped: dict[tuple[int, int], dict[str, list[RankingItem]]] = {}
+    pics = await photos_for_rankings(db, [r.id for r, _ in rows], user.id)
     for r, p in rows:
+        item = _item(r, p)
+        item.photos = pics.get(r.id, [])
         grouped.setdefault((r.city_id, r.subcategory_id), {b: [] for b in BUCKETS})[
             r.bucket
-        ].append(_item(r, p))
+        ].append(item)
 
     ref = await load_reference(db)
     by_city: dict[int, list[CategoryLists]] = {}
@@ -374,13 +383,18 @@ async def place_notes(
             SELECT r.id, r.user_id, r.note, r.visit_month, r.visit_year, r.bucket, r.rating,
                    r.created_at, u.username, u.is_private
             FROM rankings r JOIN users u ON u.id = r.user_id
-            WHERE r.place_id = :pid AND r.note IS NOT NULL AND btrim(r.note) <> ''
+            WHERE r.place_id = :pid
+              AND ((r.note IS NOT NULL AND btrim(r.note) <> '')
+                   OR EXISTS (SELECT 1 FROM photos ph
+                              WHERE ph.ranking_id = r.id AND NOT ph.is_hidden))
             ORDER BY {NOTE_ORDER[sort]}
             LIMIT :limit OFFSET :offset
             """
         ),
         {"pid": place_id, "limit": limit, "offset": offset},
     )
+    found = rows.all()
+    pics = await photos_for_rankings(db, [r.id for r in found], viewer.id if viewer else None)
     return PlaceNotes(
         notes=[
             PlaceNote(
@@ -393,7 +407,8 @@ async def place_notes(
                 rating=r.rating,
                 created_at=r.created_at.isoformat(),
                 is_own=viewer is not None and viewer.id == r.user_id,
+                photos=pics.get(r.id, []),
             )
-            for r in rows
+            for r in found
         ]
     )

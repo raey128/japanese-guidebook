@@ -1,30 +1,33 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useId, useState } from "react";
-import { Link } from "react-router";
 
 import { api, unwrap, type Schemas } from "../../api/client";
 import { invalidateAfterRankingChange } from "../../hooks/ranking";
 import { rankingMessage } from "../../lib/celebrate";
-import { needsComment, ratingWord } from "../../lib/rating";
+import { reactionFor, type Reaction } from "../../lib/reactions";
 import { track } from "../../lib/track";
 import { useCelebrate } from "../app/Celebration";
 import { useInlineSignIn } from "../app/InlineSignIn";
 import NumberRating, { RatingBadge } from "./NumberRating";
+import ReactionPicker from "./ReactionPicker";
+import ThisOrThat from "./ThisOrThat";
 
 type Result = Schemas["QuickRatingResponse"];
 
 /**
- * Went (R3.7): mark a place as visited and rate it 1-10 in one tap, right on the place card.
- * 5 or higher saves straight away; 4 or lower asks for a comment first. "Fine-tune" offers the
- * comparison questions for people who want an exact order.
+ * Went (R3.7, decided 2026-11-27): mark a place as visited and rate it right on the place card.
+ * One tap on a reaction sticker (or a number, for people who prefer that), then at most two
+ * "Which did you like more?" questions, then where it landed: "#3 in your Tokyo ramen · 8.6".
  */
 export default function WentPanel({
   placeId,
+  placeName,
   current,
   canRate,
 }: {
   placeId: number;
-  /** The viewer's rating today, if any. */
+  placeName: string;
+  /** The viewer's rating today (1-10), if any. */
   current: number | null;
   canRate: boolean;
 }) {
@@ -33,17 +36,16 @@ export default function WentPanel({
   const celebrate = useCelebrate();
   const { requireUser } = useInlineSignIn();
   const [open, setOpen] = useState(false);
-  const [rating, setRating] = useState<number | null>(current);
-  const [note, setNote] = useState("");
-  const [askNote, setAskNote] = useState(false);
-  const [last, setLast] = useState<Result | null>(null);
+  const [mode, setMode] = useState<"stickers" | "numbers">("stickers");
+  const [reaction, setReaction] = useState<Reaction["key"] | null>(reactionFor(current)?.key ?? null);
+  const [number, setNumber] = useState<number | null>(current);
+  const [placing, setPlacing] = useState<number | null>(null); // rating being placed
+  const [landed, setLanded] = useState<{ line: string | null; score: number | null } | null>(null);
 
   const save = useMutation({
-    mutationFn: async (body: { rating: number; note?: string | null }) =>
-      unwrap(await api.PUT("/api/places/{place_id}/rating", { params: { path: { place_id: placeId } }, body })),
-    onSuccess: (res) => {
-      setLast(res);
-      setAskNote(false);
+    mutationFn: async (rating: number) =>
+      unwrap(await api.PUT("/api/places/{place_id}/rating", { params: { path: { place_id: placeId } }, body: { rating } })),
+    onSuccess: (res: Result) => {
       invalidateAfterRankingChange(qc);
       void qc.invalidateQueries({ queryKey: ["topPicks"] });
       track("went", res.is_new ? "new" : "change");
@@ -51,17 +53,12 @@ export default function WentPanel({
         const msg = rankingMessage(res.city_rank_count, res.city_name);
         celebrate(msg.title, { big: msg.big });
       }
+      setLanded(null);
+      setPlacing(res.ranking.rating ?? null);
     },
   });
 
-  const choose = (n: number) => {
-    setRating(n);
-    if (needsComment(n)) {
-      setAskNote(true); // a low rating needs a reason before it's saved
-      return;
-    }
-    save.mutate({ rating: n });
-  };
+  const rate = (rating: number) => save.mutate(rating);
 
   if (!canRate) return null;
 
@@ -74,7 +71,7 @@ export default function WentPanel({
       >
         {current ? (
           <>
-            You gave it <RatingBadge rating={current} />
+            <span aria-hidden="true">{reactionFor(current)?.emoji}</span> You went · <RatingBadge rating={current} />
           </>
         ) : (
           <>
@@ -85,62 +82,72 @@ export default function WentPanel({
     );
   }
 
-  const saved = last?.ranking.rating ?? null;
   return (
     <section aria-labelledby={`${id}-h`} className="w-full space-y-3 rounded-(--radius-card) border-2 border-line bg-stone-50 p-3">
       <div className="flex items-center justify-between gap-2">
-        <h3 id={`${id}-h`} className="font-extrabold">
-          {current || saved ? "Change your rating" : "You went! How was it?"}
+        <h3 id={`${id}-h`} className="font-display text-lg font-black">
+          {current ? "Change your rating" : "You went! How was it?"}
         </h3>
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>
           Close
         </button>
       </div>
-      <NumberRating value={rating} onChange={choose} label="Rate it from 1 to 10" disabled={save.isPending} autoFocus />
 
-      {askNote ? (
-        <form
-          noValidate
-          className="space-y-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (rating !== null && note.trim()) save.mutate({ rating, note: note.trim() });
-          }}
-        >
-          <label htmlFor={`${id}-note`} className="label">
-            Tell others why <span aria-hidden="true">*</span>
-          </label>
-          <textarea
-            id={`${id}-note`}
-            rows={3}
-            maxLength={1000}
-            required
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="What went wrong? Others will thank you."
-            className="field"
-          />
-          <button type="submit" className="btn btn-primary btn-sm" disabled={!note.trim() || save.isPending}>
-            Save rating
+      {placing !== null && !landed ? (
+        <ThisOrThat
+          placeId={placeId}
+          placeName={placeName}
+          rating={placing}
+          onDone={(line, score) => setLanded({ line, score })}
+        />
+      ) : landed ? (
+        <div role="status" className="space-y-1 text-center">
+          <p className="font-display text-xl font-black text-brand-dark">{landed.line ?? "Saved!"}</p>
+          {landed.score !== null ? (
+            <p className="text-sm font-bold text-muted">Your score: {landed.score.toFixed(1)}</p>
+          ) : null}
+          <button type="button" className="link text-sm" onClick={() => {
+              setLanded(null);
+              setPlacing(null);
+            }}>
+            Change it
           </button>
-          <p className="hint">Ratings of 4 or lower need a short comment.</p>
-        </form>
-      ) : null}
+        </div>
+      ) : mode === "stickers" ? (
+        <>
+          <ReactionPicker
+            value={reaction}
+            disabled={save.isPending}
+            onChange={(r) => {
+              setReaction(r.key);
+              rate(r.rating);
+            }}
+          />
+          <button type="button" className="link text-sm" onClick={() => setMode("numbers")}>
+            Rate with a number instead
+          </button>
+        </>
+      ) : (
+        <>
+          <NumberRating
+            value={number}
+            label="Rate it from 1 to 10"
+            disabled={save.isPending}
+            onChange={(n) => {
+              setNumber(n);
+              rate(n);
+            }}
+          />
+          <button type="button" className="link text-sm" onClick={() => setMode("stickers")}>
+            Use the stickers instead
+          </button>
+        </>
+      )}
 
       <p aria-live="polite" className="text-sm">
         {save.isPending ? <span className="text-muted">Saving…</span> : null}
-        {saved !== null && !save.isPending ? (
-          <span className="font-bold text-success-dark">
-            Saved: you gave it {saved} · {ratingWord(saved)}
-          </span>
-        ) : null}
         {save.isError ? <span className="text-danger">{save.error.message}</span> : null}
       </p>
-      {last && last.compare_count > 0 ? (
-        <Link to={`/places/${placeId}/rank?refine=1`} className="link text-sm">
-          Fine-tune: compare it with your other {last.compare_count} {last.compare_count === 1 ? "place" : "places"}
-        </Link>
-      ) : null}
     </section>
   );
 }

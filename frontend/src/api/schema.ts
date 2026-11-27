@@ -926,12 +926,33 @@ export interface paths {
         };
         /**
          * Get Vote List
-         * @description The vote page. `voter` is this browser's random id: its own choices come back. Once
-         *     voting is closed every place also carries its tally (read-only results).
+         * @description The list page. `voter` is this browser's random id: its own choices come back. Every
+         *     place carries live yes/maybe/no counts; voters' names only for the list's owner.
          */
         get: operations["getVoteList"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v/{token}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save List Places
+         * @description "Save these places" (decided 2026-11-27): every place on the list that you haven't
+         *     rated or saved goes on your Want to go.
+         */
+        post: operations["saveListPlaces"];
         delete?: never;
         options?: never;
         head?: never;
@@ -998,10 +1019,248 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/rankings/{ranking_id}/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Photos
+         * @description Add photos to your own review. At most `photos_per_review` in total; every file is
+         *     cleaned (location and camera data removed) and resized before it's kept.
+         */
+        post: operations["uploadReviewPhotos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/places/{place_id}/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Place Photos
+         * @description Everyone's photos of a place, newest first (the photo strip on the place card).
+         */
+        get: operations["getPlacePhotos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/photos/{photo_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Photo */
+        delete: operations["deletePhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/photos/{photo_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report Photo
+         * @description Flag a photo (R20.6). Once `photo_reports_to_hide` different people have, it's hidden
+         *     until an admin looks at it. Reporting twice counts once.
+         */
+        post: operations["reportPhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reported Photos
+         * @description Photos that were reported or hidden, most reported first.
+         */
+        get: operations["listReportedPhotos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/photos/{photo_id}/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Moderate Photo
+         * @description `hide` keeps it out of sight; `keep` shows it again and clears its reports.
+         */
+        post: operations["moderatePhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Lists */
+        get: operations["listMyLists"];
+        put?: never;
+        /**
+         * Create List
+         * @description A new list for one city. With `prefill`, it starts with the places you loved there
+         *     (rated 8 or more), best first.
+         */
+        post: operations["createList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/lists/{list_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My List */
+        get: operations["getMyList"];
+        put?: never;
+        post?: never;
+        /** Delete List */
+        delete: operations["deleteList"];
+        options?: never;
+        head?: never;
+        /**
+         * Update List
+         * @description Rename, or turn "Let friends vote" on or off (nothing is lost either way).
+         */
+        patch: operations["updateList"];
+        trace?: never;
+    };
+    "/api/me/lists/{list_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Items
+         * @description Add many places at once, at the end, in the order given. A list is one city: places
+         *     elsewhere are skipped, and so are ones already on it.
+         */
+        post: operations["addListItems"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/lists/{list_id}/items/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove Items
+         * @description Remove many places at once (their votes go with them).
+         */
+        post: operations["removeListItems"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/lists/{list_id}/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reorder
+         * @description The whole list in its new order (after dragging, or Move up / Move down).
+         */
+        put: operations["reorderList"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AddItemsRequest */
+        AddItemsRequest: {
+            /** Place Ids */
+            place_ids: number[];
+        };
+        /** AddItemsResult */
+        AddItemsResult: {
+            /** Added */
+            added: number;
+            /** Already */
+            already: number;
+            /** Other City */
+            other_city: number;
+        };
         /** AddressResult */
         AddressResult: {
             /** Label */
@@ -1015,6 +1274,37 @@ export interface components {
         AddressSearchResponse: {
             /** Results */
             results: components["schemas"]["AddressResult"][];
+        };
+        /** AdminPhoto */
+        AdminPhoto: {
+            /** Id */
+            id: number;
+            /** Ranking Id */
+            ranking_id: number;
+            /** Url */
+            url: string;
+            /** Thumb Url */
+            thumb_url: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /** Author */
+            author: string;
+            /** Author Avatar Url */
+            author_avatar_url: string | null;
+            /** Created At */
+            created_at: string;
+            /** Is Own */
+            is_own: boolean;
+            /** Place Id */
+            place_id: number;
+            /** Place Name */
+            place_name: string;
+            /** Report Count */
+            report_count: number;
+            /** Is Hidden */
+            is_hidden: boolean;
         };
         /** AreaLookupResponse */
         AreaLookupResponse: {
@@ -1041,6 +1331,14 @@ export interface components {
             lng: number;
             /** Zoom */
             zoom: number;
+        };
+        /** Body_uploadReviewPhotos */
+        Body_uploadReviewPhotos: {
+            /**
+             * Files
+             * @description 1-4 photos
+             */
+            files: string[];
         };
         /** BookmarkList */
         BookmarkList: {
@@ -1128,6 +1426,18 @@ export interface components {
             payload?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** CreateListRequest */
+        CreateListRequest: {
+            /** Title */
+            title: string;
+            /** City Slug */
+            city_slug: string;
+            /**
+             * Prefill
+             * @default true
+             */
+            prefill: boolean;
         };
         /** DuplicateCheckResponse */
         DuplicateCheckResponse: {
@@ -1295,6 +1605,11 @@ export interface components {
             /** Database */
             database: string;
         };
+        /** ItemIdsRequest */
+        ItemIdsRequest: {
+            /** Item Ids */
+            item_ids: number[];
+        };
         /** ListItem */
         ListItem: {
             /** Id */
@@ -1318,6 +1633,7 @@ export interface components {
             ranker_count: number;
             /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
+            image?: components["schemas"]["PlaceImage"] | null;
             /** Rank */
             rank: number | null;
         };
@@ -1422,6 +1738,50 @@ export interface components {
             /** Detail */
             detail: string;
         };
+        /** MyListDetail */
+        MyListDetail: {
+            /** Id */
+            id: number;
+            /** Token */
+            token: string;
+            /** Title */
+            title: string;
+            city: components["schemas"]["CityOut"];
+            /** Is Open */
+            is_open: boolean;
+            /** Place Count */
+            place_count: number;
+            /** Voter Count */
+            voter_count: number;
+            /** Updated At */
+            updated_at: string;
+            /** Share Url */
+            share_url: string;
+            cover: components["schemas"]["PlaceSummary"] | null;
+            /** Items */
+            items: components["schemas"]["VoteItemOut"][];
+        };
+        /** MyListSummary */
+        MyListSummary: {
+            /** Id */
+            id: number;
+            /** Token */
+            token: string;
+            /** Title */
+            title: string;
+            city: components["schemas"]["CityOut"];
+            /** Is Open */
+            is_open: boolean;
+            /** Place Count */
+            place_count: number;
+            /** Voter Count */
+            voter_count: number;
+            /** Updated At */
+            updated_at: string;
+            /** Share Url */
+            share_url: string;
+            cover: components["schemas"]["PlaceSummary"] | null;
+        };
         /** MyRanking */
         MyRanking: {
             /** Id */
@@ -1443,6 +1803,11 @@ export interface components {
             visit_month: number | null;
             /** Visit Year */
             visit_year: number | null;
+            /**
+             * Photos
+             * @default []
+             */
+            photos: components["schemas"]["PhotoOut"][];
         };
         /** MyRankings */
         MyRankings: {
@@ -1517,6 +1882,29 @@ export interface components {
         PendingQueue: {
             /** Items */
             items: components["schemas"]["PendingPlace"][];
+        };
+        /** PhotoOut */
+        PhotoOut: {
+            /** Id */
+            id: number;
+            /** Ranking Id */
+            ranking_id: number;
+            /** Url */
+            url: string;
+            /** Thumb Url */
+            thumb_url: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /** Author */
+            author: string;
+            /** Author Avatar Url */
+            author_avatar_url: string | null;
+            /** Created At */
+            created_at: string;
+            /** Is Own */
+            is_own: boolean;
         };
         /**
          * PlaceCheckRequest
@@ -1630,6 +2018,7 @@ export interface components {
             ranker_count: number;
             /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
+            image?: components["schemas"]["PlaceImage"] | null;
             /** Creator */
             creator: string;
             /** Created At */
@@ -1645,6 +2034,26 @@ export interface components {
             status: "live" | "pending" | "rejected";
             top_note: components["schemas"]["TopNote"] | null;
             viewer: components["schemas"]["ViewerState"];
+        };
+        /**
+         * PlaceImage
+         * @description The picture shown for a place (decided 2026-11-27): a user's newest photo, else a
+         *     Wikimedia Commons photo (credit required), else none (the app draws poster art).
+         */
+        PlaceImage: {
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "user" | "wikimedia";
+            /** Url */
+            url: string;
+            /** Thumb Url */
+            thumb_url: string;
+            /** Credit */
+            credit: string | null;
+            /** Credit Url */
+            credit_url: string | null;
         };
         /** PlaceLookupResponse */
         PlaceLookupResponse: {
@@ -1676,7 +2085,7 @@ export interface components {
             /** Author */
             author: string;
             /** Note */
-            note: string;
+            note: string | null;
             /** Visit Month */
             visit_month: number | null;
             /** Visit Year */
@@ -1688,6 +2097,11 @@ export interface components {
             bucket: "liked" | "fine" | "disliked";
             /** Rating */
             rating?: number | null;
+            /**
+             * Photos
+             * @default []
+             */
+            photos: components["schemas"]["PhotoOut"][];
             /** Created At */
             created_at: string;
             /** Is Own */
@@ -1697,6 +2111,11 @@ export interface components {
         PlaceNotes: {
             /** Notes */
             notes: components["schemas"]["PlaceNote"][];
+        };
+        /** PlacePhotos */
+        PlacePhotos: {
+            /** Photos */
+            photos: components["schemas"]["PhotoOut"][];
         };
         /**
          * PlaceSummary
@@ -1724,6 +2143,7 @@ export interface components {
             ranker_count: number;
             /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
+            image?: components["schemas"]["PlaceImage"] | null;
         };
         /**
          * PlaceUpdateRequest
@@ -1895,6 +2315,11 @@ export interface components {
             visit_month?: number | null;
             /** Visit Year */
             visit_year?: number | null;
+            /**
+             * Photos
+             * @default []
+             */
+            photos: components["schemas"]["PhotoOut"][];
             /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
         };
@@ -1902,6 +2327,11 @@ export interface components {
         RejectIn: {
             /** Reason */
             reason?: string | null;
+        };
+        /** ReportResult */
+        ReportResult: {
+            /** Hidden */
+            hidden: boolean;
         };
         /** ReverseGeocodeResponse */
         ReverseGeocodeResponse: {
@@ -1911,7 +2341,7 @@ export interface components {
         /**
          * ReviewIn
          * @description The adder's own rating when they've been there (R3.6). Rating is required; a comment is
-         *     optional unless the rating is 4 or lower.
+         *     optional (a setting can require one for low ratings).
          */
         ReviewIn: {
             /** Rating */
@@ -1922,6 +2352,13 @@ export interface components {
             visit_month?: number | null;
             /** Visit Year */
             visit_year?: number | null;
+        };
+        /** SaveAllResult */
+        SaveAllResult: {
+            /** Saved */
+            saved: number;
+            /** Already */
+            already: number;
         };
         /** SearchItem */
         SearchItem: {
@@ -1946,6 +2383,7 @@ export interface components {
             ranker_count: number;
             /** Badges */
             badges: ("unverified" | "closed" | "reported_closed" | "hidden" | "pending")[];
+            image?: components["schemas"]["PlaceImage"] | null;
             /**
              * Is Bookmarked
              * @default false
@@ -2151,6 +2589,13 @@ export interface components {
             /** Items */
             items: components["schemas"]["PlaceSummary"][];
         };
+        /** UpdateListRequest */
+        UpdateListRequest: {
+            /** Title */
+            title?: string | null;
+            /** Is Open */
+            is_open?: boolean | null;
+        };
         /** UpdateMeRequest */
         UpdateMeRequest: {
             /** Is Private */
@@ -2201,6 +2646,11 @@ export interface components {
         VoteItemOut: {
             /** Item Id */
             item_id: number;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
             place: components["schemas"]["PlaceSummary"];
             /** Curator Count */
             curator_count: number | null;
@@ -2216,6 +2666,11 @@ export interface components {
             title: string;
             /** Organizer Name */
             organizer_name: string;
+            /**
+             * Is Owner
+             * @default false
+             */
+            is_owner: boolean;
             city: components["schemas"]["CityOut"];
             /** Is Open */
             is_open: boolean;
@@ -4762,6 +5217,64 @@ export interface operations {
             };
         };
     };
+    saveListPlaces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveAllResult"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
     castVote: {
         parameters: {
             query?: never;
@@ -4939,6 +5452,565 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    uploadReviewPhotos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ranking_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_uploadReviewPhotos"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    getPlacePhotos: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                place_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlacePhotos"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deletePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photo_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reportPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photo_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportResult"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    listReportedPhotos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPhoto"][];
+                };
+            };
+        };
+    };
+    moderatePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photo_id: number;
+                action: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listMyLists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyListSummary"][];
+                };
+            };
+        };
+    };
+    createList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyListDetail"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    getMyList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyListDetail"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    deleteList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    updateList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyListDetail"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    addListItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddItemsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddItemsResult"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    removeListItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemIdsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyListDetail"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    reorderList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemIdsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyListDetail"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

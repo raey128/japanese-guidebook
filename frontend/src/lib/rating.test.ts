@@ -4,17 +4,13 @@ test("8-10 are Liked, 5-7 Fine, 1-4 Disliked", () => {
   expect([1, 4, 5, 7, 8, 10].map(bucketForRating)).toEqual(["disliked", "disliked", "fine", "fine", "liked", "liked"]);
 });
 
-test("a comment is required at 4 or lower", () => {
-  expect(needsComment(null)).toBe(false);
-  expect(needsComment(1)).toBe(true);
-  expect(needsComment(4)).toBe(true);
-  expect(needsComment(5)).toBe(false);
+test("comments are optional for every rating (for now)", () => {
+  expect([null, 1, 4, 5, 10].map(needsComment)).toEqual([false, false, false, false, false]);
 });
 
-test("reviewProblem: rating is mandatory, comment is mandatory when low", () => {
+test("reviewProblem: a rating is mandatory, a comment never is", () => {
   expect(reviewProblem(null, "great")).toEqual({ rating: expect.any(String) });
-  expect(reviewProblem(4, "   ")).toEqual({ note: expect.stringMatching(/comment/) });
-  expect(reviewProblem(3, "Cold food")).toBeNull();
+  expect(reviewProblem(2, "   ")).toBeNull();
   expect(reviewProblem(9, "")).toBeNull();
 });
 

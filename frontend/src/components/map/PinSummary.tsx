@@ -3,7 +3,9 @@ import { Link } from "react-router";
 
 import { COPY } from "../../copy";
 import { usePlace } from "../../hooks/places";
+import { usePlacePhotos } from "../../hooks/photos";
 import { usePlaceNotes, type NoteSort } from "../../hooks/ranking";
+import PhotoThumbs from "../photos/PhotoThumbs";
 import { walkLabel } from "../../lib/walk";
 import Badges from "../Badges";
 import FlagButton from "../FlagButton";
@@ -24,6 +26,14 @@ const SORTS: { key: NoteSort; label: string }[] = [
   { key: "highest", label: "Top rated" },
   { key: "lowest", label: "Lowest" },
 ];
+
+/** Everyone's photos of the place, newest first, as a strip on the card (R20.4). */
+function PlacePhotoStrip({ placeId, signedIn }: { placeId: number; signedIn: boolean }) {
+  const q = usePlacePhotos(placeId);
+  const photos = q.data?.photos ?? [];
+  if (photos.length === 0) return null;
+  return <PhotoThumbs photos={photos} signedIn={signedIn} size="lg" label="Photos of this place" />;
+}
 
 /** Reviews in the place card, sortable (R17.9). */
 function Reviews({ placeId, signedIn }: { placeId: number; signedIn: boolean }) {
@@ -63,7 +73,12 @@ function Reviews({ placeId, signedIn }: { placeId: number; signedIn: boolean }) 
                   </span>
                 ) : null}
               </p>
-              <p className="whitespace-pre-wrap text-sm">{n.note}</p>
+              {n.note ? <p className="whitespace-pre-wrap text-sm">{n.note}</p> : null}
+              {n.photos.length ? (
+                <div className="mt-1.5">
+                  <PhotoThumbs photos={n.photos} signedIn={signedIn} size="sm" label={`Photos by ${n.author}`} />
+                </div>
+              ) : null}
             </li>
           );
         })}
@@ -118,6 +133,7 @@ export default function PinSummary({
             subcategorySlug={place.subcategory.slug}
             topCategory={place.subcategory.top_category}
             variant="banner"
+            image={place.image}
             name={place.name}
             nameAs="h2"
             className="min-h-36"
@@ -154,7 +170,7 @@ export default function PinSummary({
         <div className="space-y-3 px-4 pb-4 pt-3">
           <div className="flex flex-wrap items-center gap-2">
             {canRate ? (
-              <WentPanel key={place.id} placeId={place.id} current={v.my_ranking?.rating ?? null} canRate />
+              <WentPanel key={place.id} placeId={place.id} placeName={place.name} current={v.my_ranking?.rating ?? null} canRate />
             ) : (
               <p className="flex-1 text-sm font-bold text-muted">Reported closed: not taking new ratings</p>
             )}
@@ -171,6 +187,8 @@ export default function PinSummary({
               </Link>
             ) : null}
           </div>
+
+          <PlacePhotoStrip placeId={place.id} signedIn={v.signed_in} />
 
           <div className="flex flex-wrap items-center gap-2">
             <Score score={place.public_score} rankerCount={place.ranker_count} />

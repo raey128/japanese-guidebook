@@ -135,3 +135,17 @@ def geocoder_stub() -> Iterator[GeocoderStub]:
                 settings.place_lookup_url,
             ) = previous
             geocoding._lookup_cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def media_dir(tmp_path, monkeypatch):  # type: ignore[no-untyped-def]
+    """Uploaded photos go to a throwaway folder per test."""
+    folder = tmp_path / "media"
+    monkeypatch.setattr(get_settings(), "media_dir", folder)
+    return folder
+
+
+@pytest.fixture
+def require_comments(monkeypatch):  # type: ignore[no-untyped-def]
+    """Turn on "ratings of 4 or lower need a comment" (off by default for now)."""
+    monkeypatch.setattr(get_settings(), "comment_required_below", 5)

@@ -467,7 +467,7 @@ async def test_bucket_that_disagrees_with_rating_is_422(client, db):
     assert (await rank(client, a, "liked", 1, rating=8, send_bucket="liked")).status_code == 200
 
 
-async def test_low_rating_needs_a_comment_but_high_does_not(client, db):
+async def test_low_rating_needs_a_comment_but_high_does_not(client, db, require_comments):
     maker = await make_user(db, "maker")
     a, b, c = await ramen(db, maker, "A", "B", "C")
     await sign_in(client, "alice")
@@ -481,7 +481,7 @@ async def test_low_rating_needs_a_comment_but_high_does_not(client, db):
     assert (await rank(client, c, "liked", 1)).status_code == 200
 
 
-async def test_low_rated_comment_cannot_be_cleared(client, db):
+async def test_low_rated_comment_cannot_be_cleared(client, db, require_comments):
     maker = await make_user(db, "maker")
     a, b = await ramen(db, maker, "A", "B")
     await sign_in(client, "alice")
@@ -532,7 +532,7 @@ async def test_went_rates_in_one_tap_and_can_change(client, db):
     assert r.json()["ranking"]["bucket"] == "fine" and r.json()["ranking"]["note"] == "Okay"
 
 
-async def test_went_low_rating_needs_a_comment(client, db):
+async def test_went_low_rating_needs_a_comment(client, db, require_comments):
     maker = await make_user(db, "maker")
     (a,) = await ramen(db, maker, "Went Low")
     await sign_in(client, "goer")
@@ -551,3 +551,11 @@ async def test_went_signed_out_is_401(client, db):
     maker = await make_user(db, "maker")
     (a,) = await ramen(db, maker, "Went Anon")
     assert (await client.put(f"/api/places/{a.id}/rating", json={"rating": 9})).status_code == 401
+
+
+async def test_comments_are_optional_by_default(client, db):
+    maker = await make_user(db, "maker")
+    (a,) = await ramen(db, maker, "No Comment")
+    await sign_in(client, "quiet")
+    r = await client.put(f"/api/places/{a.id}/rating", json={"rating": 2})
+    assert r.status_code == 200 and r.json()["ranking"]["note"] is None

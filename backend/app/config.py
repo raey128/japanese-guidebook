@@ -58,6 +58,15 @@ class Settings(BaseSettings):
     # Paths
     data_dir: Path = REPO_ROOT / "data"
     dump_dir: Path = REPO_ROOT / "dumps"
+    # Uploaded review photos (R20.3). A local folder for the MVP; behind app/media.py so a
+    # cloud bucket can replace it later.
+    media_dir: Path = REPO_ROOT / "media"
+    photo_max_bytes: int = 12 * 1024 * 1024
+    photos_per_review: int = 4
+    photo_reports_to_hide: int = 3
+    # Ratings below this need a comment (R3.6). 0 = comments are always optional (decided
+    # 2026-11-27: "no comment is required for now"); set 5 to require one at 4 or lower.
+    comment_required_below: int = 0
     # Public address of the site, for the links the organizer shares (V1).
     site_url: str = "http://localhost:5173"
     # Vote rate limits (V1.4): writes per minute per link and per voter.

@@ -53,6 +53,7 @@ export const router = createBrowserRouter([
           { path: "/admin/pending", lazy: page(() => import("./pages/AdminPending")) },
           { path: "/admin/seeds", lazy: page(() => import("./pages/SeedReview")) },
           { path: "/admin/stats", lazy: page(() => import("./pages/AdminStats")) },
+          { path: "/admin/photos", lazy: page(() => import("./pages/AdminPhotos")) },
           { path: "*", lazy: page(() => import("./pages/NotFound")) },
         ],
       },

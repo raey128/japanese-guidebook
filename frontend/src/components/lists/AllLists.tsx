@@ -48,7 +48,7 @@ function ListCard({ list, city }: { list: Featured; city: string }) {
               <span aria-hidden="true">{p.rank ?? "·"}</span>
               <span className="sr-only">{p.rank ? `Rank ${p.rank}` : "Not ranked yet"}</span>
             </span>
-            <PlaceArt id={p.id} subcategorySlug={p.subcategory.slug} topCategory={p.subcategory.top_category} className="size-14 text-lg" />
+            <PlaceArt id={p.id} subcategorySlug={p.subcategory.slug} topCategory={p.subcategory.top_category} image={p.image} className="size-14 text-lg" />
             <div className="min-w-0 flex-1">
               <Link to={`/?place=${p.id}`} className="font-bold underline-offset-2 hover:underline">
                 <PlaceNames name={p.name} nameJa={p.name_ja} as="span" />

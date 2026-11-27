@@ -55,7 +55,8 @@ _The search UI moves onto the map (R12). R3.1 is now the backend that powers the
 | R3.3 | One ranking per user per place | Ranking an already-ranked place opens re-rank instead of creating a second entry |
 | R3.4 | Empty search result state | A search with no match shows "Not found" plus an "Add manually" option that starts R13 (pending approval). _Changed: it used to link to the live pin-drop flow_ |
 | R3.5 | The standalone search page is retired | `/search` (with any query string) redirects to `/` and keeps `q`, `city` and `category`, so the map's search bar opens with them filled in |
-| R3.6 | Every ranking has a 1–5 star rating; a comment is required below 3 stars | Ranking without a rating is refused (422). 4–5 ★ go in Liked, 3 ★ in Fine, 1–2 ★ in Disliked, then the usual comparisons. A 1–2 ★ rating without a comment is refused in the app and by the API, and its comment can't later be cleared. Comments are optional at 3 ★ and up. Adding a place asks "Have you been here?" (required); "Yes" requires a star rating and ranks the place for the adder as it's created, then offers comparisons if the list has other places (the "Have you been here?" step on Add a place is switched off for now; the API still accepts a review with a new place) |
+| R3.6 | Rating: stickers when adding, stickers or numbers elsewhere | Every rating is stored as a number from 1 to 10 (8–10 Liked, 5–7 Fine, 1–4 Disliked). Adding a place ends with a required **Been there** or **Want to go**; Been there is one tap on a reaction sticker (🤩 Obsessed 10 · 😍 Loved it 8 · 👍 Solid 6 · 😐 Meh 4 · 🙅 Skip it 2) and the Add flow never shows a number. Comments are optional (a setting can require one for low ratings later). If other places in that category have the same reaction, at most **2** "Which did you like more?" questions place it; then "#3 in your Tokyo ramen" |
+| R3.7 | Went on every place | The place card has **Went**: reaction stickers first, "Rate with a number instead" for 1–10. It saves in one tap, asks at most 2 this-or-that questions, then shows "#3 in your Tokyo ramen" and "Your score: 8.6". "Fine-tune" (the full comparison screen) stays available |
 
 ### R4: Pairwise ranking
 
@@ -257,6 +258,15 @@ Round 1 tests whether an organizer sends one link and friends vote without an ac
 | V1.6 | Name and Done | "Your name, so <Organizer> knows it's you" is visible and optional, saved on leaving the field. A sticky Done shows "Thanks. 3 of 4 have voted." (or "3 people have voted" without a group size) and "Planning your own trip? Start a list." |
 | V1.7 | Closed voting is read-only results | When the organizer closes voting, the link shows yes / maybe / no counts and the names of named voters per place, most yeses first, instead of an error |
 | V1.8 | Demo data | `python -m app.cli vote-demo [--token T] [--closed]` creates "Maya picked 12 places for Tokyo" (optionally closed, with sample votes) for the mockup test and e2e |
+
+### R20: Place pictures `⬜ new`
+
+| ID | Requirement | Acceptance criterion |
+|----|-------------|----------------------|
+| R20.1 | Poster art for every place | Every place card, list row and vote card shows its kind's gradient, a tilted emoji sticker and its name in the display font (Partiful-style), so nothing looks empty |
+| R20.2 | Photos on reviews | Up to 4 photos per review (JPEG/PNG/WebP/HEIC, ≤ 12 MB), cleaned of location and camera data and resized on upload; shown on the place card, in reviews and in My ratings; your own can be deleted, others reported (hidden after 3 reports), with an admin Photos queue |
+| R20.3 | Wikimedia photos | `fetch-place-images` (weekly) finds a nearby Wikipedia article (Japanese, then English) whose title closely matches the place and keeps its freely licensed main image, with "Photo: <author> · <licence> · Wikimedia Commons" shown on it. Misses are rechecked after 90 days |
+| R20.4 | Which picture wins | A user's newest photo, else the Wikimedia photo, else the poster art |
 
 ## Stretch
 

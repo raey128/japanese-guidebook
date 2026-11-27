@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
 
 import "@fontsource-variable/nunito";
+import "@fontsource-variable/bricolage-grotesque";
 import "./index.css";
 import { router } from "./router";
 

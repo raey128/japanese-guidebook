@@ -153,7 +153,7 @@ async def test_review_without_visit_is_rejected(client, db):
     assert (await client.post("/api/places", json=body)).status_code == 422
 
 
-async def test_low_rating_on_add_needs_a_comment(client, db):
+async def test_low_rating_on_add_needs_a_comment(client, db, require_comments):
     await sign_in(client, "adder")
     for review in ({"rating": 2}, {"rating": 1, "note": "  "}):
         r = await client.post("/api/places", json=await place_body(db, visited=True, review=review))

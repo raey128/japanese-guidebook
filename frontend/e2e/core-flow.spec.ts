@@ -41,10 +41,10 @@ test("sign in, add a place by pin, rank three places, see them in both lists", a
   const c = await createPlaceApi(page, { name: `Corefl Tonkotsu ${run}` });
 
   // 3. Rank all three through the RankFlow UI: A first, then B (A is better), then C (B is better).
-  // Went: rate it 9 in one tap, right on the card (R3.7).
+  // Went: one tap on a sticker, right on the card (R3.7).
   await summary.getByRole("button", { name: "Went", exact: true }).click();
-  await summary.locator("label").filter({ has: page.getByRole("radio", { name: /^9 out of 10/ }) }).click();
-  await expect(summary.getByText(/Saved: you gave it 9/)).toBeVisible();
+  await summary.locator("label").filter({ has: page.getByRole("radio", { name: /Obsessed/ }) }).click();
+  await expect(summary.getByText(/^#1 in your Tokyo ramen$/)).toBeVisible();
   expect(await rankViaUi(page, b.id, { answers: ["existing"] })).toBe(1);
   expect(await rankViaUi(page, c.id, { answers: ["existing"], note: `Great bowl ${run}` })).toBe(1);
 

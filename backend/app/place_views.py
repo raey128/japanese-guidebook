@@ -8,7 +8,7 @@ from typing import Any
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app import scores
+from app import media, scores
 from app.config import get_settings
 from app.models import Bookmark, Place, Ranking, Subcategory, User
 from app.schemas.common import (
@@ -17,6 +17,7 @@ from app.schemas.common import (
     LocationOut,
     MyRanking,
     PlaceDetail,
+    PlaceImage,
     PlaceSummary,
     SubcategoryOut,
     TopNote,
@@ -55,14 +56,60 @@ async def load_reference(db: AsyncSession) -> Reference:
     return Reference(subs, locs, cities)
 
 
+# The place's picture: the newest visible user photo, else its Wikimedia photo (if found).
+IMAGE_COLS = (
+    "uph.key AS photo_key, wi.image_url AS wiki_url, wi.thumb_url AS wiki_thumb, "
+    "wi.author AS wiki_author, wi.license AS wiki_license, wi.page_url AS wiki_page, "
+    "tn.note AS peek_note, tn.username AS peek_author, tn.is_private AS peek_private"
+)
+IMAGE_JOIN = """
+LEFT JOIN LATERAL (
+    SELECT ph.key FROM photos ph JOIN rankings rk ON rk.id = ph.ranking_id
+    WHERE rk.place_id = p.id AND NOT ph.is_hidden
+    ORDER BY ph.created_at DESC, ph.id DESC LIMIT 1
+) uph ON true
+LEFT JOIN place_images wi ON wi.place_id = p.id AND wi.image_url IS NOT NULL
+LEFT JOIN LATERAL (
+    SELECT rn.note, un.username, un.is_private
+    FROM rankings rn JOIN users un ON un.id = rn.user_id
+    WHERE rn.place_id = p.id AND rn.note IS NOT NULL AND btrim(rn.note) <> ''
+    ORDER BY (rn.bucket = 'liked') DESC, rn.updated_at DESC NULLS LAST, rn.id DESC
+    LIMIT 1
+) tn ON true
+"""
+
 SUMMARY_SQL = f"""
 WITH {scores.place_scores_cte()}
 SELECT p.id, p.name, p.name_ja, p.address, ST_Y(p.geom) AS lat, ST_X(p.geom) AS lng,
        p.subcategory_id, p.location_id, p.city_id, p.is_hidden, p.is_closed,
-       p.closed_by_reports, p.status, s.public_score, s.ranker_count, s.is_unverified
+       p.closed_by_reports, p.status, s.public_score, s.ranker_count, s.is_unverified,
+       {IMAGE_COLS}
 FROM places p JOIN place_scores s ON s.place_id = p.id
+{IMAGE_JOIN}
 WHERE p.id = ANY(:ids)
 """
+
+
+def image_from_row(row: Any) -> PlaceImage | None:
+    key = getattr(row, "photo_key", None)
+    if key:
+        return PlaceImage(
+            source="user",
+            url=media.url(key) or "",
+            thumb_url=media.url(key, thumb=True) or "",
+            credit=None,
+            credit_url=None,
+        )
+    wiki = getattr(row, "wiki_url", None)
+    if wiki:
+        return PlaceImage(
+            source="wikimedia",
+            url=wiki,
+            thumb_url=row.wiki_thumb or wiki,
+            credit=f"Photo: {row.wiki_author} · {row.wiki_license}",
+            credit_url=row.wiki_page,
+        )
+    return None
 
 
 def summary_from_row(row: Any, ref: Reference) -> PlaceSummary:
@@ -85,6 +132,15 @@ def summary_from_row(row: Any, ref: Reference) -> PlaceSummary:
             closed_by_reports=row.closed_by_reports,
             is_hidden=row.is_hidden,
             is_pending=row.status == "pending",
+        ),
+        image=image_from_row(row),
+        peek=(
+            TopNote(
+                author=ANONYMOUS if row.peek_private else row.peek_author,
+                note=row.peek_note.strip()[:200],
+            )
+            if getattr(row, "peek_note", None)
+            else None
         ),
     )
 
@@ -131,6 +187,12 @@ async def place_detail(db: AsyncSession, place: Place, viewer: User | None) -> P
             )
         ).scalar_one_or_none()
         my_ranking = MyRanking.model_validate(r) if r else None
+        if my_ranking is not None:
+            from app.photos import photos_for_rankings
+
+            my_ranking.photos = (await photos_for_rankings(db, [my_ranking.id], viewer.id))[
+                my_ranking.id
+            ]
         bookmarked = (
             await db.execute(
                 select(Bookmark).where(Bookmark.user_id == viewer.id, Bookmark.place_id == place.id)

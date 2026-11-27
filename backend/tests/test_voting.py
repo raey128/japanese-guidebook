@@ -60,7 +60,7 @@ async def test_vote_page_needs_no_account_and_lists_places_in_order(client, db):
     first = page["items"][0]
     assert (first["curator_count"], first["evidence_updated"]) == (5, "2026-11-12")
     assert page["items"][1]["curator_count"] is None  # no evidence: no line, never invented
-    assert first["tally"] is None and page["me"] is None and page["voter_count"] == 0
+    assert first["tally"]["yes"] == 0 and page["me"] is None and page["voter_count"] == 0
 
 
 async def test_each_tap_saves_and_last_tap_wins(client, db):
@@ -132,9 +132,7 @@ async def test_closed_list_is_read_only_results(client, db):
     assert page["is_open"] is False
     first, second, third = (i["tally"] for i in page["items"])
     assert (first["yes"], first["maybe"], first["no"]) == (2, 0, 1)
-    assert (
-        first["yes_names"] == ["Aiko", "Ken"] and first["no_names"] == []
-    )  # unnamed: counted only
+    assert first["yes_names"] == [] and first["no_names"] == []  # unnamed: counted only
     assert (second["yes"], second["maybe"], second["no"]) == (0, 2, 1)
     assert third == {
         "yes": 0,

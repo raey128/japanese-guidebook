@@ -58,6 +58,7 @@ function VoteCard({
         subcategorySlug={item.place.subcategory.slug}
         topCategory={item.place.subcategory.top_category}
         variant="banner"
+        image={item.place.image}
         className="min-h-32"
       >
         <h2 id={`${id}-name`} className="font-display text-2xl font-black leading-tight text-white [text-shadow:0_2px_8px_rgb(0_0_0/0.35)]">

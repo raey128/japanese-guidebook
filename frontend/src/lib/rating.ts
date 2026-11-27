@@ -4,8 +4,11 @@ type Bucket = Schemas["MyRanking"]["bucket"];
 
 /** Ratings are numbers from 1 to 10 (R3.6). Mirrors the API. */
 export const RATING_MAX = 10;
-/** A rating of 4 or lower needs a comment, so low ratings always say why. */
-export const COMMENT_REQUIRED_BELOW = 5;
+/**
+ * Ratings below this need a comment. 0 = comments are always optional (decided 2026-11-27,
+ * "no comment is required for now"); mirrors the API's `comment_required_below` setting.
+ */
+export const COMMENT_REQUIRED_BELOW = 0;
 
 /** Words for the two ends of the scale, shown under the buttons. */
 export const RATING_ENDS = { low: "skip it", high: "must go" } as const;

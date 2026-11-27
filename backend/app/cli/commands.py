@@ -47,6 +47,13 @@ async def run_in_session(db: AsyncSession, command: str, options: dict[str, Any]
                 db, int(options.get("count", 50000)), int(options.get("seed", 42))
             )
             return f"synthetic: {n} places created"
+        if command == "fetch-place-images":
+            from app import place_images
+
+            checked, found = await place_images.fetch(
+                db, limit=int(options.get("limit", 500)), refresh=bool(options.get("refresh"))
+            )
+            return f"place images: {checked} places checked, {found} photos found"
         if command == "vote-demo":
             from app import vote_demo
 

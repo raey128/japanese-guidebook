@@ -16,6 +16,8 @@ from app.routers import (
     lists,
     map,
     moderation,
+    my_lists,
+    photos,
     place_detail,
     places,
     profiles,
@@ -43,6 +45,8 @@ ROUTERS = [
     review,
     events,
     voting,
+    photos,
+    my_lists,
 ]
 
 
@@ -60,6 +64,8 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestLogMiddleware)
     for module in ROUTERS:
         app.include_router(module.router, prefix="/api")
+    # The share link itself (/share/l/<token>): a preview for chat apps, then the app.
+    app.include_router(my_lists.share_router)
     return app
 
 

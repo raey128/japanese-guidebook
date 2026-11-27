@@ -52,12 +52,9 @@ test.describe("ranking flow", () => {
     const target = await createPlaceApi(page, { name: `Bucket New ${run}` });
     await page.goto(`/places/${target.id}/rank`);
     await pickRating(page, 3);
-    // At 4 or lower the comment is required.
-    await expect(page.getByRole("heading", { name: "Tell others why" })).toBeVisible();
+    // Comments are optional, even for a low rating (decided 2026-11-27).
+    await expect(page.getByRole("heading", { name: "Add a comment (optional)" })).toBeVisible();
     await expect(page.getByText(/#1 of 1 in your Disliked list\./)).toBeVisible();
-    await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByRole("alert").filter({ hasText: "need a comment" })).toBeVisible();
-    await page.getByRole("textbox", { name: /^Comment/ }).fill("Too salty for me.");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
   });
@@ -131,24 +128,22 @@ test.describe("ranking flow", () => {
   });
 });
 
-// R3.7: Went rates a place 1-10 in one tap on its card; 4 or lower asks for a comment first.
-test("Went: one-tap rating on the place card, and a comment for a low number", async ({ page }) => {
+// R3.7 (decided 2026-11-27): Went is one tap on a reaction sticker, or a number if you prefer.
+test("Went: one tap on a sticker, or a number instead; shows where it landed", async ({ page }) => {
   await stubMapStyle(page);
   await signInApi(page);
   const p = await createPlaceApi(page, { name: `Went ${runId()}` });
   await page.goto(`/?place=${p.id}`);
   const card = page.getByRole("region", { name: "Place summary" });
   await card.getByRole("button", { name: "Went", exact: true }).click();
-  const tap = (n: number) =>
-    card.locator("label").filter({ has: page.getByRole("radio", { name: new RegExp(`^${n} out of 10`) }) }).click();
-  await tap(8);
-  await expect(card.getByText("Saved: you gave it 8 · Great")).toBeVisible();
+  await card.locator("label").filter({ has: page.getByRole("radio", { name: /Loved it/ }) }).click();
+  await expect(card.getByText(/^#\d+ in your Tokyo ramen$/)).toBeVisible();
   expect((await snapshotApi(page, p.id)).my_ranking).toMatchObject({ rating: 8, bucket: "liked" });
 
-  await tap(3);
-  await expect(card.getByRole("textbox", { name: /Tell others why/ })).toBeVisible();
-  await card.getByRole("textbox", { name: /Tell others why/ }).fill("Too salty for me");
-  await card.getByRole("button", { name: "Save rating", exact: true }).click();
-  await expect(card.getByText("Saved: you gave it 3 · Not great")).toBeVisible();
-  expect((await snapshotApi(page, p.id)).my_ranking).toMatchObject({ rating: 3, bucket: "disliked", note: "Too salty for me" });
+  // Change it with a number instead.
+  await card.getByRole("button", { name: "Change it" }).click();
+  await card.getByRole("button", { name: "Rate with a number instead" }).click();
+  await card.locator("label").filter({ has: page.getByRole("radio", { name: /^3 out of 10/ }) }).click();
+  await expect(card.getByText(/^#\d+ in your Tokyo ramen$/)).toBeVisible();
+  expect((await snapshotApi(page, p.id)).my_ranking).toMatchObject({ rating: 3, bucket: "disliked" });
 });

@@ -13,7 +13,7 @@ function PickRow({ place, rank, userLoc, onPick }: { place: Place; rank: number;
     <li>
       <button type="button" onClick={onPick} className="flex w-full items-center gap-3 rounded-xl px-1 py-2 text-left hover:bg-stone-50">
         <span className="w-6 text-right text-lg font-extrabold text-brand">{rank}</span>
-        <PlaceArt id={place.id} subcategorySlug={place.subcategory.slug} topCategory={place.subcategory.top_category} className="size-12 text-base" />
+        <PlaceArt id={place.id} subcategorySlug={place.subcategory.slug} topCategory={place.subcategory.top_category} image={place.image} className="size-12 text-base" />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-extrabold">{place.name}</span>
           <span className="block truncate text-xs text-muted">

@@ -2,7 +2,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 
 import { api, unwrap, type Schemas } from "../../api/client";
+import { invalidateAfterPhotoChange, photoProblem, PHOTOS_PER_REVIEW, uploadReviewPhotos } from "../../hooks/photos";
 import { invalidateAfterRankingChange } from "../../hooks/ranking";
+import PhotoPicker from "../photos/PhotoPicker";
+import PhotoThumbs from "../photos/PhotoThumbs";
 import { needsComment, reviewProblem } from "../../lib/rating";
 import NoteFields, { formatVisit, type NoteValue } from "./NoteFields";
 import { RatingBadge } from "./NumberRating";
@@ -24,20 +27,27 @@ export default function MyRankingSummary({
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState<NoteValue>({ note: "", month: null, year: null });
   const [noteError, setNoteError] = useState<string | undefined>(undefined);
+  const [newPhotos, setNewPhotos] = useState<File[]>([]);
+  const photos = ranking.photos ?? [];
   const rating = ranking.rating ?? null;
   const startEdit = () => {
     setValue({ note: ranking.note ?? "", month: ranking.visit_month, year: ranking.visit_year });
     setEditing(true);
   };
   const save = useMutation({
-    mutationFn: async () =>
-      unwrap(
+    mutationFn: async () => {
+      const out = unwrap(
         await api.PATCH("/api/rankings/{ranking_id}", {
           params: { path: { ranking_id: ranking.id } },
           body: { note: value.note.trim() || null, visit_month: value.month, visit_year: value.year },
         }),
-      ),
+      );
+      if (newPhotos.length) await uploadReviewPhotos(ranking.id, newPhotos);
+      return out;
+    },
     onSuccess: () => {
+      setNewPhotos([]);
+      invalidateAfterPhotoChange(qc);
       setEditing(false);
       invalidateAfterRankingChange(qc);
     },
@@ -67,9 +77,14 @@ export default function MyRankingSummary({
         <>
           {ranking.note ? <p className="mt-2 whitespace-pre-wrap">{ranking.note}</p> : null}
           {visit ? <p className="hint">Visited {visit}</p> : null}
+          {photos.length ? (
+            <div className="mt-2">
+              <PhotoThumbs photos={photos} signedIn label="Your photos" />
+            </div>
+          ) : null}
           <div className="mt-2 flex gap-2">
             <button type="button" onClick={startEdit} className="btn btn-secondary btn-sm">
-              Edit comment
+              Edit comment{photos.length < PHOTOS_PER_REVIEW ? " & photos" : ""}
             </button>
             <button
               type="button"
@@ -89,6 +104,7 @@ export default function MyRankingSummary({
           className="mt-2 space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
+            if (photoProblem(newPhotos, photos.length)) return;
             const problem = rating ? reviewProblem(rating, value.note) : null;
             if (problem?.note) {
               setNoteError(problem.note);
@@ -106,6 +122,7 @@ export default function MyRankingSummary({
             required={needsComment(rating)}
             error={noteError}
           />
+          <PhotoPicker files={newPhotos} onChange={setNewPhotos} alreadyHave={photos.length} />
           <div className="flex gap-2">
             <button type="submit" disabled={save.isPending} className="btn btn-primary btn-sm">
               Save comment

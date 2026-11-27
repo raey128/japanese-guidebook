@@ -243,3 +243,23 @@ class GeocodeThrottle(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     last_called_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Photo(Base):
+    """A photo on a review (R20). Files live under the media store, keyed by `key`."""
+
+    __tablename__ = "photos"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    ranking_id: Mapped[int] = mapped_column(
+        ForeignKey("rankings.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    key: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    width: Mapped[int] = mapped_column(Integer, nullable=False)
+    height: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    report_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )

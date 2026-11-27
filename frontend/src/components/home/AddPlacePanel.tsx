@@ -10,8 +10,9 @@ import CategoryPicker from "../map/CategoryPicker";
 import { distanceMetres, formatDistance, mapApiErrors, type FormErrors, type LatLng } from "../map/geo";
 import PlaceNameLookup, { type LookupPick } from "../map/PlaceNameLookup";
 import PlaceNames from "../PlaceNames";
-import ReviewFields, { EMPTY_REVIEW, type ReviewValue } from "../ranking/ReviewFields";
-import { reviewProblem } from "../../lib/rating";
+import ReactionPicker from "../ranking/ReactionPicker";
+import ThisOrThat from "../ranking/ThisOrThat";
+import type { Reaction } from "../../lib/reactions";
 import { PinIcon } from "../ui/MapPin";
 
 function without(errors: Record<string, string>, key: string): Record<string, string> {
@@ -73,7 +74,12 @@ export default function AddPlacePanel({
   const [candidates, setCandidates] = useState<Schemas["PlaceSummary"][] | null>(null);
   const lastValues = useRef<PlaceValues | null>(null);
   const [plan, setPlan] = useState<"been" | "want" | null>(null);
-  const [review, setReview] = useState<ReviewValue>(EMPTY_REVIEW);
+  const [reaction, setReaction] = useState<Reaction | null>(null);
+  const [comment, setComment] = useState("");
+  const [showComment, setShowComment] = useState(false);
+  // After adding a place you've been to: the this-or-that step, then where it landed.
+  const [placing, setPlacing] = useState<{ id: number; name: string; rating: number } | null>(null);
+  const [landed, setLanded] = useState<{ id: number; name: string; line: string | null } | null>(null);
 
   // The area (location) comes from the pin; nobody has to pick it.
   const suggestion = useSuggestLocation(pin);
@@ -113,24 +119,26 @@ export default function AddPlacePanel({
   const send = (values: PlaceValues, confirm: boolean) => {
     lastValues.current = values;
     setServerErrors(null);
-    const been = plan === "been" && review.rating !== null;
+    const been = plan === "been" && reaction !== null;
     create.mutate(
       {
         ...values,
         confirm_not_duplicate: confirm,
         source: manual ? "manual" : "pin",
         visited: been,
-        review: been
-          ? { rating: review.rating!, note: review.note.trim() || null, visit_month: review.month, visit_year: review.year }
-          : null,
+        review: been ? { rating: reaction!.rating, note: comment.trim() || null } : null,
         want_to_go: plan === "want",
       },
       {
         onSuccess: (res) => {
           if (res.status === "created" && res.place) {
             track("add", manual ? "manual" : "pin");
-            if (res.ranking) track("went", "new");
             celebrate(manual ? SENT_FOR_REVIEW_MESSAGE : ADDED_MESSAGE);
+            if (res.ranking) {
+              track("went", "new");
+              setPlacing({ id: res.place.id, name: res.place.name, rating: res.ranking.rating ?? reaction?.rating ?? 6 });
+              return;
+            }
             onCreated(res.place.id, res.place.name);
           } else {
             setCandidates(res.candidates);
@@ -153,11 +161,7 @@ export default function AddPlacePanel({
     if (!pin) next.pin = "Pick the place from the suggestions so we can pin it.";
     if (subcategoryId === null) next.subcategory_id = "Choose a category.";
     if (plan === null) next.plan = "Have you been, or do you want to go?";
-    else if (plan === "been") {
-      const problem = reviewProblem(review.rating, review.note);
-      if (problem?.rating) next.rating = problem.rating;
-      if (problem?.note) next.note = problem.note;
-    }
+    else if (plan === "been" && reaction === null) next.rating = "Tap how it was.";
     setErrors(next);
     if (Object.keys(next).length || !pin || subcategoryId === null) return;
     if (locationId === null) return; // still working out the area; the button shows it
@@ -176,6 +180,34 @@ export default function AddPlacePanel({
   };
 
   const waitingForArea = pin !== null && !outside && locationId === null;
+
+  // Added a place you've been to: place it among your others, then say where it landed.
+  if (landed) {
+    return (
+      <section aria-labelledby={`${uid}-landed`} role="status" className="space-y-3 py-2 text-center">
+        <p aria-hidden="true" className="text-5xl">
+          🎉
+        </p>
+        <h2 id={`${uid}-landed`} className="font-display text-2xl font-black">
+          {landed.name} is in!
+        </h2>
+        {landed.line ? <p className="text-lg font-extrabold text-brand-dark">{landed.line}</p> : null}
+        <button type="button" className="btn btn-primary w-full" onClick={() => onCreated(landed.id, landed.name)}>
+          Done
+        </button>
+      </section>
+    );
+  }
+  if (placing) {
+    return (
+      <ThisOrThat
+        placeId={placing.id}
+        placeName={placing.name}
+        rating={placing.rating}
+        onDone={(line) => setLanded({ id: placing.id, name: placing.name, line })}
+      />
+    );
+  }
 
   return (
     <form onSubmit={submit} noValidate aria-labelledby={`${uid}-title`} className="space-y-4">
@@ -314,14 +346,41 @@ export default function AddPlacePanel({
           </p>
         ) : null}
         {plan === "been" ? (
-          <ReviewFields
-            value={review}
-            onChange={(v) => {
-              setReview(v);
-              setErrors((e) => without(without(e, "rating"), "note"));
-            }}
-            errors={{ rating: errors.rating, note: errors.note }}
-          />
+          <div className="space-y-2">
+            {/* One tap on a sticker; no numbers while adding (decided 2026-11-27). */}
+            <ReactionPicker
+              value={reaction?.key ?? null}
+              onChange={(r) => {
+                setReaction(r);
+                setErrors((e) => without(e, "rating"));
+              }}
+            />
+            {errors.rating ? (
+              <p role="alert" className="text-sm text-danger">
+                {errors.rating}
+              </p>
+            ) : null}
+            {showComment ? (
+              <div>
+                <label htmlFor={`${uid}-comment`} className="label">
+                  Comment (optional)
+                </label>
+                <textarea
+                  id={`${uid}-comment`}
+                  rows={2}
+                  maxLength={1000}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="What should people order, see or know?"
+                  className="field"
+                />
+              </div>
+            ) : (
+              <button type="button" className="link text-sm" onClick={() => setShowComment(true)}>
+                Add a comment (optional)
+              </button>
+            )}
+          </div>
         ) : null}
       </fieldset>
 

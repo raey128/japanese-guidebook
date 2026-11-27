@@ -72,6 +72,7 @@ function MyReviews() {
               note: item.note ?? null,
               visit_month: item.visit_month ?? null,
               visit_year: item.visit_year ?? null,
+              photos: item.photos ?? [],
             }}
           />
           <Link to={`/places/${item.place_id}/rank`} className="link ml-1 mt-1 inline-block text-sm">

@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.ranking import COMMENT_REQUIRED_BELOW, LOW_RATING_NEEDS_COMMENT, NOTE_MAX_LEN
+from app.ranking import NOTE_MAX_LEN, check_review
 from app.schemas.common import CityOut, MyRanking, PlaceDetail, PlaceSummary
 
 
@@ -37,7 +37,7 @@ class PlaceCheckRequest(BaseModel):
 
 class ReviewIn(BaseModel):
     """The adder's own rating when they've been there (R3.6). Rating is required; a comment is
-    optional unless the rating is 4 or lower."""
+    optional (a setting can require one for low ratings)."""
 
     rating: int = Field(ge=1, le=10)
     note: str | None = Field(default=None, max_length=NOTE_MAX_LEN)
@@ -51,8 +51,7 @@ class ReviewIn(BaseModel):
 
     @model_validator(mode="after")
     def _low_rating_needs_comment(self) -> "ReviewIn":
-        if self.rating < COMMENT_REQUIRED_BELOW and not self.note:
-            raise ValueError(LOW_RATING_NEEDS_COMMENT)
+        check_review(self.rating, self.note)
         if (self.visit_month is None) != (self.visit_year is None):
             raise ValueError("Give both a visit month and year, or neither.")
         return self

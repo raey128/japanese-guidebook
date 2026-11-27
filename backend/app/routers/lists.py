@@ -7,7 +7,7 @@ from sqlalchemy import text
 from app import scores
 from app.deps import DB
 from app.models import TOP_CATEGORIES
-from app.place_views import load_reference, summary_from_row
+from app.place_views import IMAGE_COLS, IMAGE_JOIN, load_reference, summary_from_row
 from app.schemas.common import CityOut, LocationOut, Message
 from app.schemas.lists import FeaturedList, FeaturedLists, ListItem, PublicList
 
@@ -24,8 +24,10 @@ LIST_SQL = f"""
 WITH {scores.place_scores_cte()}
 SELECT p.id, p.name, p.name_ja, p.address, ST_Y(p.geom) AS lat, ST_X(p.geom) AS lng,
        p.subcategory_id, p.location_id, p.city_id, p.is_hidden, p.is_closed,
-       p.closed_by_reports, p.status, s.public_score, s.ranker_count, s.is_unverified
+       p.closed_by_reports, p.status, s.public_score, s.ranker_count, s.is_unverified,
+       {IMAGE_COLS}
 FROM places p JOIN place_scores s ON s.place_id = p.id
+{IMAGE_JOIN}
 WHERE p.city_id = :city_id AND p.subcategory_id = ANY(:sub_ids)
   AND (CAST(:location_id AS integer) IS NULL OR p.location_id = CAST(:location_id AS integer))
   AND NOT p.is_hidden AND p.merged_into_id IS NULL

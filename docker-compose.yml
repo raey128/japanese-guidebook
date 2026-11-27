@@ -26,6 +26,8 @@ services:
     ports: ["8000:8000"]
     volumes:
       - ./dumps:/app/dumps
+      # Uploaded photos (R20.3); survives rebuilds.
+      - media:/app/media
     depends_on:
       db: { condition: service_healthy }
 
@@ -50,3 +52,4 @@ services:
 
 volumes:
   pgdata:
+  media:

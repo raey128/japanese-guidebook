@@ -8,6 +8,7 @@ from app.schemas.common import (
     CityOut,
     MyRanking,
     Out,
+    PhotoOut,
     SubcategoryOut,
 )
 
@@ -25,6 +26,7 @@ class RankingItem(Out):
     note: str | None = None  # the user's comment (only their own lists are ever served)
     visit_month: int | None = None
     visit_year: int | None = None
+    photos: list[PhotoOut] = []
     badges: list[Badge]  # "closed" / "reported_closed" / "hidden" (hidden only ever shown to owner)
 
 
@@ -115,11 +117,12 @@ class MyRankings(Out):
 class PlaceNote(Out):
     ranking_id: int
     author: str  # username, or "Anonymous" for private users
-    note: str
+    note: str | None  # a review can be photos only
     visit_month: int | None
     visit_year: int | None
     bucket: Bucket
     rating: int | None = None
+    photos: list[PhotoOut] = []
     created_at: str
     is_own: bool
 
