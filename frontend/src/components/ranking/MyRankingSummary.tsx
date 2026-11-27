@@ -71,7 +71,7 @@ export default function MyRankingSummary({
             <RatingBadge rating={rating} /> ·{" "}
           </>
         ) : null}
-        {BUCKET_LABEL[ranking.bucket]} · #{ranking.position} in your list · personal score {ranking.personal_score.toFixed(1)}
+        #{ranking.position} in your {BUCKET_LABEL[ranking.bucket].toLowerCase()} list · your score {ranking.personal_score.toFixed(1)}
       </p>
       {!editing ? (
         <>

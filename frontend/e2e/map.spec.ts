@@ -38,7 +38,8 @@ test("pan/zoom reloads the pins, and a pin opens its summary and detail page", a
   await expect(summary.getByRole("button", { name: "Save" })).toBeVisible();
   await expect(summary.getByRole("link", { name: "View details" })).toHaveCount(0);
   await expect(summary.getByRole("link", { name: /Directions/ })).toHaveCount(0);
-  await expect(summary.getByRole("heading", { name: /^Reviews/ })).toBeVisible();
+  // The photo leads the card, with its Add photo button (decided 2026-11-27).
+  await expect(summary.getByRole("button", { name: /Add (the first )?photo/ })).toBeVisible();
 });
 
 test("the summary closes with the close button", async ({ page }) => {

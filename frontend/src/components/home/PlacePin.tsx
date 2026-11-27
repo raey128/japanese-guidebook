@@ -46,7 +46,11 @@ export default function PlacePin({
         className={`flex size-9 items-center justify-center rounded-full border-[3px] text-lg shadow-md ${
           selected ? "border-ink" : "border-white"
         } ${pending ? "opacity-70 outline-2 outline-dashed outline-ink" : ""}`}
-        style={{ background: info?.iconBg ?? "var(--color-brand)" }}
+        // Been there (decided 2026-11-27): a green ring around the pin instead of a ✓ badge.
+        style={{
+          background: info?.iconBg ?? "var(--color-brand)",
+          boxShadow: point.ranked && !selected ? "0 0 0 2.5px var(--color-success), 0 4px 6px rgb(0 0 0 / 0.2)" : undefined,
+        }}
       >
         <span aria-hidden="true">{info?.emoji ?? "📍"}</span>
       </span>
@@ -55,13 +59,12 @@ export default function PlacePin({
           {score}
         </span>
       ) : null}
-      {point.saved || point.ranked ? (
+      {point.saved ? (
         <span
           aria-hidden="true"
-          className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border-2 border-white bg-white text-[11px] font-extrabold shadow"
-          style={{ color: point.saved ? "var(--color-brand)" : "var(--color-success)" }}
+          className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full border-[1.5px] border-white bg-brand text-[9px] leading-none text-white shadow"
         >
-          {point.saved ? "♥" : "✓"}
+          ♥
         </span>
       ) : null}
     </button>

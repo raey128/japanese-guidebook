@@ -34,7 +34,8 @@ test("sign in, add a place by pin, rank three places, see them in both lists", a
   if (await different.isVisible()) await different.click();
   await expect(summary).toContainText(nameA);
   await expect(page.getByTestId("add-panel")).toHaveCount(0);
-  await expect(summary.getByText("Unverified", { exact: true })).toBeVisible();
+  // "Unverified" is no longer shown (decided 2026-11-27).
+  await expect(summary.getByText("Unverified", { exact: true })).toHaveCount(0);
 
   // 2. Two more places in the same city + subcategory, created through the API.
   const b = await createPlaceApi(page, { name: `Corefl Broth ${run}` });
@@ -65,7 +66,6 @@ test("sign in, add a place by pin, rank three places, see them in both lists", a
     const row = page.getByRole("listitem").filter({ hasText: name });
     await revealInList(page, row);
     await expect(row).toContainText(/\d+\.\d · 1 ranker/);
-    await expect(row).toContainText("Unverified");
   }
 
   // The public profile shows them too.

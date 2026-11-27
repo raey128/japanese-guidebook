@@ -25,7 +25,7 @@ export default function PhotoPicker({ files, onChange, alreadyHave = 0, error }:
   return (
     <div className="space-y-2">
       <p className="label" id={`${id}-label`}>
-        Photos (optional, up to {PHOTOS_PER_REVIEW})
+        Photos <span className="font-normal text-muted">(up to {PHOTOS_PER_REVIEW})</span>
       </p>
       <div className="flex flex-wrap gap-2" aria-labelledby={`${id}-label`} role="group">
         {previews.map((src, i) => (
@@ -69,7 +69,7 @@ export default function PhotoPicker({ files, onChange, alreadyHave = 0, error }:
           if (picked.length) onChange([...files, ...picked].slice(0, PHOTOS_PER_REVIEW - alreadyHave));
         }}
       />
-      <p className="hint">Location and camera details are removed from photos before they're shared.</p>
+      {files.length ? <p className="text-xs text-muted">Location data is removed before sharing.</p> : null}
       {problem ? (
         <p role="alert" className="text-sm text-danger">
           {problem}

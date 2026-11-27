@@ -1,7 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 
 import { ApiError, type Schemas } from "../../api/client";
+import { invalidateAfterPhotoChange, uploadReviewPhotos } from "../../hooks/photos";
+import PhotoPicker from "../photos/PhotoPicker";
 import { reverseGeocode, useCreatePlace, useSuggestLocation, type PlaceValues } from "../../hooks/places";
 import { ADDED_MESSAGE, SENT_FOR_REVIEW_MESSAGE } from "../../lib/celebrate";
 import { track } from "../../lib/track";
@@ -74,6 +77,8 @@ export default function AddPlacePanel({
   const [candidates, setCandidates] = useState<Schemas["PlaceSummary"][] | null>(null);
   const lastValues = useRef<PlaceValues | null>(null);
   const [plan, setPlan] = useState<"been" | "want" | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const qc = useQueryClient();
   const [reaction, setReaction] = useState<Reaction | null>(null);
   const [comment, setComment] = useState("");
   const [showComment, setShowComment] = useState(false);
@@ -136,6 +141,13 @@ export default function AddPlacePanel({
             celebrate(manual ? SENT_FOR_REVIEW_MESSAGE : ADDED_MESSAGE);
             if (res.ranking) {
               track("went", "new");
+              // Photos picked before submitting go up with the review (decided 2026-11-27).
+              if (photos.length) {
+                void uploadReviewPhotos(res.ranking.id, photos).then(
+                  () => invalidateAfterPhotoChange(qc),
+                  () => celebrate("The place is added, but the photos didn't upload. Try again from its card."),
+                );
+              }
               setPlacing({ id: res.place.id, name: res.place.name, rating: res.ranking.rating ?? reaction?.rating ?? 6 });
               return;
             }
@@ -347,6 +359,7 @@ export default function AddPlacePanel({
         ) : null}
         {plan === "been" ? (
           <div className="space-y-2">
+            <PhotoPicker files={photos} onChange={setPhotos} />
             {/* One tap on a sticker; no numbers while adding (decided 2026-11-27). */}
             <ReactionPicker
               value={reaction?.key ?? null}

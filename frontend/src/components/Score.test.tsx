@@ -10,8 +10,8 @@ test("score formats rankers and unranked", () => {
   expect(screen.getByText("Not yet ranked")).toBeInTheDocument();
 });
 
-test("badges render labels", () => {
+test("badges render labels, except Unverified", () => {
   render(<Badges badges={["unverified", "reported_closed"]} />);
-  expect(screen.getByText("Unverified")).toBeInTheDocument();
+  expect(screen.queryByText("Unverified")).toBeNull();
   expect(screen.getByText("Reported closed")).toBeInTheDocument();
 });

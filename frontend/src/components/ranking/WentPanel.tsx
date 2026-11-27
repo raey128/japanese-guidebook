@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { api, unwrap, type Schemas } from "../../api/client";
+import { invalidateAfterPhotoChange, photoProblem, uploadReviewPhotos } from "../../hooks/photos";
 import { invalidateAfterRankingChange } from "../../hooks/ranking";
+import PhotoPicker from "../photos/PhotoPicker";
 import { rankingMessage } from "../../lib/celebrate";
 import { reactionFor, type Reaction } from "../../lib/reactions";
 import { track } from "../../lib/track";
@@ -24,12 +26,20 @@ export default function WentPanel({
   placeName,
   current,
   canRate,
+  rankingId = null,
+  photoCount = 0,
+  openSignal = 0,
 }: {
   placeId: number;
   placeName: string;
   /** The viewer's rating today (1-10), if any. */
   current: number | null;
   canRate: boolean;
+  /** The viewer's ranking (to add photos without re-rating) and how many photos it has. */
+  rankingId?: number | null;
+  photoCount?: number;
+  /** Bumped by the card's "Add photo" button: open the panel with the photo picker on top. */
+  openSignal?: number;
 }) {
   const id = useId();
   const qc = useQueryClient();
@@ -41,11 +51,31 @@ export default function WentPanel({
   const [number, setNumber] = useState<number | null>(current);
   const [placing, setPlacing] = useState<number | null>(null); // rating being placed
   const [landed, setLanded] = useState<{ line: string | null; score: number | null } | null>(null);
+  // Photos come first (decided 2026-11-27): pick them before rating; they upload with it.
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  useEffect(() => {
+    if (openSignal > 0) requireUser(() => setOpen(true), "Pick a username to add photos");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openSignal]);
+
+  const upload = async (rid: number) => {
+    if (!photos.length) return;
+    try {
+      await uploadReviewPhotos(rid, photos);
+      setPhotos([]);
+      invalidateAfterPhotoChange(qc);
+    } catch (e) {
+      setPhotoError(e instanceof Error ? e.message : "Couldn't upload the photos.");
+    }
+  };
+  const uploadOnly = useMutation({ mutationFn: (rid: number) => upload(rid) });
 
   const save = useMutation({
     mutationFn: async (rating: number) =>
       unwrap(await api.PUT("/api/places/{place_id}/rating", { params: { path: { place_id: placeId } }, body: { rating } })),
     onSuccess: (res: Result) => {
+      void upload(res.ranking.id);
       invalidateAfterRankingChange(qc);
       void qc.invalidateQueries({ queryKey: ["topPicks"] });
       track("went", res.is_new ? "new" : "change");
@@ -58,7 +88,10 @@ export default function WentPanel({
     },
   });
 
-  const rate = (rating: number) => save.mutate(rating);
+  const rate = (rating: number) => {
+    if (photoProblem(photos, photoCount)) return;
+    save.mutate(rating);
+  };
 
   if (!canRate) return null;
 
@@ -92,6 +125,17 @@ export default function WentPanel({
           Close
         </button>
       </div>
+
+      {placing === null || landed ? (
+        <div className="space-y-2">
+          <PhotoPicker files={photos} onChange={(f) => { setPhotos(f); setPhotoError(null); }} alreadyHave={photoCount} error={photoError} />
+          {photos.length && current !== null && rankingId !== null && placing === null ? (
+            <button type="button" className="btn btn-primary btn-sm" disabled={uploadOnly.isPending} onClick={() => uploadOnly.mutate(rankingId)}>
+              {uploadOnly.isPending ? "Uploading…" : `Add ${photos.length === 1 ? "photo" : `${photos.length} photos`} without changing my rating`}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {placing !== null && !landed ? (
         <ThisOrThat
